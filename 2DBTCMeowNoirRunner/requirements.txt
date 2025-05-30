@@ -1,3 +1,0 @@
-pygame==2.5.2
-pygame-web==0.1.0
-asyncio==3.4.3 
