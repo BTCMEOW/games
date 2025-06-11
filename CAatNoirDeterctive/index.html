@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noir Cat - Crypto Detective</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #1a1a2e;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(70, 70, 110, 0.2) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(123, 31, 162, 0.2) 0%, transparent 20%);
+            color: #e6e6e6;
+            overflow-x: hidden;
+        }
+
+        .cat-shadow {
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.4)) 
+                   drop-shadow(0 0 20px rgba(123, 31, 162, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .cat-eyes {
+            position: absolute;
+            transition: all 0.2s ease;
+        }
+        
+        .blink {
+            animation: blink 2.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { height: 24px; }
+            5%, 7% { height: 2px; }
+        }
+        
+        .noir-font {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .cat-container {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #0073e6, 0 0 20px #0073e6;
+        }
+        
+        .pixel-corners {
+            clip-path: polygon(
+                0% 5px, 5px 5px, 5px 0%, calc(100% - 5px) 0%, calc(100% - 5px) 5px, 100% 5px, 
+                100% calc(100% - 5px), calc(100% - 5px) calc(100% - 5px), calc(100% - 5px) 100%, 
+                5px 100%, 5px calc(100% - 5px), 0% calc(100% - 5px)
+            );
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-2xl w-full mx-auto">
+        <h1 class="text-3xl md:text-5xl font-bold text-center mb-2 noir-font neon-text">NOIR CAT</h1>
+        <p class="text-center text-sm md:text-base mb-6 italic">Crypto Detective from Blockchain City</p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Cat Stats -->
+            <div class="bg-gray-900 bg-opacity-80 p-4 pixel-corners">
+                <h2 class="text-xl font-bold mb-4 noir-font border-b border-gray-700 pb-2">Dossier</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <p class="flex justify-between mb-1">
+                            <span>🐟 Hunger</span>
+                            <span id="hunger-value">80%</span>
+                        </p>
+                        <div class="bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div id="hunger-bar" class="status-bar bg-amber-500 h-full" style="width: 80%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="flex justify-between mb-1">
+                            <span>💤 Energy</span>
+                            <span id="energy-value">65%</span>
+                        </p>
+                        <div class="bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div id="energy-bar" class="status-bar bg-blue-500 h-full" style="width: 65%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="flex justify-between mb-1">
+                            <span>🕵️‍♂️ Mood</span>
+                            <span id="mood-value">50%</span>
+                        </p>
+                        <div class="bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div id="mood-bar" class="status-bar bg-purple-500 h-full" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p class="flex justify-between mb-1">
+                            <span>💰 BTC</span>
+                            <span id="btc-value">0.000123</span>
+                        </p>
+                        <div class="bg-gray-800 h-2 rounded-full overflow-hidden">
+                            <div class="status-bar bg-green-500 h-full" style="width: 12%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cat -->
+            <div class="flex items-center justify-center cat-container relative w-full h-64">
+                <div class="relative w-64 h-64" id="cat">
+                    <img src="https://i.imgur.com/8Km9tLL.png" alt="Noir Cat" 
+                         class="w-full h-full object-contain cat-shadow cursor-pointer" id="cat-image"
+                         style="filter: brightness(0);"
+                         onclick="petCat()">
+                    <div id="left-eye" class="cat-eyes blink bg-yellow-300 rounded-full w-4 h-6 absolute left-1/3 top-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+                    <div id="right-eye" class="cat-eyes blink bg-yellow-300 rounded-full w-4 h-6 absolute right-1/3 top-1/2 transform translate-x-1/2 -translate-y-1/2"></div>
+                    <div class="absolute bottom-0 left-0 right-0 text-center" id="cat-mood"></div>
+                </div>
+            </div>
+            
+            <!-- Event Log -->
+            <div class="bg-gray-900 bg-opacity-80 p-4 pixel-corners">
+                <h2 class="text-xl font-bold mb-4 noir-font border-b border-gray-700 pb-2">Log</h2>
+                <div id="log" class="h-48 overflow-y-auto text-sm space-y-2 font-mono">
+                    <p class="text-green-400">> Noir Cat has arrived...</p>
+                    <p class="text-yellow-400">> Case solved: Missing fish from the exchange</p>
+                    <p class="text-blue-400">> New BTC price: 42069 USD</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button onclick="feedCat()" class="bg-amber-700 hover:bg-amber-600 text-white py-3 px-4 rounded noir-font pixel-corners transition">
+                🐟 Feed
+            </button>
+            <button onclick="playWithCat()" class="bg-purple-700 hover:bg-purple-600 text-white py-3 px-4 rounded noir-font pixel-corners transition">
+                🎾 Play
+            </button>
+            <button onclick="sleepCat()" class="bg-blue-700 hover:bg-blue-600 text-white py-3 px-4 rounded noir-font pixel-corners transition">
+                💤 Sleep
+            </button>
+            <button onclick="workCat()" class="bg-green-700 hover:bg-green-600 text-white py-3 px-4 rounded noir-font pixel-corners transition">
+                💻 Hack Exchange
+            </button>
+        </div>
+        
+        <!-- Next Day Button -->
+        <div class="mt-8 text-center">
+            <button onclick="nextDay()" class="bg-red-700 hover:bg-red-600 text-white py-3 px-6 rounded-lg noir-font text-lg pixel-corners transition">
+                🔍 Next Day
+            </button>
+        </div>
+    </div>
+    
+    <!-- Death Modal -->
+    <div id="death-modal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-gray-900 max-w-md w-full p-8 text-center pixel-corners">
+            <h2 class="text-3xl font-bold mb-4 text-red-500 noir-font">NOIR CAT HAS DIED</h2>
+            <p class="mb-6">Your crypto detective couldn't survive the harsh streets of Blockchain City.</p>
+            <p class="mb-6 text-yellow-400">BTC Earned: <span id="final-btc">0</span></p>
+            <button onclick="restartGame()" class="bg-amber-600 hover:bg-amber-500 text-white py-2 px-6 rounded noir-font pixel-corners">
+                🐾 Start New Case
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        const state = {
+            hunger: 80,
+            energy: 65,
+            mood: 50,
+            btc: 0.000123,
+            day: 1,
+            alive: true
+        };
+        
+        // DOM Elements
+        const hungerBar = document.getElementById('hunger-bar');
+        const energyBar = document.getElementById('energy-bar');
+        const moodBar = document.getElementById('mood-bar');
+        const hungerValue = document.getElementById('hunger-value');
+        const energyValue = document.getElementById('energy-value');
+        const moodValue = document.getElementById('mood-value');
+        const btcValue = document.getElementById('btc-value');
+        const log = document.getElementById('log');
+        const cat = document.getElementById('cat');
+        const leftEye = document.getElementById('left-eye');
+        const rightEye = document.getElementById('right-eye');
+        const deathModal = document.getElementById('death-modal');
+        const finalBtc = document.getElementById('final-btc');
+
+        // Random number in range
+        function random(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // Add log entry
+        function addLog(message, color = 'gray') {
+            const colors = {
+                'gray': 'text-gray-400',
+                'green': 'text-green-400',
+                'yellow': 'text-yellow-400',
+                'blue': 'text-blue-400',
+                'red': 'text-red-400',
+                'purple': 'text-purple-400'
+            };
+            
+            const entry = document.createElement('p');
+            entry.className = `${colors[color] || 'text-gray-400'}`;
+            entry.innerHTML = `> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Update UI
+        function updateUI() {
+            hungerBar.style.width = `${state.hunger}%`;
+            energyBar.style.width = `${state.energy}%`;
+            moodBar.style.width = `${state.mood}%`;
+            
+            hungerValue.textContent = `${state.hunger}%`;
+            energyValue.textContent = `${state.energy}%`;
+            moodValue.textContent = `${state.mood}%`;
+            btcValue.textContent = state.btc.toFixed(6);
+            
+            // Change bar colors based on values
+            hungerBar.className = `status-bar h-full ${state.hunger < 20 ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`;
+            energyBar.className = `status-bar h-full ${state.energy < 20 ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`;
+            moodBar.className = `status-bar h-full ${state.mood < 20 ? 'bg-red-500 animate-pulse' : 'bg-purple-500'}`;
+            
+            // Death check
+            if ((state.hunger <= 0 || state.energy <= 0) && state.alive) {
+                state.alive = false;
+                finalBtc.textContent = state.btc.toFixed(6);
+                deathModal.classList.remove('hidden');
+                addLog('Noir Cat has died... Case closed.', 'red');
+            }
+        }
+
+        // Show mood message
+        function showMoodMessage(message, color = 'text-yellow-300') {
+            const moodElement = document.createElement('div');
+            moodElement.textContent = message;
+            moodElement.className = `absolute bottom-0 left-0 right-0 text-center ${color} transition-opacity duration-300`;
+            document.getElementById('cat').appendChild(moodElement);
+            
+            setTimeout(() => {
+                moodElement.classList.add('opacity-0');
+                setTimeout(() => {
+                    moodElement.remove();
+                }, 300);
+            }, 1500);
+        }
+
+        // Create coin effect animation
+        function createCoinEffect(x, y) {
+            const coin = document.createElement('div');
+            coin.className = 'coin absolute w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-yellow-800 animate-bounce';
+            coin.style.left = `${x}px`;
+            coin.style.top = `${y}px`;
+            coin.innerHTML = '₽';
+            
+            document.body.appendChild(coin);
+            
+            // Animate coin
+            const startY = y;
+            const endY = y - 100; // Move up 100px
+            const duration = 1000; // 1 second
+            const startTime = Date.now();
+            
+            function animate() {
+                const now = Date.now();
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Ease out quad
+                const easeProgress = 1 - (1 - progress) * (1 - progress);
+                
+                // Update position
+                const currentY = startY - (endY - startY) * easeProgress;
+                coin.style.top = `${currentY}px`;
+                
+                // Update opacity
+                coin.style.opacity = 1 - progress;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    coin.remove();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Feed cat
+        function feedCat() {
+            if (!state.alive) return;
+            
+            state.hunger = Math.min(100, state.hunger + 25);
+            state.energy = Math.max(0, state.energy - 5);
+            
+            const foods = ['sardines', 'salmon', 'trash fish from exchange', 'crypto-tuna', 'NFT-shrimp'];
+            const food = foods[random(0, foods.length-1)];
+            addLog(`Cat ate ${food} (+25 hunger)`, 'green');
+            
+            // Create coin effect at random position around the cat
+            const catElement = document.getElementById('cat');
+            const catRect = catElement.getBoundingClientRect();
+            const x = catRect.left + Math.random() * catRect.width;
+            const y = catRect.top + Math.random() * catRect.height;
+            
+            createCoinEffect(x, y);
+            
+            // Feeding animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            leftEye.style.height = '30px';
+            rightEye.style.height = '30px';
+            
+            setTimeout(() => {
+                leftEye.style.height = '24px';
+                rightEye.style.height = '24px';
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+                showMoodMessage('Mrrr... Thank you!', 'text-yellow-300');
+            }, 300);
+            
+            updateUI();
+        }
+
+        // Pet cat
+        function petCat() {
+            if (!state.alive) return;
+            
+            state.mood = Math.min(100, state.mood + 10);
+            
+            const reactions = [
+                'Purrrr...', 
+                'Purring', 
+                'Happy stretching', 
+                'Making cookies with paws'
+            ];
+            const reaction = reactions[random(0, reactions.length-1)];
+            addLog(`You petted Noir Cat: "${reaction}" (+10 mood)`, 'purple');
+            
+            // Feeding animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            leftEye.style.height = '30px';
+            rightEye.style.height = '30px';
+            
+            setTimeout(() => {
+                leftEye.style.height = '24px';
+                rightEye.style.height = '24px';
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+                showMoodMessage(reaction, 'text-purple-300');
+            }, 300);
+            
+            updateUI();
+        }
+        
+        // Play with cat
+        function playWithCat() {
+            if (!state.alive) return;
+            
+            state.mood = Math.min(100, state.mood + 20);
+            state.energy = Math.max(0, state.energy - 15);
+            state.hunger = Math.max(0, state.hunger - 10);
+            
+            const games = [
+                'hunted BTC price', 
+                'exposed some scammers', 
+                'caught a laser dot', 
+                'solved blockchain mystery',
+                'found Bitcoin'
+            ];
+            addLog(`Cat ${games[random(0, games.length-1)]} (+20 mood)`, 'blue');
+            
+            // Feeding animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            leftEye.style.height = '30px';
+            rightEye.style.height = '30px';
+            
+            setTimeout(() => {
+                leftEye.style.height = '24px';
+                rightEye.style.height = '24px';
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+                showMoodMessage('Purrrr...', 'text-purple-300');
+            }, 300);
+            
+            updateUI();
+        }
+        
+        // Sleep cat
+        function sleepCat() {
+            if (!state.alive) return;
+            
+            state.energy = Math.min(100, state.energy + 40);
+            state.hunger = Math.max(0, state.hunger - 15);
+            
+            const dreams = [
+                'about Bitcoin moon', 
+                'about halving', 
+                'about decentralization', 
+                'that he is Satoshi', 
+                'about whales'
+            ];
+            addLog(`Cat is sleeping and dreaming about ${dreams[random(0, dreams.length-1)]} (+40 energy)`, 'yellow');
+            
+            // Feeding animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            leftEye.style.height = '30px';
+            rightEye.style.height = '30px';
+            
+            setTimeout(() => {
+                leftEye.style.height = '24px';
+                rightEye.style.height = '24px';
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+                showMoodMessage('Zzz...', 'text-yellow-300');
+            }, 300);
+            
+            updateUI();
+        }
+        
+        // Work
+        function workCat() {
+            if (!state.alive) return;
+            
+            const earned = random(1, 10) / 100000;
+            state.btc += earned;
+            state.energy = Math.max(0, state.energy - 30);
+            state.hunger = Math.max(0, state.hunger - 20);
+            state.mood = Math.max(0, state.mood - 10);
+            
+            const works = [
+                'Hacked exchange', 
+                'Found smart contract vulnerability', 
+                'Developed new algorithm', 
+                'Conducted investigation', 
+                'Mined block'
+            ];
+            addLog(`${works[random(0, works.length-1)]} (+${earned.toFixed(6)} BTC)`, 'green');
+            
+            // Feeding animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            leftEye.style.height = '30px';
+            rightEye.style.height = '30px';
+            
+            setTimeout(() => {
+                leftEye.style.height = '24px';
+                rightEye.style.height = '24px';
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+                showMoodMessage('Mrrr...', 'text-yellow-300');
+            }, 300);
+            
+            updateUI();
+        }
+        
+        // Next day
+        function nextDay() {
+            if (!state.alive) return;
+            
+            state.day++;
+            state.hunger = Math.max(0, state.hunger - random(15, 30));
+            state.energy = Math.max(0, state.energy - random(10, 25));
+            state.mood = Math.max(0, state.mood - random(5, 15));
+            
+            // Random events
+            const events = [
+                {msg: 'BTC price dropped 2%', effect: () => {state.mood -= 5;}},
+                {msg: 'BTC price rose 5%', effect: () => {state.mood += 10; state.btc += random(1,5)/100000;}},
+                {msg: 'Hackers are attacking the blockchain!', effect: () => {state.energy -= 15;}},
+                {msg: 'Found the missing fish', effect: () => {state.hunger += 10; state.mood += 5;}},
+                {msg: 'Satoshi made contact', effect: () => {state.btc += random(5,15)/100000; state.mood += 20;}},
+                {msg: 'Nothing happened...', effect: () => {}},
+            ];
+            
+            const event = events[random(0, events.length-1)];
+            event.effect();
+            addLog(`Day ${state.day}: ${event.msg}`, 'yellow');
+            
+            updateUI();
+            
+            // Day flip animation
+            document.getElementById('cat-image').classList.add('animate-bounce');
+            setTimeout(() => {
+                document.getElementById('cat-image').classList.remove('animate-bounce');
+            }, 300);
+        }
+        
+        // New game
+        function restartGame() {
+            state.hunger = 80;
+            state.energy = 65;
+            state.mood = 50;
+            state.btc = 0.000123;
+            state.day = 1;
+            state.alive = true;
+            
+            log.innerHTML = '';
+            addLog('New case: Noir Cat is on the trail...', 'green');
+            deathModal.classList.add('hidden');
+            updateUI();
+        }
+        
+        // Initialization
+        addLog('Crypto detective Noir Cat has arrived', 'green');
+        updateUI();
+        
+        // Automatic game update
+        setInterval(() => {
+            if (!state.alive) return;
+            
+            state.hunger = Math.max(0, state.hunger - 1);
+            state.energy = Math.max(0, state.energy - 1);
+            state.mood = Math.max(0, state.mood - 1);
+            
+            // Random event
+            if (Math.random() > 0.95) {
+                const events = [
+                    {msg: "Cat found satoshi under the carpet!", effect: () => state.btc += 0.00001},
+                    {msg: "Cat confused ETH with BTC... again!", effect: () => state.btc -= 0.000005},
+                    {msg: "Cat cracked a hacker's wallet and found some change", effect: () => state.btc += 0.00003},
+                    {msg: "Cat successfully traded memecoins", effect: () => state.btc += 0.00005},
+                    {msg: "Cat broke a mining farm light bulb", effect: () => state.energy -= 5}
+                ];
+                
+                const event = events[Math.floor(Math.random() * events.length)];
+                event.effect();
+                addLog(`Random event: ${event.msg}`, 'yellow');
+            }
+            
+            updateUI();
+            
+            // Eye blinking
+            if (Math.random() > 0.98) {
+                leftEye.style.height = '2px';
+                rightEye.style.height = '2px';
+                setTimeout(() => {
+                    leftEye.style.height = '24px';
+                    rightEye.style.height = '24px';
+                }, 200);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
