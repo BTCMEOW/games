@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meow Wars - BTC RTS Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes glow {
+            0% { filter: drop-shadow(0 0 5px currentColor); }
+            50% { filter: drop-shadow(0 0 15px currentColor); }
+            100% { filter: drop-shadow(0 0 5px currentColor); }
+        }
+
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.5; }
+            50% { opacity: 0.2; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: translateX(0); }
+        }
+        
+        .animate-shake {
+            animation: shake 0.5s ease;
+        }
+        
+        .unit {
+            transition: all 0.3s ease;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .effect-spin {
+            animation: spin 2s linear infinite;
+        }
+
+        .effect-glow {
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .effect-flash {
+            animation: flash 0.5s ease infinite;
+        }
+        
+        .damage-popup {
+            animation: damagePopup 1.5s forwards;
+            position: absolute;
+            font-weight: bold;
+            pointer-events: none;
+            font-size: 1.2rem;
+            text-shadow: 0 0 3px black;
+            z-index: 100;
+        }
+
+        .particle {
+            position: absolute;
+            background-color: currentColor;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @keyframes damagePopup {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            50% { transform: translateY(-25px) scale(1.3); opacity: 1; }
+            100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
+        }
+
+        @keyframes particleExplosion {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        .ability-cooldown {
+            position: absolute;
+            bottom: -15px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background-color: rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .ability-cooldown-bar {
+            height: 100%;
+            background-color: #60a5fa;
+            transition: width 0.1s linear;
+        }
+        
+        .notification {
+            animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        .progress-bar {
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-mono">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 class="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 relative">
+                <span class="effect-glow">Meow Wars</span>
+                <span class="absolute -top-2 -right-4 text-xl animate-bounce">🐾</span>
+            </h1>
+            <p class="text-lg text-gray-400">BTC RTS Battle: Base vs Base</p>
+        </header>
+        
+        <!-- Game Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
+                <div class="mr-4 text-yellow-400 text-2xl">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">BTC Resources</div>
+                    <div id="btc-resources" class="text-2xl font-bold">100</div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
+                <div class="mr-4 text-blue-400 text-2xl">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Network Power</div>
+                    <div id="network-power" class="text-2xl font-bold">10</div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
+                <div class="mr-4 text-red-400 text-2xl">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <div class="text-gray-400 text-sm">Game Time</div>
+                    <div id="game-time" class="text-2xl font-bold">00:00</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Game Arena -->
+        <div class="relative bg-gray-800 rounded-xl overflow-hidden mb-8" style="height: 400px;">
+            <!-- Background Grid -->
+            <div class="absolute inset-0 bg-gray-900">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(55, 65, 81, 0.5)" stroke-width="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid)" />
+                </svg>
+            </div>
+            
+            <!-- Middle Line -->
+            <div class="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-700 transform -translate-x-1/2"></div>
+            
+            <!-- Cat Gang Base -->
+            <div id="player-base" class="absolute left-16 top-1/2 transform -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center border-4 border-green-300 shadow-lg cursor-pointer hover:scale-105 transition-all">
+                <div class="text-center">
+                    <i class="fas fa-cat text-3xl mb-2 text-green-300"></i>
+                    <div class="font-bold">Cat Gang</div>
+                    <div id="base-health" class="text-sm">HP: 100/100</div>
+                </div>
+            </div>
+            
+            <!-- Rat Gang Base -->
+            <div id="enemy-base" class="absolute right-16 top-1/2 transform -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-gray-800 to-gray-950 rounded-full flex items-center justify-center border-4 border-red-300 shadow-lg">
+                <div class="text-center">
+                    <i class="fas fa-rat text-3xl mb-2 text-red-400"></i>
+                    <div class="font-bold">Rat Mob</div>
+                    <div id="enemy-health" class="text-sm">HP: 100/100</div>
+                </div>
+            </div>
+            
+            <!-- Miner Node -->
+            <div id="miner-node" class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center border-4 border-yellow-300 shadow-xl cursor-pointer hover:animate-pulse effect-glow">
+                <div class="relative">
+                    <i class="fas fa-coins text-3xl"></i>
+                    <div class="absolute -inset-2 rounded-full border-2 border-yellow-200 animate-spin opacity-0" id="node-spin"></div>
+                </div>
+                <div id="node-particles" class="absolute inset-0 pointer-events-none"></div>
+            </div>
+            
+            <!-- Units Container -->
+            <div id="units-container" class="absolute inset-0 pointer-events-none"></div>
+            
+            <!-- Win/Lose Banner -->
+            <div id="game-result" class="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden">
+                <div class="text-center p-8 rounded-xl max-w-md">
+                    <h2 id="result-text" class="text-4xl font-bold mb-4"></h2>
+                    <button id="restart-btn" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-colors">
+                        Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Units Panel -->
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
+                    <i class="fas fa-users mr-2"></i> Units
+                </h2>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- Miner -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('miner')">
+                        <div class="flex items-center mb-2">
+                            <div class="w-10 h-10 bg-yellow-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-digging"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">BTC Miner</div>
+                                <div class="text-xs text-gray-400">Gathers resources</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="miner-cost">10</span></div>
+                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>2</span>s</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Fighter -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('fighter')">
+                        <div class="flex items-center mb-2">
+                            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-fist-raised"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Crypto Fighter</div>
+                                <div class="text-xs text-gray-400">Attacks enemies</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="fighter-cost">15</span></div>
+                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>3</span>s</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Hacker -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('hacker')">
+                        <div class="flex items-center mb-2">
+                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Blockchain Hacker</div>
+                                <div class="text-xs text-gray-400">Increases network power</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="hacker-cost">20</span></div>
+                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>5</span>s</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tank -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('tank')">
+                        <div class="flex items-center mb-2">
+                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold">Hash Tank</div>
+                                <div class="text-xs text-gray-400">Damages base directly</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-sm">
+                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="tank-cost">30</span></div>
+                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>8</span>s</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="font-bold mb-2">Your Units: <span id="unit-count">0</span></h3>
+                    <div class="progress-bar bg-gray-700 w-full">
+                        <div id="unit-capacity-bar" class="progress-fill bg-blue-500" style="width: 0%"></div>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">Unit capacity: <span id="unit-capacity">0</span>/10</div>
+                </div>
+            </div>
+            
+            <!-- Abilities Panel -->
+            <div class="bg-gray-800 rounded-xl p-6">
+                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
+                    <i class="fas fa-fire mr-2"></i> Special Abilities
+                </h2>
+                
+                <div class="space-y-3">
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer relative" onclick="useAbility('nuke')">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">Satoshi Bomb</div>
+                                <div class="text-sm text-gray-400">Destroy all enemies</div>
+                            </div>
+                            <div class="text-yellow-400">
+                                <i class="fas fa-bomb"></i>
+                            </div>
+                        </div>
+                        <div class="ability-cooldown">
+                            <div id="nuke-cooldown-bar" class="ability-cooldown-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer relative" onclick="useAbility('heal')">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">Halving Heal</div>
+                                <div class="text-sm text-gray-400">Restore base health</div>
+                            </div>
+                            <div class="text-green-400">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="ability-cooldown">
+                            <div id="heal-cooldown-bar" class="ability-cooldown-bar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Upgrades Panel -->
+            <div class="bg-gray-800 rounded-xl p-6 lg:col-span-2">
+                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
+                    <i class="fas fa-level-up-alt mr-2"></i> Upgrades
+                </h2>
+                
+                <!-- Difficulty Settings -->
+                <div class="mb-6 bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-bold mb-4 flex items-center">
+                        <i class="fas fa-sliders-h mr-2"></i> Difficulty Settings
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Enemy Spawn Rate</label>
+                            <input type="range" min="1" max="10" value="5" class="w-full" id="spawn-rate-slider"
+                                onchange="updateDifficulty('spawnRate', this.value)">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Slow</span>
+                                <span>Fast</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Enemy Health</label>
+                            <input type="range" min="1" max="10" value="5" class="w-full" id="enemy-health-slider"
+                                onchange="updateDifficulty('enemyHealth', this.value)">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Low</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Enemy Damage</label>
+                            <input type="range" min="1" max="10" value="5" class="w-full" id="enemy-damage-slider"
+                                onchange="updateDifficulty('enemyDamage', this.value)">
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>Low</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <!-- Mining Upgrade -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('mining')">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-bold">Advanced Mining</div>
+                                <div class="text-sm text-gray-400">Increases BTC yield by 50%</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="mining-upgrade-cost">50</span></div>
+                                <div id="mining-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Attack Upgrade -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('attack')">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-bold">Weapon Upgrade</div>
+                                <div class="text-sm text-gray-400">Increases unit damage by 25%</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="attack-upgrade-cost">75</span></div>
+                                <div id="attack-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Capacity Upgrade -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('capacity')">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-bold">Unit Capacity</div>
+                                <div class="text-sm text-gray-400">+5 unit slots</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="capacity-upgrade-cost">100</span></div>
+                                <div id="capacity-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Base Health -->
+                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('base')">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="font-bold">Base Fortification</div>
+                                <div class="text-sm text-gray-400">+50 base HP</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="base-upgrade-cost">120</span></div>
+                                <div id="base-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 bg-gray-900 rounded-lg p-4">
+                    <h3 class="font-bold mb-2 flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i> Game Guide
+                    </h3>
+                    <ul class="text-sm text-gray-400 space-y-2">
+                        <li>- <span class="text-yellow-400">BTC Miners</span> gather resources from the center node</li>
+                        <li>- <span class="text-red-400">Fighters</span> attack enemy units</li>
+                        <li>- <span class="text-purple-400">Hackers</span> increase your network power (unlock upgrades)</li>
+                        <li>- <span class="text-green-400">Tanks</span> damage enemy base directly</li>
+                        <li>- Destroy enemy base to win!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notifications -->
+        <div id="notifications" class="fixed bottom-4 right-4 w-72 space-y-2 z-50"></div>
+    </div>
+
+    <script>
+        // Game State
+        const gameState = {
+            btc: 100,
+            networkPower: 10,
+            time: 0,
+            baseHealth: 100,
+            enemyHealth: 100,
+            maxEnemyHealth: 100,
+            unitCount: 0,
+            maxUnits: 10,
+            gameActive: true,
+            
+            units: [],
+            enemyUnits: [],
+            
+            difficulty: {
+                spawnRate: 5,    // 1-10
+                enemyHealth: 5,  // 1-10
+                enemyDamage: 5   // 1-10
+            },
+
+            // Boss system
+            bossSystem: {
+                lastBossSpawn: 0,
+                bossSpawnInterval: 300, // 5 minutes
+                bossLevel: 1,
+                activeBoss: null
+            },
+            
+            upgrades: {
+                mining: { level: 0, cost: 50 },
+                attack: { level: 0, cost: 75 },
+                capacity: { level: 0, cost: 100 },
+                base: { level: 0, cost: 120 }
+            },
+            
+            abilities: {
+                nuke: { cooldown: 0, maxCooldown: 300 }, // 5 minutes
+                heal: { cooldown: 0, maxCooldown: 180 }  // 3 minutes
+            },
+            
+            unitCosts: {
+                miner: 10,
+                fighter: 15,
+                hacker: 20,
+                tank: 30
+            },
+            
+            unitProductionTimes: {
+                miner: 2,
+                fighter: 3,
+                hacker: 5,
+                tank: 8,
+                sniper: 4,
+                medic: 5,
+                summoner: 10
+            },
+
+            unitSpecialAbilities: {
+                miner: { cooldown: 0, maxCooldown: 30 },
+                fighter: { cooldown: 0, maxCooldown: 20 },
+                hacker: { cooldown: 0, maxCooldown: 40 },
+                tank: { cooldown: 0, maxCooldown: 60 },
+                sniper: { cooldown: 0, maxCooldown: 30 },
+                medic: { cooldown: 0, maxCooldown: 25 },
+                summoner: { cooldown: 0, maxCooldown: 90 }
+            },
+            
+            enemySpawnInterval: 8000,
+            lastEnemySpawn: 0
+        };
+        
+        // DOM Elements
+        const dom = {
+            btcResources: document.getElementById('btc-resources'),
+            networkPower: document.getElementById('network-power'),
+            gameTime: document.getElementById('game-time'),
+            baseHealth: document.getElementById('base-health'),
+            enemyHealth: document.getElementById('enemy-health'),
+            unitCount: document.getElementById('unit-count'),
+            unitCapacity: document.getElementById('unit-capacity'),
+            unitCapacityBar: document.getElementById('unit-capacity-bar'),
+            unitsContainer: document.getElementById('units-container'),
+            gameResult: document.getElementById('game-result'),
+            resultText: document.getElementById('result-text'),
+            restartBtn: document.getElementById('restart-btn'),
+            notifications: document.getElementById('notifications'),
+            
+            minerCost: document.getElementById('miner-cost'),
+            fighterCost: document.getElementById('fighter-cost'),
+            hackerCost: document.getElementById('hacker-cost'),
+            tankCost: document.getElementById('tank-cost'),
+            
+            miningUpgradeCost: document.getElementById('mining-upgrade-cost'),
+            miningUpgradeLevel: document.getElementById('mining-upgrade-level'),
+            attackUpgradeCost: document.getElementById('attack-upgrade-cost'),
+            attackUpgradeLevel: document.getElementById('attack-upgrade-level'),
+            capacityUpgradeCost: document.getElementById('capacity-upgrade-cost'),
+            capacityUpgradeLevel: document.getElementById('capacity-upgrade-level'),
+            baseUpgradeCost: document.getElementById('base-upgrade-cost'),
+            baseUpgradeLevel: document.getElementById('base-upgrade-level')
+        };
+        
+        // Helper Functions
+        function getUnitName(type) {
+            const names = {
+                miner: "BTC Miner",
+                fighter: "Crypto Fighter",
+                hacker: "Blockchain Hacker",
+                tank: "Hash Tank"
+            };
+            return names[type] || "Unit";
+        }
+
+        function getUnitClass(type) {
+            return {
+                miner: "bg-yellow-600 border-yellow-400 shadow-yellow-500/50",
+                fighter: "bg-red-600 border-red-400 shadow-red-500/50",
+                hacker: "bg-purple-600 border-purple-400 shadow-purple-500/50",
+                tank: "bg-green-600 border-green-400 shadow-green-500/50"
+            }[type];
+        }
+
+        function getUnitHealthBarClass(type) {
+            return {
+                miner: "bg-yellow-500",
+                fighter: "bg-red-500",
+                hacker: "bg-purple-500",
+                tank: "bg-green-500"
+            }[type];
+        }
+
+        function getUnitIcon(type) {
+            const icons = {
+                miner: '<i class="fas fa-digging text-white"></i>',
+                fighter: '<i class="fas fa-fist-raised text-white"></i>',
+                hacker: '<i class="fas fa-code text-white"></i>',
+                tank: '<i class="fas fa-shield-alt text-white"></i>'
+            };
+            return icons[type];
+        }
+
+        function getUnitAttack(type) {
+            if (!type || !gameState.unitCosts[type]) return 0;
+            const baseAttack = {
+                miner: 0,
+                fighter: 15,
+                hacker: 0,
+                tank: 20
+            };
+            return Math.floor(baseAttack[type] * (1 + (gameState.upgrades.attack.level * 0.25)));
+        }
+
+        function getUnitSpeed(type) {
+            return {
+                miner: 0.5,
+                fighter: 1,
+                hacker: 0.3,
+                tank: 0.4
+            }[type];
+        }
+
+        function getUnitCooldown(type) {
+            return {
+                miner: 5,
+                fighter: 1.5,
+                hacker: 10,
+                tank: 5
+            }[type];
+        }
+
+        function showNotification(text, type = 'info') {
+            const colors = {
+                info: 'bg-blue-600',
+                success: 'bg-green-600',
+                warning: 'bg-yellow-600',
+                error: 'bg-red-600'
+            };
+            
+            const notif = document.createElement('div');
+            notif.className = `notification ${colors[type]} rounded-lg p-3 shadow-lg flex items-start`;
+            
+            const icons = {
+                info: 'info-circle',
+                success: 'check-circle',
+                warning: 'exclamation-triangle',
+                error: 'times-circle'
+            };
+            
+            notif.innerHTML = `
+                <i class="fas fa-${icons[type]} mr-2"></i>
+                <span>${text}</span>
+            `;
+            
+            dom.notifications.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        function updateUI() {
+            dom.btcResources.textContent = gameState.btc;
+            dom.networkPower.textContent = gameState.networkPower;
+            dom.baseHealth.textContent = `HP: ${gameState.baseHealth}/${100 + (gameState.upgrades.base.level * 50)}`;
+            dom.enemyHealth.textContent = `HP: ${gameState.enemyHealth}/${gameState.maxEnemyHealth}`;
+            dom.unitCount.textContent = gameState.unitCount;
+            dom.unitCapacity.textContent = `${gameState.unitCount}/${gameState.maxUnits}`;
+            
+            const capacityPercent = (gameState.unitCount / gameState.maxUnits) * 100;
+            dom.unitCapacityBar.style.width = `${capacityPercent}%`;
+        }
+
+        function playSound(type) {
+            console.log(`Playing sound: ${type}`);
+        }
+
+        function unitClicked(unitId) {
+            const unit = gameState.units.find(u => u.id === unitId);
+            if (!unit) return;
+            
+            unit.target = null;
+            
+            if (unit.type === 'miner') {
+                unit.targetX = 290;
+                unit.targetY = 200;
+                showNotification("Miner sent to mine BTC", "info");
+            } else if (unit.type === 'fighter') {
+                if (gameState.enemyUnits.length > 0) {
+                    const closestEnemy = gameState.enemyUnits[0];
+                    unit.target = closestEnemy;
+                    showNotification("Fighter attacking enemy", "info");
+                } else {
+                    showNotification("No enemies to attack", "warning");
+                }
+            } else if (unit.type === 'tank') {
+                unit.targetX = 630;
+                unit.targetY = 200;
+                showNotification("Tank moving to attack enemy base", "info");
+            } else if (unit.type === 'hacker') {
+                showNotification("Hacker is boosting your network power", "info");
+            }
+        }
+
+        // Unit creation
+        function createUnit(type) {
+            if (!gameState.gameActive) return;
+            
+            if (gameState.btc < gameState.unitCosts[type]) {
+                showNotification("Not enough BTC!", "error");
+                return;
+            }
+            
+            if (gameState.unitCount >= gameState.maxUnits) {
+                showNotification("Unit capacity reached!", "warning");
+                return;
+            }
+            
+            gameState.btc -= gameState.unitCosts[type];
+            gameState.unitCount++;
+            
+            const unit = {
+                id: Date.now(),
+                type: type,
+                x: 100,
+                y: 200,
+                targetX: null,
+                targetY: null,
+                target: null,
+                health: 100,
+                attack: getUnitAttack(type),
+                speed: getUnitSpeed(type),
+                cooldown: 0,
+                cooldownMax: getUnitCooldown(type)
+            };
+            
+            gameState.units.push(unit);
+            
+            const unitElement = document.createElement('div');
+            unitElement.className = `unit absolute w-8 h-8 rounded-full flex items-center justify-center cursor-pointer ${getUnitClass(type)}`;
+            unitElement.id = `unit-${unit.id}`;
+            unitElement.style.left = `${unit.x}px`;
+            unitElement.style.top = `${unit.y}px`;
+            unitElement.innerHTML = getUnitIcon(type);
+            
+            const healthBar = document.createElement('div');
+            healthBar.className = `health-bar absolute -top-2 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden`;
+            
+            const healthFill = document.createElement('div');
+            healthFill.className = `h-full ${getUnitHealthBarClass(type)}`;
+            healthFill.style.width = '100%';
+            
+            healthBar.appendChild(healthFill);
+            unitElement.appendChild(healthBar);
+            
+            unitElement.addEventListener('click', () => unitClicked(unit.id));
+            
+            dom.unitsContainer.appendChild(unitElement);
+            
+            if (type === 'miner') {
+                unit.targetX = 290;
+                unit.targetY = 200;
+            } else if (type === 'hacker') {
+                unit.targetX = 100 + Math.random() * 100;
+                unit.targetY = 150 + Math.random() * 100;
+            }
+            
+            showNotification(`${getUnitName(type)} created!`, "success");
+            
+            updateUI();
+            playSound('create');
+        }
+
+        // Buy upgrade
+        function buyUpgrade(type) {
+            if (!gameState.gameActive) return;
+            
+            const upgrade = gameState.upgrades[type];
+            
+            if (gameState.btc < upgrade.cost) {
+                showNotification("Not enough BTC for this upgrade!", "error");
+                return;
+            }
+            
+            if (gameState.networkPower < upgrade.level * 5) {
+                showNotification("Not enough network power!", "error");
+                return;
+            }
+            
+            gameState.btc -= upgrade.cost;
+            upgrade.level++;
+            upgrade.cost = Math.floor(upgrade.cost * 1.75);
+            
+            if (type === 'capacity') {
+                gameState.maxUnits += 5;
+                showNotification("Unit capacity increased by 5!", "success");
+            } else if (type === 'base') {
+                const healthIncrease = 50;
+                gameState.baseHealth += healthIncrease;
+                showNotification(`Base health increased by ${healthIncrease}!`, "success");
+            } else if (type === 'mining') {
+                showNotification("Mining efficiency increased by 50%!", "success");
+            } else if (type === 'attack') {
+                showNotification("Unit attack power increased by 25%!", "success");
+                
+                for (const unit of gameState.units) {
+                    if (unit.attack > 0) {
+                        unit.attack = getUnitAttack(unit.type);
+                    }
+                }
+            }
+            
+            playSound('upgrade');
+            updateUI();
+        }
+
+        // Use special ability
+        function useAbility(type) {
+            if (!gameState.gameActive) return;
+            
+            const ability = gameState.abilities[type];
+            if (!ability) return;
+            
+            if (ability.cooldown > 0) {
+                showNotification("Ability is on cooldown!", "error");
+                return;
+            }
+            
+            switch (type) {
+                case 'nuke':
+                    // Destroy all enemy units
+                    for (const enemy of [...gameState.enemyUnits]) {
+                        destroyEnemyUnit(enemy.id);
+                    }
+                    showNotification("All enemies destroyed!", "success");
+                    playSound('explosion');
+                    break;
+                    
+                case 'heal':
+                    // Heal base
+                    const healAmount = 50;
+                    gameState.baseHealth = Math.min(gameState.baseHealth + healAmount, 100);
+                    showNotification(`Base healed for ${healAmount} HP!`, "success");
+                    playSound('heal');
+                    updateUI();
+                    break;
+            }
+            
+            // Set cooldown
+            ability.cooldown = ability.maxCooldown;
+            
+            // Start cooldown timer
+            const cooldownBar = document.getElementById(`${type}-cooldown-bar`);
+            if (cooldownBar) {
+                const startTime = Date.now();
+                const updateCooldown = () => {
+                    const elapsed = Date.now() - startTime;
+                    const remaining = Math.max(0, ability.maxCooldown - elapsed / 1000);
+                    const percent = (remaining / ability.maxCooldown) * 100;
+                    
+                    cooldownBar.style.width = `${percent}%`;
+                    ability.cooldown = remaining;
+                    
+                    if (remaining > 0) {
+                        requestAnimationFrame(updateCooldown);
+                    } else {
+                        cooldownBar.style.width = '0%';
+                    }
+                };
+                requestAnimationFrame(updateCooldown);
+            }
+        }
+
+        // Initialize game
+        function init() {
+            updateUI();
+            setInterval(gameLoop, 1000);
+            setInterval(moveUnits, 50);
+            document.getElementById('restart-btn').addEventListener('click', restartGame);
+            document.getElementById('miner-node').addEventListener('click', collectResources);
+            setInterval(spawnRandomEnemyUnit, gameState.enemySpawnInterval);
+        }
+
+        // Start the game when the page loads
+        window.addEventListener('load', init);
+
+        // Game loop
+        function gameLoop() {
+            if (!gameState.gameActive) return;
+            
+            gameState.time++;
+            
+            // Update clock
+            const minutes = Math.floor(gameState.time / 60).toString().padStart(2, '0');
+            const seconds = (gameState.time % 60).toString().padStart(2, '0');
+            dom.gameTime.textContent = `${minutes}:${seconds}`;
+            
+            // Passive BTC income
+            const passiveIncome = Math.min(1 + Math.floor(gameState.time / 60), 10);
+            addBTC(passiveIncome);
+            
+            // Check win/lose conditions
+            if (gameState.baseHealth <= 0) {
+                endGame(false);
+            } else if (gameState.enemyHealth <= 0) {
+                endGame(true);
+            }
+            
+            // Увеличивать сложность со временем
+            gameState.enemySpawnInterval = Math.max(8000 - gameState.time * 100, 2000);
+            
+            updateUI();
+        }
+        
+        // Check for nearby enemies
+        function checkForEnemies(unit) {
+            const detectionRange = 100; // Range at which units can detect enemies
+            
+            for (const enemy of gameState.enemyUnits) {
+                const dx = enemy.x - unit.x;
+                const dy = enemy.y - unit.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < detectionRange) {
+                    unit.target = enemy;
+                    return;
+                }
+            }
+        }
+
+        // Move units
+        function moveUnits() {
+            if (!gameState.gameActive) return;
+            
+            // Move player units
+            for (const unit of [...gameState.units]) {
+                const unitElement = document.getElementById(`unit-${unit.id}`);
+                if (!unitElement) continue;
+                
+                let targetX = unit.targetX;
+                let targetY = unit.targetY;
+                
+                if (unit.target) {
+                    targetX = unit.target.x;
+                    targetY = unit.target.y;
+                }
+                
+                // Check for nearby enemies automatically
+                if (!unit.target && unit.type === 'fighter') {
+                    checkForEnemies(unit);
+                }
+
+                // If no target and no enemies nearby, move to enemy base
+                if (!unit.target && (unit.type === 'fighter' || unit.type === 'tank')) {
+                    unit.targetX = 630;
+                    unit.targetY = 200;
+                }
+
+                // If has target position
+                if (targetX !== null && targetY !== null && !unit.target) {
+                    const dx = targetX - unit.x;
+                    const dy = targetY - unit.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Check if we ran into enemies along the way
+                    if (unit.type === 'fighter' && !unit.target) {
+                        checkForEnemies(unit);
+                    }
+                    
+                    // Attack enemy base if in range
+                    if ((unit.type === 'fighter' || unit.type === 'tank') && 
+                        targetX === 630 && targetY === 200 && distance < 50) {
+                        if (unit.cooldown <= 0) {
+                            gameState.enemyHealth -= unit.attack;
+                            showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
+                            
+                            document.getElementById('enemy-base').classList.add('animate-shake');
+                            setTimeout(() => {
+                                document.getElementById('enemy-base').classList.remove('animate-shake');
+                            }, 300);
+                            
+                            unit.cooldown = unit.cooldownMax;
+                            playSound('attack');
+                        } else {
+                            unit.cooldown--;
+                        }
+                        continue;
+                    }
+                    
+                    // Miner unit logic
+                    if (unit.type === 'miner') {
+                        // Mining at node
+                        if (targetX === 290 && targetY === 200 && distance < 20) {
+                            if (unit.cooldown <= 0) {
+                                // Mine BTC
+                                const yieldMultiplier = 1 + (gameState.upgrades.mining.level * 0.5);
+                                const btcYield = Math.floor(5 * yieldMultiplier);
+                                
+                                addBTC(btcYield);
+                                showFloatingText("+" + btcYield + " BTC", unit.x, unit.y, 'yellow');
+                                
+                                unit.cooldown = unit.cooldownMax;
+                                playSound('mine');
+                                
+                                // Return to base after mining
+                                unit.targetX = 100;
+                                unit.targetY = 200;
+                            } else {
+                                unit.cooldown--;
+                            }
+                            
+                            // Prevent getting stuck
+                            if (Math.random() < 0.05 && unit.cooldown < 3) {
+                                unit.x += Math.random() * 4 - 2;
+                                unit.y += Math.random() * 4 - 2;
+                            }
+                            
+                            continue;
+                        }
+                        
+                        // Depositing at base
+                        if (targetX === 100 && targetY === 200 && distance < 20) {
+                            // Immediately go back to mining
+                            unit.targetX = 290;
+                            unit.targetY = 200;
+                            continue;
+                        }
+                        
+                        // Animate mining
+                        unitElement.classList.toggle('scale-90');
+                        continue;
+                    }
+                    
+                    // Tank unit logic
+                    if (unit.type === 'tank') {
+                        // Prioritize attacking targeted enemy units
+                        if (unit.target) {
+                            const enemy = unit.target;
+                            const dx = enemy.x - unit.x;
+                            const dy = enemy.y - unit.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < 40) { // Tank has longer range
+                                if (unit.cooldown <= 0) {
+                                    enemy.health -= unit.attack;
+                                    showFloatingText("-" + unit.attack, enemy.x, enemy.y, 'red');
+                                    
+                                    const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
+                                    if (enemyElement) {
+                                        const healthBar = enemyElement.querySelector('.health-bar > div');
+                                        const healthPercent = (enemy.health / 100) * 100;
+                                        healthBar.style.width = `${healthPercent}%`;
+                                        
+                                        if (enemy.health <= 0) {
+                                            destroyEnemyUnit(enemy.id);
+                                            unit.target = null;
+                                            // Return to base attack if no more targets
+                                            unit.targetX = 630;
+                                            unit.targetY = 200;
+                                        }
+                                    }
+                                    
+                                    unit.cooldown = unit.cooldownMax;
+                                    playSound('attack');
+                                } else {
+                                    unit.cooldown--;
+                                }
+                                continue;
+                            }
+                        }
+                        
+                        // Attack enemy base if no target and in range
+                        if (!unit.target && targetX === 630 && targetY === 200 && distance < 50) {
+                            if (unit.cooldown <= 0) {
+                                gameState.enemyHealth -= unit.attack;
+                                showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
+                                
+                                document.getElementById('enemy-base').classList.add('animate-shake');
+                                setTimeout(() => {
+                                    document.getElementById('enemy-base').classList.remove('animate-shake');
+                                }, 300);
+                                
+                                unit.cooldown = unit.cooldownMax;
+                                playSound('attack');
+                            } else {
+                                unit.cooldown--;
+                            }
+                            continue;
+                        }
+                    }
+                    if (unit.type === 'tank' && distance < 50 && !unit.target) {
+                        if (unit.cooldown <= 0) {
+                            // Attack base
+                            gameState.enemyHealth -= unit.attack;
+                            showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
+                            
+                            // Shake base
+                            document.getElementById('enemy-base').classList.add('animate-shake');
+                            setTimeout(() => {
+                                document.getElementById('enemy-base').classList.remove('animate-shake');
+                            }, 300);
+                            
+                            unit.cooldown = unit.cooldownMax;
+                            playSound('attack');
+                        } else {
+                            unit.cooldown--;
+                        }
+                        continue;
+                    }
+                    
+                    // For hackers - random movement
+                    if (unit.type === 'hacker' && distance < 10) {
+                        if (unit.cooldown <= 0) {
+                            // Increase network power
+                            gameState.networkPower += 2;
+                            showFloatingText("+2 Network", unit.x, unit.y, 'purple');
+                            
+                            // Get new random position
+                            unit.targetX = 50 + Math.random() * 200;
+                            unit.targetY = 100 + Math.random() * 200;
+                            
+                            unit.cooldown = unit.cooldownMax;
+                            playSound('hack');
+                        } else {
+                            unit.cooldown--;
+                        }
+                        continue;
+                    }
+                    
+                    // Move towards target if not close enough
+                    if (distance > 5) {
+                        unit.x += (dx / distance) * unit.speed;
+                        unit.y += (dy / distance) * unit.speed;
+                    }
+                    
+                    // Update DOM position
+                    unitElement.style.left = `${unit.x}px`;
+                    unitElement.style.top = `${unit.y}px`;
+                }
+                
+                // Attack logic
+                if (unit.target && unit.type === 'fighter') {
+                    const enemyId = unit.target.id;
+                    const enemy = gameState.enemyUnits.find(e => e.id === enemyId);
+                    
+                    if (!enemy) {
+                        unit.target = null;
+                        continue;
+                    }
+                    
+                    const dx = enemy.x - unit.x;
+                    const dy = enemy.y - unit.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // If in range
+                    if (distance < 30) {
+                        if (unit.cooldown <= 0) {
+                            // Attack enemy
+                            enemy.health -= unit.attack;
+                            showFloatingText("-" + unit.attack, enemy.x, enemy.y, 'red');
+                            
+                            // Update enemy health bar
+                            const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
+                            if (enemyElement) {
+                                const healthBar = enemyElement.querySelector('.health-bar > div');
+                                const healthPercent = (enemy.health / 100) * 100;
+                                healthBar.style.width = `${healthPercent}%`;
+                            }
+                            
+                            // Check if enemy is dead
+                            if (enemy.health <= 0) {
+                                destroyEnemyUnit(enemy.id);
+                            }
+                            
+                            unit.cooldown = unit.cooldownMax;
+                            playSound('attack');
+                        } else {
+                            unit.cooldown--;
+                        }
+                    } else {
+                        // Move towards enemy
+                        unit.x += (dx / distance) * unit.speed;
+                        unit.y += (dy / distance) * unit.speed;
+                        
+                        // Update DOM position
+                        unitElement.style.left = `${unit.x}px`;
+                        unitElement.style.top = `${unit.y}px`;
+                    }
+                }
+            }
+            
+            // Move and update enemy units
+            for (const enemy of [...gameState.enemyUnits]) {
+                updateEnemyAI(enemy);
+                const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
+                if (!enemyElement) continue;
+                
+                // Move towards player base
+                if (enemy.x < 150) {
+                    enemy.x += enemy.speed;
+                    
+                    // Update DOM position
+                    enemyElement.style.left = `${enemy.x}px`;
+                    enemyElement.style.top = `${enemy.y}px`;
+                } else {
+                    // Attack player base
+                    if (enemy.cooldown <= 0) {
+                        gameState.baseHealth -= enemy.attack;
+                        showFloatingText("-" + enemy.attack, 100, 200, 'red');
+                        
+                        // Shake base
+                        document.getElementById('player-base').classList.add('animate-shake');
+                        setTimeout(() => {
+                            document.getElementById('player-base').classList.remove('animate-shake');
+                        }, 300);
+                        
+                        enemy.cooldown = enemy.cooldownMax;
+                        playSound('attack');
+                    } else {
+                        enemy.cooldown--;
+                    }
+                }
+            }
+        }
+        
+        // Spawn random enemy units
+        function spawnRandomEnemyUnit() {
+            if (!gameState.gameActive) return;
+            
+            // Check for boss spawn
+            if (gameState.time - gameState.bossSystem.lastBossSpawn >= gameState.bossSystem.bossSpawnInterval) {
+                spawnBoss();
+                return;
+            }
+            
+            const types = ['fighter', 'tank', 'hacker', 'sniper', 'medic'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            const healthMultiplier = 0.5 + ((gameState.difficulty.enemyHealth - 1) * 1.5 / 9);
+            const damageMultiplier = 0.5 + ((gameState.difficulty.enemyDamage - 1) * 1.5 / 9);
+            
+            const enemy = {
+                id: Date.now(),
+                type: type,
+                x: 630,
+                y: 200,
+                health: Math.floor(100 * healthMultiplier),
+                maxHealth: Math.floor(100 * healthMultiplier),
+                attack: Math.floor(10 * damageMultiplier),
+                speed: 1,
+                target: null,
+                abilities: getEnemyAbilities(type)
+            };
+            
+            gameState.enemyUnits.push(enemy);
+            createEnemyUnitElement(enemy);
+        }
+
+        // Spawn boss
+        function spawnBoss() {
+            const bossTypes = ['cyberlord', 'dataking', 'networkmaster'];
+            const type = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+            
+            const healthMultiplier = 2 + (gameState.bossSystem.bossLevel * 0.5);
+            const damageMultiplier = 1.5 + (gameState.bossSystem.bossLevel * 0.3);
+            
+            const boss = {
+                id: Date.now(),
+                type: type,
+                x: 630,
+                y: 200,
+                health: Math.floor(500 * healthMultiplier),
+                maxHealth: Math.floor(500 * healthMultiplier),
+                attack: Math.floor(30 * damageMultiplier),
+                speed: 0.8,
+                target: null,
+                abilities: getBossAbilities(type),
+                phase: 1,
+                lastAbilityUse: 0
+            };
+            
+            gameState.bossSystem.activeBoss = boss;
+            gameState.bossSystem.lastBossSpawn = gameState.time;
+            gameState.enemyUnits.push(boss);
+            createEnemyUnitElement(boss);
+            
+            showNotification(`Boss ${type} has appeared!`, "warning");
+            playSound('boss');
+        }
+
+        // Get enemy abilities based on type
+        function getEnemyAbilities(type) {
+            switch (type) {
+                case 'sniper':
+                    return {
+                        longRange: {
+                            cooldown: 0,
+                            maxCooldown: 15,
+                            range: 150,
+                            damage: 25
+                        }
+                    };
+                case 'medic':
+                    return {
+                        heal: {
+                            cooldown: 0,
+                            maxCooldown: 20,
+                            healAmount: 30,
+                            range: 50
+                        }
+                    };
+                default:
+                    return {};
+            }
+        }
+
+        // Get boss abilities based on type
+        function getBossAbilities(type) {
+            switch (type) {
+                case 'cyberlord':
+                    return {
+                        summonMinions: {
+                            cooldown: 0,
+                            maxCooldown: 30,
+                            minionCount: 3
+                        },
+                        cyberStorm: {
+                            cooldown: 0,
+                            maxCooldown: 45,
+                            damage: 20,
+                            range: 100
+                        }
+                    };
+                case 'dataking':
+                    return {
+                        dataCorruption: {
+                            cooldown: 0,
+                            maxCooldown: 25,
+                            damage: 15,
+                            duration: 5
+                        },
+                        systemCrash: {
+                            cooldown: 0,
+                            maxCooldown: 60,
+                            stunDuration: 3
+                        }
+                    };
+                case 'networkmaster':
+                    return {
+                        networkOverload: {
+                            cooldown: 0,
+                            maxCooldown: 40,
+                            damage: 25,
+                            range: 80
+                        },
+                        firewall: {
+                            cooldown: 0,
+                            maxCooldown: 20,
+                            shieldAmount: 100
+                        }
+                    };
+            }
+        }
+
+        // Update enemy AI
+        function updateEnemyAI(enemy) {
+            if (!enemy || !gameState.gameActive) return;
+
+            // Boss AI
+            if (gameState.bossSystem.activeBoss && enemy.id === gameState.bossSystem.activeBoss.id) {
+                updateBossAI(enemy);
+                return;
+            }
+
+            // Regular enemy AI
+            if (enemy.type === 'sniper') {
+                // Find furthest target
+                let maxDistance = 0;
+                let target = null;
+                
+                for (const unit of gameState.units) {
+                    const dx = unit.x - enemy.x;
+                    const dy = unit.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > maxDistance) {
+                        maxDistance = distance;
+                        target = unit;
+                    }
+                }
+                
+                if (target && maxDistance <= enemy.abilities.longRange.range) {
+                    if (enemy.abilities.longRange.cooldown <= 0) {
+                        target.health -= enemy.abilities.longRange.damage;
+                        showFloatingText("-" + enemy.abilities.longRange.damage, target.x, target.y, 'red');
+                        enemy.abilities.longRange.cooldown = enemy.abilities.longRange.maxCooldown;
+                        playSound('snipe');
+                    } else {
+                        enemy.abilities.longRange.cooldown--;
+                    }
+                }
+            } else if (enemy.type === 'medic') {
+                // Find lowest health ally
+                let lowestHealth = Infinity;
+                let target = null;
+                
+                for (const ally of gameState.enemyUnits) {
+                    if (ally.id === enemy.id) continue;
+                    
+                    const healthPercent = ally.health / ally.maxHealth;
+                    if (healthPercent < lowestHealth) {
+                        const dx = ally.x - enemy.x;
+                        const dy = ally.y - enemy.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance <= enemy.abilities.heal.range) {
+                            lowestHealth = healthPercent;
+                            target = ally;
+                        }
+                    }
+                }
+                
+                if (target && enemy.abilities.heal.cooldown <= 0) {
+                    target.health = Math.min(target.health + enemy.abilities.heal.healAmount, target.maxHealth);
+                    showFloatingText("+" + enemy.abilities.heal.healAmount, target.x, target.y, 'green');
+                    enemy.abilities.heal.cooldown = enemy.abilities.heal.maxCooldown;
+                    playSound('heal');
+                } else if (enemy.abilities.heal.cooldown > 0) {
+                    enemy.abilities.heal.cooldown--;
+                }
+            }
+        }
+
+        // Update boss AI
+        function updateBossAI(boss) {
+            if (!boss || !gameState.gameActive) return;
+
+            const now = Date.now();
+            if (now - boss.lastAbilityUse < 1000) return; // Prevent spam
+
+            // Phase transitions
+            if (boss.health <= boss.maxHealth * 0.5 && boss.phase === 1) {
+                boss.phase = 2;
+                boss.speed *= 1.2;
+                boss.attack *= 1.3;
+                showNotification("Boss is enraged!", "warning");
+            }
+
+            // Use abilities based on type and phase
+            switch (boss.type) {
+                case 'cyberlord':
+                    if (boss.abilities.summonMinions.cooldown <= 0) {
+                        for (let i = 0; i < boss.abilities.summonMinions.minionCount; i++) {
+                            const minion = {
+                                id: Date.now() + i,
+                                type: 'fighter',
+                                x: boss.x + (Math.random() * 100 - 50),
+                                y: boss.y + (Math.random() * 100 - 50),
+                                health: 50,
+                                maxHealth: 50,
+                                attack: 5,
+                                speed: 1.2,
+                                target: null
+                            };
+                            gameState.enemyUnits.push(minion);
+                            createEnemyUnitElement(minion);
+                        }
+                        boss.abilities.summonMinions.cooldown = boss.abilities.summonMinions.maxCooldown;
+                        showNotification("Boss summoned minions!", "warning");
+                    } else {
+                        boss.abilities.summonMinions.cooldown--;
+                    }
+
+                    if (boss.abilities.cyberStorm.cooldown <= 0) {
+                        for (const unit of gameState.units) {
+                            const dx = unit.x - boss.x;
+                            const dy = unit.y - boss.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance <= boss.abilities.cyberStorm.range) {
+                                unit.health -= boss.abilities.cyberStorm.damage;
+                                showFloatingText("-" + boss.abilities.cyberStorm.damage, unit.x, unit.y, 'red');
+                            }
+                        }
+                        boss.abilities.cyberStorm.cooldown = boss.abilities.cyberStorm.maxCooldown;
+                        showNotification("Cyber Storm!", "warning");
+                    } else {
+                        boss.abilities.cyberStorm.cooldown--;
+                    }
+                    break;
+
+                // Add other boss types here...
+            }
+
+            boss.lastAbilityUse = now;
+        }
+
+        // Create enemy unit element
+        function createEnemyUnitElement(enemy) {
+            // Add enemy to DOM
+            const enemyElement = document.createElement('div');
+            enemyElement.className = `unit absolute w-8 h-8 rounded-full flex items-center justify-center border-2 ${getEnemyUnitClass(enemy.type)}`;
+            enemyElement.id = `enemy-unit-${enemy.id}`;
+            enemyElement.style.left = `${enemy.x}px`;
+            enemyElement.style.top = `${enemy.y}px`;
+            enemyElement.innerHTML = getUnitIcon(enemy.type);
+            
+            // Add health bar
+            const healthBar = document.createElement('div');
+            healthBar.className = `health-bar absolute -top-2 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden`;
+            
+            const healthFill = document.createElement('div');
+            healthFill.className = `h-full ${getEnemyHealthBarClass(enemy.type)}`;
+            healthFill.style.width = '100%';
+            
+            healthBar.appendChild(healthFill);
+            enemyElement.appendChild(healthBar);
+            
+            dom.unitsContainer.appendChild(enemyElement);
+            
+            // Show notification periodically
+            if (Math.random() < 0.3) {
+                showNotification("Enemy unit spawned!", "warning");
+            }
+            
+            playSound('spawn');
+        }
+
+        // Get enemy unit class based on type
+        function getEnemyUnitClass(type) {
+            switch (type) {
+                case 'fighter': return 'border-red-500 bg-red-900';
+                case 'tank': return 'border-green-500 bg-green-900';
+                case 'hacker': return 'border-purple-500 bg-purple-900';
+                default: return 'border-gray-500 bg-gray-900';
+            }
+        }
+
+        // Get enemy health bar class based on type
+        function getEnemyHealthBarClass(type) {
+            switch (type) {
+                case 'fighter': return 'bg-red-500';
+                case 'tank': return 'bg-green-500';
+                case 'hacker': return 'bg-purple-500';
+                default: return 'bg-gray-500';
+            }
+        }
+
+        // Destroy unit
+        function destroyUnit(unitId) {
+            const unitIndex = gameState.units.findIndex(u => u.id === unitId);
+            if (unitIndex === -1) return;
+            
+            gameState.units.splice(unitIndex, 1);
+            gameState.unitCount--;
+            
+            const unitElement = document.getElementById(`unit-${unitId}`);
+            if (unitElement) {
+                // Explosion effect
+                unitElement.classList.add('scale-0', 'opacity-0', 'transition-all', 'duration-300');
+                setTimeout(() => {
+                    unitElement.remove();
+                }, 300);
+            }
+            
+            playSound('destroy');
+        }
+        
+        // Destroy enemy unit
+        function destroyEnemyUnit(unitId) {
+            const enemyIndex = gameState.enemyUnits.findIndex(e => e.id === unitId);
+            if (enemyIndex === -1) return;
+            
+            const enemy = gameState.enemyUnits[enemyIndex];
+            gameState.enemyUnits.splice(enemyIndex, 1);
+            
+            // Drop BTC
+            const btcDrop = enemy.type === 'fighter' ? 5 : 10;
+            addBTC(btcDrop);
+            showFloatingText(`+${btcDrop} BTC`, enemy.x, enemy.y, 'yellow');
+            
+            const enemyElement = document.getElementById(`enemy-unit-${unitId}`);
+            if (enemyElement) {
+                // Explosion effect
+                enemyElement.classList.add('scale-0', 'opacity-0', 'transition-all', 'duration-300');
+                setTimeout(() => {
+                    enemyElement.remove();
+                }, 300);
+            }
+            
+            playSound('destroy');
+        }
+        
+        // Collect resources from miner node
+        function collectResources() {
+            if (!gameState.gameActive) return;
+            
+            // Check if player has miners
+            const miners = gameState.units.filter(u => u.type === 'miner');
+            if (miners.length === 0) {
+                showNotification("You need miners to collect BTC!", "error");
+                return;
+            }
+            
+            // Get bonus from clicking
+            const bonusBTC = 1 + Math.floor(miners.length / 2);
+            addBTC(bonusBTC);
+            
+            // Show effect
+            document.getElementById('miner-node').classList.add('animate-ping');
+            setTimeout(() => {
+                document.getElementById('miner-node').classList.remove('animate-ping');
+            }, 500);
+            
+            showFloatingText(`+${bonusBTC} BTC`, 290, 200, 'yellow');
+            playSound('click');
+        }
+        
+        // Add BTC
+        function addBTC(amount) {
+            gameState.btc += amount;
+            updateUI();
+        }
+        
+        // End game
+        function endGame(win) {
+            gameState.gameActive = false;
+            
+            dom.resultText.textContent = win ? "Victory! 🎉" : "Defeat! 💀";
+            dom.resultText.className = win ? 
+                "text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500" : 
+                "text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-500";
+            
+            dom.gameResult.classList.remove('hidden');
+            
+            // Remove all units
+            dom.unitsContainer.innerHTML = '';
+            gameState.units = [];
+            gameState.enemyUnits = [];
+            gameState.unitCount = 0;
+            
+            playSound(win ? 'win' : 'lose');
+        }
+        
+        // Restart game
+        function restartGame() {
+            // Reset game state
+            gameState.btc = 100;
+            gameState.networkPower = 10;
+            gameState.time = 0;
+            gameState.baseHealth = 100 + (gameState.upgrades.base.level * 50);
+            gameState.enemyHealth = gameState.maxEnemyHealth = 100;
+            gameState.unitCount = 0;
+            gameState.maxUnits = 10 + (gameState.upgrades.capacity.level * 5);
+            gameState.units = [];
+            gameState.enemyUnits = [];
+            gameState.gameActive = true;
+            
+            // Reset UI
+            dom.gameResult.classList.add('hidden');
+            dom.unitsContainer.innerHTML = '';
+            
+            updateUI();
+            
+            // Clear notifications
+            dom.notifications.innerHTML = '';
+        }
+        
+        // Show floating text
+        function showFloatingText(text, x, y, color = 'white') {
+            const textElement = document.createElement('div');
+            textElement.className = `damage-popup text-${color}-400 font-bold`;
+            textElement.style.left = `${x}px`;
+            textElement.style.top = `${y}px`;
+            textElement.textContent = text;
+            
+            dom.unitsContainer.appendChild(textElement);
+            
+            setTimeout(() => {
+                textElement.remove();
+            }, 1000);
+        }
+
+        // Update difficulty settings
+        function updateDifficulty(type, value) {
+            if (!gameState.gameActive) return;
+            
+            value = parseInt(value);
+            gameState.difficulty[type] = value;
+            
+            // Apply difficulty changes
+            switch (type) {
+                case 'spawnRate':
+                    // Adjust enemy spawn interval (8000ms to 2000ms)
+                    const baseInterval = 8000;
+                    const minInterval = 2000;
+                    gameState.enemySpawnInterval = baseInterval - ((value - 1) * (baseInterval - minInterval) / 9);
+                    break;
+                    
+                case 'enemyHealth':
+                    // Adjust enemy health multiplier (0.5x to 2x)
+                    const healthMultiplier = 0.5 + ((value - 1) * 1.5 / 9);
+                    for (const enemy of gameState.enemyUnits) {
+                        enemy.maxHealth = Math.floor(100 * healthMultiplier);
+                        enemy.health = Math.floor(enemy.health * healthMultiplier);
+                    }
+                    break;
+                    
+                case 'enemyDamage':
+                    // Adjust enemy damage multiplier (0.5x to 2x)
+                    const damageMultiplier = 0.5 + ((value - 1) * 1.5 / 9);
+                    for (const enemy of gameState.enemyUnits) {
+                        enemy.attack = Math.floor(enemy.attack * damageMultiplier);
+                    }
+                    break;
+            }
+            
+            showNotification("Difficulty updated!", "success");
+            updateUI();
+        }
+    </script>
+</body>
+</html>
