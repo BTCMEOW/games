@@ -198,6 +198,23 @@ const fmtN=n=>n>=1000?n.toLocaleString('en-US',{maximumFractionDigits:0}):n>=10?
 const fmtB=n=>n>1e12?(n/1e12).toFixed(2)+'T':n>1e9?(n/1e9).toFixed(2)+'B':n>1e6?(n/1e6).toFixed(1)+'M':n+'';
 const pc=(v,c)=>(v>=0?'+':'')+v.toFixed(2)+'%';
 
+const PROXIES = [
+  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+];
+
+async function fetchP(url, type='text') {
+  for (let i = 0; i < PROXIES.length; i++) {
+    try {
+      const r = await fetch(PROXIES[i](url));
+      if (!r.ok) continue;
+      return type === 'json' ? await r.json() : await r.text();
+    } catch (e) { continue; }
+  }
+  return null;
+}
+
 let D={btc:null,p30:[],fg:50,fr:0,vix:null,spx:null,gold:null,eurusd:null,dxy:null,
        cryptoPain:null,stocksPain:null,macroPain:null};
 
@@ -286,8 +303,8 @@ async function fetchFG(){
 // ── FUNDING ──
 async function fetchFunding(){
   try{
-    const r=await fetch('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT');
-    const d=await r.json();
+    const d = await fetchP('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 'json');
+    if(!d) return;
     const fr=parseFloat(d.lastFundingRate)*100;D.fr=fr;
     const c=fr>0.05?'#ff2d55':fr>0.01?'#ff9f0a':fr<-0.01?'#00cfff':'#ffe033';
     const sig=fr>0.05?'EXTREME LONG':fr>0.01?'HIGH LONG':fr<-0.01?'EXTREME SHORT':fr<0?'SHORT BIAS':'NEUTRAL';
@@ -300,14 +317,12 @@ async function fetchFunding(){
   }catch(e){}
 }
 
-// ── STOCKS via stooq.com CSV (no CORS issues) ──
+// ── STOCKS via stooq.com CSV ──
 async function fetchStooq(sym){
   try{
     const stooqUrl=`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`;
-    const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(stooqUrl)}`;
-    const r=await fetch(url);
-    if(!r.ok) return null;
-    const txt=await r.text();
+    const txt = await fetchP(stooqUrl, 'text');
+    if(!txt) return null;
     const lines=txt.trim().split('\n');
     if(lines.length<2) return null;
     const cols=lines[1].split(',');
@@ -383,7 +398,7 @@ async function fetchStocks(){
   updateGlobal();buildPain();
 }
 
-// ── FX via Frankfurter (ECB data, free, no key) ──
+// ── FX ──
 async function fetchFX(){
   try{
     const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF');
@@ -400,7 +415,6 @@ async function fetchFX(){
     if(gbp){$('gbpusd-v').textContent=(1/gbp).toFixed(4);$('gbpusd-c').textContent='ECB RATE';}
     if(jpy){$('usdjpy-v').textContent=jpy.toFixed(2);$('usdjpy-c').textContent=jpy>150?'YEN WEAK':'STABLE';$('usdjpy-c').style.color=jpy>150?'#ff9f0a':'#00ff88';}
     if(chf){$('usdchf-v').textContent=chf.toFixed(4);$('usdchf-c').textContent=chf<0.9?'CHF STRONG':'NEUTRAL';}
-    // DXY approximation from EUR/USD (inverse correlation ~60% weight)
     if(eur){
       const dxyApprox=(100*(1-((1/eur)-1.10)*0.6)).toFixed(2);
       D.dxy=parseFloat(dxyApprox);
@@ -415,49 +429,33 @@ async function fetchFX(){
   }catch(e){}
 }
 
-// ── METALS via open.er-api.com (free, no key needed for XAU) ──
+// ── METALS ──
 async function fetchMetals(){
   try{
-    // Using exchangerate.host which has commodity rates
-    const r=await fetch('https://api.exchangerate.host/live?access_key=free&currencies=XAU,XAG');
-    const d=await r.json();
-    // fallback: use goldapi via public proxy
-    throw new Error('try next');
+    const d = await fetchP('https://api.metals.live/v1/spot/gold,silver', 'json');
+    if(!d || !Array.isArray(d)) throw 0;
+    d.forEach(item=>{
+      if(item.gold){D.gold=item.gold;$('gold-v').textContent='$'+item.gold.toFixed(0);$('gold-c').textContent='SPOT XAU/USD';$('gold-c').style.color='#ffe033';}
+      if(item.silver){$('silver-v').textContent='$'+item.silver.toFixed(2);$('silver-c').textContent='SPOT XAG/USD';$('silver-c').style.color='#aaa';}
+    });
+    calcMacro();
   }catch(e){
-    // Use metals-live free endpoint
     try{
-      const metalsUrl = 'https://api.metals.live/v1/spot/gold,silver';
-      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(metalsUrl)}`;
-      const r=await fetch(url);
-      if(!r.ok) throw 0;
-      const d=await r.json();
-      d.forEach(item=>{
-        if(item.gold){D.gold=item.gold;$('gold-v').textContent='$'+item.gold.toFixed(0);$('gold-c').textContent='SPOT XAU/USD';$('gold-c').style.color='#ffe033';}
-        if(item.silver){$('silver-v').textContent='$'+item.silver.toFixed(2);$('silver-c').textContent='SPOT XAG/USD';$('silver-c').style.color='#aaa';}
-      });
-      calcMacro();
-    }catch(e2){
-      // Last fallback: use CoinGecko for gold as PAXG proxy
-      try{
-        const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true');
-        if(!r.ok) return;
-        const d=await r.json();
-        const g=d['pax-gold'];
-        if(g){
-          D.gold=g.usd;
-          $('gold-v').textContent='$'+g.usd.toFixed(0);
-          const gc=g.usd_24h_change||0;
-          $('gold-c').textContent=(gc>=0?'+':'')+gc.toFixed(2)+'% (PAXG)';
-          $('gold-c').style.color=gc>=0?'#00ff88':'#ff2d55';
-          calcMacro();
-        }
-      }catch(e3){}
-    }
+      const d = await fetchP('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true', 'json');
+      const g=d['pax-gold'];
+      if(g){
+        D.gold=g.usd;
+        $('gold-v').textContent='$'+g.usd.toFixed(0);
+        const gc=g.usd_24h_change||0;
+        $('gold-c').textContent=(gc>=0?'+':'')+gc.toFixed(2)+'% (PAXG)';
+        $('gold-c').style.color=gc>=0?'#00ff88':'#ff2d55';
+        calcMacro();
+      }
+    }catch(e3){}
   }
 }
 
 async function fetchOil(){
-  // Oil via stooq
   try{
     const d=await fetchStooq('cl.f');
     if(d){
