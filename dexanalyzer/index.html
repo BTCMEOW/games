@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEX Analytics Dashboard Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-bg: #ffffff;
+            --secondary-bg: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #3b82f6;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+        }
+
+        [data-theme="dark"] {
+            --primary-bg: #0f172a;
+            --secondary-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #60a5fa;
+            --success-color: #34d399;
+            --error-color: #f87171;
+            --warning-color: #fbbf24;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .theme-toggle {
+            background: var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .search-highlight {
+            background-color: var(--warning-color);
+            color: var(--primary-bg);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        /* Chart container improvements */
+        .chart-container {
+            position: relative;
+            background: linear-gradient(135deg, var(--secondary-bg) 0%, var(--primary-bg) 100%);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .chart-container:hover {
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .chart-title {
+            background: linear-gradient(135deg, var(--accent-color), var(--success-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 640px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            
+            .chart-container {
+                height: 200px !important;
+                padding: 10px;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            .grid {
+                gap: 1rem;
+            }
+            
+            .text-2xl {
+                font-size: 1.25rem;
+            }
+            
+            .text-xl {
+                font-size: 1.125rem;
+            }
+            
+            /* Hide less important elements on mobile */
+            .hidden-mobile {
+                display: none;
+            }
+            
+            /* Stack elements vertically on mobile */
+            .flex-col-mobile {
+                flex-direction: column;
+            }
+            
+            /* Smaller text on mobile */
+            .text-sm-mobile {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px !important;
+                padding: 15px;
+            }
+            
+            .grid-cols-1 {
+                grid-template-columns: 1fr;
+            }
+            
+            .md\:grid-cols-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .lg\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 350px !important;
+            }
+        }
+        
+        /* Scrollable tables on mobile */
+        @media (max-width: 768px) {
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                min-width: 600px;
+            }
+        }
+        
+        /* Loading states improvements */
+        .loading-skeleton {
+            background: linear-gradient(90deg, var(--secondary-bg) 25%, var(--border-color) 50%, var(--secondary-bg) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="card rounded-none border-x-0 border-t-0 p-4 mb-6">
+        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-2 md:space-x-4">
+                <i class="fas fa-chart-line text-xl md:text-2xl" style="color: var(--accent-color);"></i>
+                <h1 class="text-lg md:text-2xl font-bold">DEX Analytics Dashboard Pro</h1>
+            </div>
+            <div class="flex items-center space-x-2 md:space-x-4">
+                <button id="theme-toggle" class="theme-toggle px-3 md:px-4 py-2 rounded-lg text-white font-medium text-sm md:text-base">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                    <span id="theme-text" class="ml-1 md:ml-2 hidden-mobile">Dark</span>
+                </button>
+                <button id="refresh-btn" class="bg-green-500 hover:bg-green-600 text-white px-3 md:px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base">
+                    <i class="fas fa-sync-alt mr-1 md:mr-2"></i><span class="hidden-mobile">Refresh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4">
+        <!-- Search and Filters -->
+        <div class="card rounded-lg p-4 md:p-6 mb-6">
+            <div class="flex flex-col gap-4">
+                <div class="flex-1">
+                    <input type="text" id="search-input" placeholder="Search DEX platforms..." 
+                           class="w-full px-3 md:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base" 
+                           style="background-color: var(--primary-bg); border-color: var(--border-color); color: var(--text-primary);">
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <select id="chain-filter" class="flex-1 px-3 md:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base" 
+                            style="background-color: var(--primary-bg); border-color: var(--border-color); color: var(--text-primary);">
+                        <option value="">All Chains</option>
+                        <option value="Ethereum">Ethereum</option>
+                        <option value="BSC">BSC</option>
+                        <option value="Polygon">Polygon</option>
+                        <option value="Arbitrum">Arbitrum</option>
+                        <option value="Optimism">Optimism</option>
+                    </select>
+                    <select id="volume-filter" class="flex-1 px-3 md:px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm md:text-base" 
+                            style="background-color: var(--primary-bg); border-color: var(--border-color); color: var(--text-primary);">
+                        <option value="">All Volumes</option>
+                        <option value="high">High (>$100M)</option>
+                        <option value="medium">Medium ($10M-$100M)</option>
+                        <option value="low">Low (<$10M)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Overview -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
+            <div class="card rounded-lg p-4 md:p-6 fade-in relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs md:text-sm font-medium" style="color: var(--text-secondary);">Total Volume (24h)</p>
+                        <p id="total-volume" class="text-lg md:text-2xl font-bold mt-1 truncate bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Loading...</p>
+                        <p id="volume-change" class="text-xs md:text-sm mt-1 font-semibold">Change: --</p>
+                        <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
+                            <div id="volume-progress" class="bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
+                        <i class="fas fa-chart-bar text-xl md:text-2xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card rounded-lg p-4 md:p-6 fade-in relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs md:text-sm font-medium" style="color: var(--text-secondary);">Total Liquidity</p>
+                        <p id="total-liquidity" class="text-lg md:text-2xl font-bold mt-1 truncate bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Loading...</p>
+                        <p id="liquidity-change" class="text-xs md:text-sm mt-1 font-semibold">Change: --</p>
+                        <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
+                            <div id="liquidity-progress" class="bg-gradient-to-r from-green-500 to-emerald-500 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                        <i class="fas fa-water text-xl md:text-2xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card rounded-lg p-4 md:p-6 fade-in relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs md:text-sm font-medium" style="color: var(--text-secondary);">Active Users (24h)</p>
+                        <p id="total-users" class="text-lg md:text-2xl font-bold mt-1 truncate bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">Loading...</p>
+                        <p id="users-change" class="text-xs md:text-sm mt-1 font-semibold">Change: --</p>
+                        <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
+                            <div id="users-progress" class="bg-gradient-to-r from-yellow-500 to-orange-500 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
+                        <i class="fas fa-users text-xl md:text-2xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card rounded-lg p-4 md:p-6 fade-in relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-500/10 to-pink-500/10 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs md:text-sm font-medium" style="color: var(--text-secondary);">Total Trades (24h)</p>
+                        <p id="total-trades" class="text-lg md:text-2xl font-bold mt-1 truncate bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent">Loading...</p>
+                        <p id="trades-change" class="text-xs md:text-sm mt-1 font-semibold">Change: --</p>
+                        <div class="w-full bg-gray-200 rounded-full h-1 mt-2">
+                            <div id="trades-progress" class="bg-gradient-to-r from-red-500 to-pink-500 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0 p-3 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl">
+                        <i class="fas fa-exchange-alt text-xl md:text-2xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Analytics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
+            <!-- Market Dominance -->
+            <div class="card rounded-lg p-4 md:p-6 fade-in">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-pie-chart mr-2 text-blue-500"></i>
+                    Market Dominance
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Uniswap</span>
+                        <span class="text-sm font-bold text-blue-600">32.5%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: 32.5%"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">PancakeSwap</span>
+                        <span class="text-sm font-bold text-yellow-600">24.8%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 h-2 rounded-full" style="width: 24.8%"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">SushiSwap</span>
+                        <span class="text-sm font-bold text-pink-600">15.2%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gradient-to-r from-pink-500 to-pink-600 h-2 rounded-full" style="width: 15.2%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Impact Analysis -->
+            <div class="card rounded-lg p-4 md:p-6 fade-in">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-green-500"></i>
+                    Price Impact
+                </h3>
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">0.12%</div>
+                        <div class="text-sm text-gray-600">Average Impact</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-lg font-bold text-blue-600">0.08%</div>
+                            <div class="text-xs text-gray-600">Best Rate</div>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-red-600">0.25%</div>
+                            <div class="text-xs text-gray-600">Worst Rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Activity -->
+            <div class="card rounded-lg p-4 md:p-6 fade-in">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-network-wired mr-2 text-purple-500"></i>
+                    Network Activity
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-sm">Gas Used (24h)</span>
+                        <span class="font-bold text-purple-600">2.4M ETH</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm">Avg Gas Price</span>
+                        <span class="font-bold text-orange-600">25 Gwei</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm">Failed Txs</span>
+                        <span class="font-bold text-red-600">3.2%</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-sm">MEV Extracted</span>
+                        <span class="font-bold text-indigo-600">$1.2M</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DEX List and Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <!-- DEX List -->
+            <div class="card rounded-lg p-4 md:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+                    <h2 class="text-lg md:text-xl font-bold">Top DEX Platforms</h2>
+                    <button id="favorites-toggle" class="text-xs md:text-sm px-2 md:px-3 py-1 rounded-lg border" 
+                            style="border-color: var(--border-color); color: var(--text-secondary);">
+                        <i class="fas fa-star mr-1"></i><span class="hidden-mobile">Favorites</span>
+                    </button>
+                </div>
+                <div id="dex-list" class="space-y-2 md:space-y-3">
+                    <div class="text-center py-6 md:py-8 pulse-animation">
+                        <i class="fas fa-spinner fa-spin text-xl md:text-2xl mb-2" style="color: var(--accent-color);"></i>
+                        <p class="text-sm md:text-base">Loading DEX data...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Volume Chart -->
+            <div class="card rounded-lg p-4 md:p-6">
+                <h2 class="chart-title text-lg md:text-xl mb-4">24h Volume Trend</h2>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="volume-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trading Pairs and Weekly Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <!-- Trading Pairs -->
+            <div class="card rounded-lg p-4 md:p-6">
+                <h2 class="text-lg md:text-xl font-bold mb-4">Top Trading Pairs</h2>
+                <div id="trading-pairs" class="overflow-x-auto">
+                    <div class="text-center py-6 md:py-8 pulse-animation">
+                        <i class="fas fa-spinner fa-spin text-xl md:text-2xl mb-2" style="color: var(--accent-color);"></i>
+                        <p class="text-sm md:text-base">Loading trading pairs...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Weekly Volume Chart -->
+            <div class="card rounded-lg p-4 md:p-6">
+                <h2 class="chart-title text-lg md:text-xl mb-4">Weekly Volume</h2>
+                <div class="chart-container" style="height: 250px;">
+                    <canvas id="weekly-volume-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-4 md:py-6 px-4" style="color: var(--text-secondary);">
+            <p id="last-updated" class="text-sm md:text-base">Last updated: --</p>
+            <p class="mt-2 text-xs md:text-sm">Data provided by DeFiLlama & CoinGecko APIs</p>
+        </footer>
+    </main>
+
+    <!-- Notification System -->
+    <div id="notification-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // Enhanced IIFE with namespace isolation to prevent conflicts
+        (function(window, document, undefined) {
+            'use strict';
+            
+            // Create isolated namespace for DEX Analytics
+            const DEXAnalytics = {
+                // Prevent conflicts with other scripts
+                noConflict: function() {
+                    return this;
+                }
+            };
+            
+            // Make DEXAnalytics globally accessible
+            window.DEXAnalytics = DEXAnalytics;
+            
+            // Isolate from global scope completely
+            const originalConsole = window.console;
+            const localConsole = {
+                log: originalConsole.log.bind(originalConsole),
+                warn: originalConsole.warn.bind(originalConsole),
+                error: originalConsole.error.bind(originalConsole)
+            };
+            
+            // Add localConsole to DEXAnalytics namespace for global access
+            DEXAnalytics.console = localConsole;
+            
+            // Completely isolated variables within DEXAnalytics namespace
+            DEXAnalytics.state = {
+                volumeChart: null,
+                weeklyVolumeChart: null,
+                currentTheme: localStorage.getItem('dex-theme') || 'light',
+                favorites: JSON.parse(localStorage.getItem('dex-favorites') || '[]'),
+                showFavoritesOnly: false,
+                allDexData: [],
+                filteredDexData: [],
+                autoRefreshInterval: null
+            };
+            
+            // All variables are now accessed through DEXAnalytics.state
+             // No local references to prevent conflicts
+
+        // Cache system
+        const cache = {
+            data: new Map(),
+            timestamps: new Map(),
+            TTL: 5 * 60 * 1000, // 5 minutes
+            
+            set(key, value) {
+                this.data.set(key, value);
+                this.timestamps.set(key, Date.now());
+            },
+            
+            get(key) {
+                const timestamp = this.timestamps.get(key);
+                if (!timestamp || Date.now() - timestamp > this.TTL) {
+                    this.data.delete(key);
+                    this.timestamps.delete(key);
+                    return null;
+                }
+                return this.data.get(key);
+            },
+            
+            clear() {
+                this.data.clear();
+                this.timestamps.clear();
+            }
+        };
+
+        // API endpoints
+        const API_ENDPOINTS = {
+            defiLlama: {
+                protocols: '/api/proxy/defillama/protocols',
+                dexs: '/api/proxy/defillama/dexs',
+                dexVolume: '/api/proxy/defillama/dexs?dataType=dailyVolume'
+            },
+            coinGecko: {
+                prices: '/api/proxy/coingecko/simple/price',
+                trending: '/api/proxy/coingecko/search/trending'
+            }
+        };
+
+        // Utility functions
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
+            return num.toFixed(2);
+        }
+
+        function formatPercentage(num) {
+            const formatted = num.toFixed(2);
+            const color = num >= 0 ? 'var(--success-color)' : 'var(--error-color)';
+            const icon = num >= 0 ? '↗' : '↘';
+            return `<span style="color: ${color};">${icon} ${formatted}%</span>`;
+        }
+
+        function showNotification(message, type = 'info', duration = 5000) {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+            
+            notification.className = `${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0`;
+            notification.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <span>${message}</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full', 'opacity-0');
+            }, 100);
+            
+            // Auto remove
+            setTimeout(() => {
+                notification.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => notification.remove(), 300);
+            }, duration);
+        }
+
+        // API functions with retry logic
+        async function fetchWithRetry(url, options = {}, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        headers: {
+                            'Accept': 'application/json',
+                            ...options.headers
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    DEXAnalytics.console.warn(`Attempt ${i + 1} failed:`, error.message);
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+
+        // Fetch DEX data from DeFiLlama
+        async function fetchDexData() {
+            const cacheKey = 'dex-data';
+            const cached = cache.get(cacheKey);
+            if (cached) {
+                DEXAnalytics.console.log('Using cached DEX data');
+                return cached;
+            }
+
+            try {
+                showNotification('Fetching latest DEX data...', 'info', 2000);
+                
+                const [dexsData, volumeData] = await Promise.all([
+                    fetchWithRetry(API_ENDPOINTS.defiLlama.dexs),
+                    fetchWithRetry(API_ENDPOINTS.defiLlama.dexVolume)
+                ]);
+
+                // Process and combine data
+                const processedData = dexsData.protocols?.slice(0, 20).map(dex => {
+                    const volumeInfo = volumeData.protocols?.find(v => v.name === dex.name) || {};
+                    
+                    return {
+                        name: dex.name,
+                        volume24h: volumeInfo.total24h || dex.total24h || 0,
+                        change24h: volumeInfo.change_1d || dex.change_1d || 0,
+                        tvl: dex.tvl || 0,
+                        tvlChange24h: dex.change_1d || 0,
+                        chains: dex.chains || ['Unknown'],
+                        url: dex.url || '#',
+                        fees24h: volumeInfo.total24h * 0.003 || 0, // Estimated 0.3% fee
+                        users24h: Math.floor((volumeInfo.total24h || 0) / 1000), // Estimated
+                        trades24h: Math.floor((volumeInfo.total24h || 0) / 100), // Estimated
+                        logo: `https://defillama.com/chain-icons/rsz_${dex.name.toLowerCase().replace(/\s+/g, '')}.jpg`
+                    };
+                }) || [];
+
+                cache.set(cacheKey, processedData);
+                // Cache charts from DeFiLlama if available
+                if (volumeData && Array.isArray(volumeData.totalDataChart)) {
+                    const chart24h = volumeData.totalDataChart.slice(-24).map(([ts, vol]) => ({
+                        time: new Date(ts * 1000).toLocaleDateString(),
+                        volume: Number(vol) || 0
+                    }));
+                    const chart7d = volumeData.totalDataChart.slice(-7).map(([ts, vol]) => ({
+                        time: new Date(ts * 1000).toLocaleDateString(),
+                        volume: Number(vol) || 0
+                    }));
+                    DEXAnalytics.state.volumeChartData = { chart24h, chart7d };
+                }
+                showNotification('DEX data updated successfully!', 'success', 2000);
+                return processedData;
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Error fetching DEX data:', error);
+                showNotification('Failed to fetch DEX data, using fallback', 'warning');
+                
+                // Fallback mock data
+                return [
+                    {
+                        name: "Uniswap V3",
+                        volume24h: 1200000000,
+                        change24h: 5.2,
+                        tvl: 3800000000,
+                        tvlChange24h: 2.1,
+                        chains: ["Ethereum", "Polygon", "Arbitrum"],
+                        url: "https://uniswap.org/",
+                        fees24h: 3600000,
+                        users24h: 45000,
+                        trades24h: 120000,
+                        logo: "https://defillama.com/chain-icons/rsz_uniswap.jpg"
+                    },
+                    {
+                        name: "PancakeSwap",
+                        volume24h: 800000000,
+                        change24h: -2.1,
+                        tvl: 2100000000,
+                        tvlChange24h: 1.8,
+                        chains: ["BSC", "Ethereum"],
+                        url: "https://pancakeswap.finance/",
+                        fees24h: 2400000,
+                        users24h: 35000,
+                        trades24h: 80000,
+                        logo: "https://defillama.com/chain-icons/rsz_pancakeswap.jpg"
+                    }
+                ];
+            }
+        }
+
+        // Fetch token prices from CoinGecko
+        async function fetchTokenPrices(tokenIds) {
+            const cacheKey = `prices-${tokenIds.join(',')}`;
+            const cached = cache.get(cacheKey);
+            if (cached) {
+                DEXAnalytics.console.log('Using cached token prices');
+                return cached;
+            }
+
+            // Set timeout for API requests
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Token prices request timeout')), 8000)
+            );
+
+            try {
+                showNotification('Fetching token prices...', 'info', 2000);
+                
+                // Race between API call and timeout
+                const url = `${API_ENDPOINTS.coinGecko.prices}?ids=${tokenIds.join(',')}&vs_currencies=usd&include_24hr_change=true`;
+                const apiPromise = fetchWithRetry(url, {}, 2);
+                const data = await Promise.race([apiPromise, timeoutPromise]);
+                
+                if (!data || Object.keys(data).length === 0) {
+                    throw new Error('No token price data received');
+                }
+
+                cache.set(cacheKey, data);
+                showNotification('Token prices updated!', 'success', 2000);
+                return data;
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Error fetching token prices:', error);
+                showNotification('Price API unavailable, using demo data', 'warning', 3000);
+                
+                // Enhanced fallback mock data
+                const fallbackPrices = {
+                    'ethereum': {
+                        usd: 2300,
+                        usd_24h_change: 2.5
+                    },
+                    'bitcoin': {
+                        usd: 43000,
+                        usd_24h_change: 1.8
+                    },
+                    'binancecoin': {
+                        usd: 310,
+                        usd_24h_change: -0.8
+                    },
+                    'cardano': {
+                        usd: 0.48,
+                        usd_24h_change: 3.2
+                    },
+                    'solana': {
+                        usd: 98,
+                        usd_24h_change: 5.7
+                    }
+                };
+                
+                cache.set(cacheKey, fallbackPrices);
+                return fallbackPrices;
+            }
+        }
+
+        // Display functions
+        function displayAnalytics(data) {
+            try {
+                if (!data || typeof data !== 'object') {
+                    DEXAnalytics.console.warn('Invalid analytics data provided, using defaults');
+                    data = {
+                        totalVolume24h: 0,
+                        totalLiquidity: 0,
+                        totalUsers24h: 0,
+                        totalTrades24h: 0,
+                        volumeChange24h: 0,
+                        liquidityChange24h: 0,
+                        usersChange24h: 0,
+                        tradesChange24h: 0
+                    };
+                }
+                
+                const formatLargeNumber = (num) => formatNumber(Math.round(num || 0));
+                
+                // Safely update DOM elements
+                const updateElement = (id, value, formatter = (v) => v) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = formatter(value);
+                    } else {
+                        DEXAnalytics.console.warn(`Element with id '${id}' not found`);
+                    }
+                };
+                
+                const updateChangeElement = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.innerHTML = `Change: ${formatPercentage(value || 0)}`;
+                    } else {
+                        DEXAnalytics.console.warn(`Element with id '${id}' not found`);
+                    }
+                };
+
+                updateElement('total-volume', data.totalVolume24h, (val) => `$${formatLargeNumber(val)}`);
+                updateChangeElement('volume-change', data.volumeChange24h);
+                
+                updateElement('total-liquidity', data.totalLiquidity, (val) => `$${formatLargeNumber(val)}`);
+                updateChangeElement('liquidity-change', data.liquidityChange24h);
+                
+                updateElement('total-users', data.totalUsers24h, formatLargeNumber);
+                updateChangeElement('users-change', data.usersChange24h);
+                
+                updateElement('total-trades', data.totalTrades24h, formatLargeNumber);
+                updateChangeElement('trades-change', data.tradesChange24h);
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Error displaying analytics:', error);
+                showNotification('Error displaying analytics data', 'warning');
+            }
+        }
+
+        function displayDexList(dexData) {
+            try {
+                const container = document.getElementById('dex-list');
+                
+                if (!container) {
+                    DEXAnalytics.console.warn('DEX list container not found');
+                    return;
+                }
+                
+                if (!Array.isArray(dexData) || dexData.length === 0) {
+                    container.innerHTML = '<div class="text-center py-8"><p>No DEX data available. Please refresh to try again.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = dexData.map((dex, index) => {
+                    // Safely handle missing data
+                    const safeDex = {
+                        name: dex.name || 'Unknown DEX',
+                        volume24h: Number(dex.volume24h) || 0,
+                        tvl: Number(dex.tvl) || 0,
+                        change24h: Number(dex.change24h) || 0,
+                        chains: Array.isArray(dex.chains) ? dex.chains : ['Unknown'],
+                        url: dex.url || '#'
+                    };
+                    
+                    const isFavorite = DEXAnalytics.state.favorites.includes(safeDex.name);
+                    const chains = safeDex.chains.slice(0, 3);
+                    
+                    return `
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 border rounded-lg hover:shadow-md transition-all" 
+                             style="border-color: var(--border-color);" data-dex="${safeDex.name}">
+                            <div class="flex items-center space-x-3 md:space-x-4 mb-2 sm:mb-0">
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm md:text-base flex-shrink-0">
+                                    ${index + 1}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-base md:text-lg truncate">${safeDex.name}</h3>
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-2 text-xs md:text-sm" style="color: var(--text-secondary);">
+                                        <span class="truncate">Vol: $${formatNumber(safeDex.volume24h)}</span>
+                                        <span class="hidden sm:inline text-xs">•</span>
+                                        <span class="truncate">TVL: $${formatNumber(safeDex.tvl)}</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-1 mt-1">
+                                        ${chains.map(chain => `<span class="text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-blue-100 text-blue-800">${chain}</span>`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between sm:justify-end space-x-2 md:space-x-3">
+                                <div class="text-left sm:text-right">
+                                    <div class="text-sm md:text-base font-medium">${formatPercentage(safeDex.change24h)}</div>
+                                    <div class="text-xs" style="color: var(--text-secondary);">24h Change</div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="toggleFavorite('${safeDex.name}')" class="text-lg md:text-xl hover:scale-110 transition-transform" 
+                                            style="color: ${isFavorite ? 'var(--warning-color)' : 'var(--text-secondary)'}">
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                    <a href="${safeDex.url}" target="_blank" class="text-blue-500 hover:text-blue-600 text-sm md:text-base">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Error displaying DEX list:', error);
+                const container = document.getElementById('dex-list');
+                if (container) {
+                    container.innerHTML = '<div class="text-center py-8 text-red-500"><p>Error loading DEX data. Please refresh the page.</p></div>';
+                }
+                showNotification('Error displaying DEX list', 'error');
+            }
+        }
+
+        function displayTradingPairs(pairs) {
+            try {
+                const container = document.getElementById('trading-pairs');
+                
+                if (!container) {
+                    DEXAnalytics.console.warn('Trading pairs container not found');
+                    return;
+                }
+                
+                if (!pairs || !Array.isArray(pairs) || pairs.length === 0) {
+                    container.innerHTML = '<p class="text-center py-8">No trading pairs data available. Please refresh to try again.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="hidden md:block">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b" style="border-color: var(--border-color);">
+                                    <th class="text-left py-2 text-sm">Pair</th>
+                                    <th class="text-right py-2 text-sm">Price</th>
+                                    <th class="text-right py-2 text-sm">24h Change</th>
+                                    <th class="text-right py-2 text-sm">Volume</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pairs.slice(0, 10).map(pair => {
+                                    // Safely handle missing data
+                                    const safePair = {
+                                        symbol: pair.symbol || 'UNKNOWN',
+                                        price: Number(pair.price) || 0,
+                                        change24h: Number(pair.change24h) || 0,
+                                        volume24h: Number(pair.volume24h) || 0
+                                    };
+                                    
+                                    return `
+                                        <tr class="border-b hover:bg-gray-50 dark:hover:bg-gray-800" style="border-color: var(--border-color);">
+                                            <td class="py-2 font-medium text-sm">${safePair.symbol}</td>
+                                            <td class="text-right py-2 text-sm">$${safePair.price.toFixed(4)}</td>
+                                            <td class="text-right py-2 text-sm">${formatPercentage(safePair.change24h)}</td>
+                                            <td class="text-right py-2 text-sm">$${formatNumber(safePair.volume24h)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="md:hidden space-y-2">
+                        ${pairs.slice(0, 8).map(pair => {
+                            // Safely handle missing data
+                            const safePair = {
+                                symbol: pair.symbol || 'UNKNOWN',
+                                price: Number(pair.price) || 0,
+                                change24h: Number(pair.change24h) || 0,
+                                volume24h: Number(pair.volume24h) || 0
+                            };
+                            
+                            return `
+                                <div class="p-3 border rounded-lg" style="border-color: var(--border-color);">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="font-medium text-sm">${safePair.symbol}</h4>
+                                        <span class="text-sm font-medium">$${safePair.price.toFixed(4)}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span style="color: var(--text-secondary);">24h: ${formatPercentage(safePair.change24h)}</span>
+                                        <span style="color: var(--text-secondary);">Vol: $${formatNumber(safePair.volume24h)}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Error displaying trading pairs:', error);
+                const container = document.getElementById('trading-pairs');
+                if (container) {
+                    container.innerHTML = '<p class="text-center py-8 text-red-500">Error loading trading pairs. Please refresh the page.</p>';
+                }
+                showNotification('Error displaying trading pairs', 'error');
+            }
+        }
+
+        function displayVolumeChart(data) {
+            try {
+                const canvas = document.getElementById('volume-chart');
+                if (!canvas) {
+                    DEXAnalytics.console.warn('Volume chart canvas not found');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    DEXAnalytics.console.error('Failed to get 2D context for volume chart');
+                    return;
+                }
+                
+                if (DEXAnalytics.state.volumeChart) {
+                    DEXAnalytics.state.volumeChart.destroy();
+                }
+
+                const chartData = data || generateMockChartData(24);
+                
+                // Create gradient
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(59, 130, 246, 0.4)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+            
+            DEXAnalytics.state.volumeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.map(d => d.time),
+                    datasets: [{
+                        label: 'Volume ($)',
+                        data: chartData.map(d => d.volume),
+                        borderColor: 'rgb(59, 130, 246)',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: 'rgb(59, 130, 246)',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: 'rgb(59, 130, 246)',
+                        pointHoverBorderColor: '#ffffff',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgb(59, 130, 246)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Volume: $' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)',
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + formatNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    elements: {
+                        line: {
+                            tension: 0.4
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+            
+            } catch (error) {
+                DEXAnalytics.console.error('Error creating volume chart:', error);
+                showNotification('Error displaying volume chart', 'warning');
+            }
+        }
+
+        function displayWeeklyVolumeChart(data) {
+            try {
+                const canvas = document.getElementById('weekly-volume-chart');
+                if (!canvas) {
+                    DEXAnalytics.console.warn('Weekly volume chart canvas not found');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    DEXAnalytics.console.error('Failed to get 2D context for weekly chart');
+                    return;
+                }
+                
+                if (DEXAnalytics.state.weeklyVolumeChart) {
+                    DEXAnalytics.state.weeklyVolumeChart.destroy();
+                }
+
+                const chartData = data || generateMockChartData(7, 'day');
+                
+                // Create gradient for bars
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.9)');
+            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.3)');
+            
+            DEXAnalytics.state.weeklyVolumeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.map(d => d.time),
+                    datasets: [{
+                        label: 'Daily Volume',
+                        data: chartData.map(d => d.volume),
+                        backgroundColor: gradient,
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 2,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        hoverBackgroundColor: 'rgba(16, 185, 129, 1)',
+                        hoverBorderColor: 'rgb(16, 185, 129)',
+                        hoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Volume: $' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)',
+                                font: {
+                                    size: 11
+                                },
+                                callback: function(value) {
+                                    return '$' + formatNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1500,
+                        easing: 'easeOutBounce'
+                    }
+                }
+            });
+            
+            } catch (error) {
+                DEXAnalytics.console.error('Error creating weekly volume chart:', error);
+                showNotification('Error displaying weekly chart', 'warning');
+            }
+        }
+
+        // Generate mock chart data
+        function generateMockChartData(points, type = 'hour') {
+            const data = [];
+            const now = new Date();
+            
+            for (let i = points - 1; i >= 0; i--) {
+                const time = new Date(now);
+                if (type === 'hour') {
+                    time.setHours(time.getHours() - i);
+                } else {
+                    time.setDate(time.getDate() - i);
+                }
+                
+                data.push({
+                    time: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    volume: Math.random() * 1000000000 + 500000000
+                });
+            }
+            
+            return data;
+        }
+
+        // Theme management
+        function toggleTheme() {
+            DEXAnalytics.state.currentTheme = DEXAnalytics.state.currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', DEXAnalytics.state.currentTheme);
+            localStorage.setItem('dex-theme', DEXAnalytics.state.currentTheme);
+            
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            
+            if (DEXAnalytics.state.currentTheme === 'dark') {
+                icon.className = 'fas fa-sun';
+                text.textContent = 'Light';
+            } else {
+                icon.className = 'fas fa-moon';
+                text.textContent = 'Dark';
+            }
+        }
+
+        // Favorites management
+        function toggleFavorite(dexName) {
+            const index = DEXAnalytics.state.favorites.indexOf(dexName);
+            if (index > -1) {
+                DEXAnalytics.state.favorites.splice(index, 1);
+                showNotification(`${dexName} removed from favorites`, 'info', 2000);
+            } else {
+                DEXAnalytics.state.favorites.push(dexName);
+                showNotification(`${dexName} added to favorites`, 'success', 2000);
+            }
+            
+            localStorage.setItem('dex-favorites', JSON.stringify(DEXAnalytics.state.favorites));
+            applyFilters();
+        }
+
+        function toggleFavoritesView() {
+            DEXAnalytics.state.showFavoritesOnly = !DEXAnalytics.state.showFavoritesOnly;
+            const button = document.getElementById('favorites-toggle');
+            
+            if (DEXAnalytics.state.showFavoritesOnly) {
+                button.style.backgroundColor = 'var(--accent-color)';
+                button.style.color = 'white';
+                button.innerHTML = '<i class="fas fa-star mr-1"></i>All DEXs';
+            } else {
+                button.style.backgroundColor = 'transparent';
+                button.style.color = 'var(--text-secondary)';
+                button.innerHTML = '<i class="fas fa-star mr-1"></i>Favorites';
+            }
+            
+            applyFilters();
+        }
+
+        // Search and filter functions
+        function applyFilters() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const chainFilter = document.getElementById('chain-filter').value;
+            const volumeFilter = document.getElementById('volume-filter').value;
+            
+            DEXAnalytics.state.filteredDexData = DEXAnalytics.state.allDexData.filter(dex => {
+                // Search filter
+                const matchesSearch = dex.name.toLowerCase().includes(searchTerm);
+                
+                // Chain filter
+                const matchesChain = !chainFilter || (dex.chains && dex.chains.includes(chainFilter));
+                
+                // Volume filter
+                let matchesVolume = true;
+                if (volumeFilter === 'high') {
+                    matchesVolume = dex.volume24h > 100000000;
+                } else if (volumeFilter === 'medium') {
+                    matchesVolume = dex.volume24h >= 10000000 && dex.volume24h <= 100000000;
+                } else if (volumeFilter === 'low') {
+                    matchesVolume = dex.volume24h < 10000000;
+                }
+                
+                // Favorites filter
+                const matchesFavorites = !DEXAnalytics.state.showFavoritesOnly || DEXAnalytics.state.favorites.includes(dex.name);
+                
+                return matchesSearch && matchesChain && matchesVolume && matchesFavorites;
+            });
+            
+            displayDexList(DEXAnalytics.state.filteredDexData);
+        }
+
+        // Auto-refresh functionality
+        function setupAutoRefresh() {
+            if (DEXAnalytics.state.autoRefreshInterval) {
+                clearInterval(DEXAnalytics.state.autoRefreshInterval);
+            }
+            
+            DEXAnalytics.state.autoRefreshInterval = setInterval(async () => {
+                try {
+                    showNotification('Auto-refreshing data...', 'info', 2000);
+                    cache.clear(); // Clear cache to force fresh data
+                    await initApp();
+                } catch (error) {
+                    DEXAnalytics.console.error('Auto-refresh failed:', error);
+                    showNotification('Auto-refresh failed', 'error', 3000);
+                }
+            }, 5 * 60 * 1000); // 5 minutes
+        }
+
+        // Initialize app
+        async function initApp() {
+            let loadingTimeout;
+            
+            try {
+                // Set loading state
+                document.body.classList.add('loading');
+                
+                // Set maximum loading time (15 seconds)
+                loadingTimeout = setTimeout(() => {
+                    DEXAnalytics.console.warn('Loading timeout reached, forcing completion');
+                    document.body.classList.remove('loading');
+                    showNotification('Loading took too long, using demo data', 'warning', 4000);
+                }, 15000);
+                
+                // Destroy existing charts
+                if (DEXAnalytics.state.volumeChart) {
+                    DEXAnalytics.state.volumeChart.destroy();
+                    DEXAnalytics.state.volumeChart = null;
+                }
+                if (DEXAnalytics.state.weeklyVolumeChart) {
+                    DEXAnalytics.state.weeklyVolumeChart.destroy();
+                    DEXAnalytics.state.weeklyVolumeChart = null;
+                }
+                
+                // Fetch DEX data with individual error handling
+                try {
+                    DEXAnalytics.state.allDexData = await fetchDexData();
+                } catch (error) {
+                    DEXAnalytics.console.error('Failed to fetch DEX data:', error);
+                    showNotification('DEX data unavailable, using demo', 'warning');
+                    DEXAnalytics.state.allDexData = [];
+                }
+                
+                DEXAnalytics.state.filteredDexData = [...DEXAnalytics.state.allDexData];
+                
+                // Calculate analytics
+                const analytics = {
+                    totalVolume24h: DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.volume24h) || 0), 0),
+                    totalLiquidity: DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.tvl) || 0), 0),
+                    totalUsers24h: DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.users24h) || 0), 0),
+                    totalTrades24h: DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.trades24h) || 0), 0),
+                    volumeChange24h: DEXAnalytics.state.allDexData.length > 0 ? DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.change24h) || 0), 0) / DEXAnalytics.state.allDexData.length : 0,
+                    liquidityChange24h: DEXAnalytics.state.allDexData.length > 0 ? DEXAnalytics.state.allDexData.reduce((sum, dex) => sum + (Number(dex.tvlChange24h) || 0), 0) / DEXAnalytics.state.allDexData.length : 0,
+                    usersChange24h: 5.1,
+                    tradesChange24h: 4.8
+                };
+                
+                // Display data with error handling
+                try {
+                    displayAnalytics(analytics);
+                    displayDexList(DEXAnalytics.state.filteredDexData);
+                } catch (displayError) {
+                    DEXAnalytics.console.error('Error displaying data:', displayError);
+                    showNotification('Display error occurred', 'error');
+                }
+                
+                // Fetch real top trading pairs via CoinGecko markets
+                try {
+                    const ids = ['ethereum','bitcoin','usd-coin','tether','dai','weth','chainlink'];
+                    const params = new URLSearchParams({ vs_currency: 'usd', ids: ids.join(','), per_page: '250' });
+                    const markets = await fetchWithRetry(`/api/proxy/coingecko/coins/markets?${params.toString()}`, {}, 2);
+                    const byId = {};
+                    (markets || []).forEach(m => { byId[m.id] = m; });
+
+                    const pairs = [
+                        {
+                            symbol: 'ETH/USDC',
+                            price: (byId['ethereum']?.current_price || 0) / (byId['usd-coin']?.current_price || 1),
+                            change24h: byId['ethereum']?.price_change_percentage_24h || 0,
+                            volume24h: byId['ethereum']?.total_volume || 0
+                        },
+                        {
+                            symbol: 'BTC/USDT',
+                            price: (byId['bitcoin']?.current_price || 0) / (byId['tether']?.current_price || 1),
+                            change24h: byId['bitcoin']?.price_change_percentage_24h || 0,
+                            volume24h: byId['bitcoin']?.total_volume || 0
+                        },
+                        {
+                            symbol: 'USDC/USDT',
+                            price: (byId['usd-coin']?.current_price || 1) / (byId['tether']?.current_price || 1),
+                            change24h: byId['usd-coin']?.price_change_percentage_24h || 0,
+                            volume24h: byId['usd-coin']?.total_volume || 0
+                        },
+                        {
+                            symbol: 'WETH/DAI',
+                            price: (byId['weth']?.current_price || byId['ethereum']?.current_price || 0) / (byId['dai']?.current_price || 1),
+                            change24h: (byId['weth']?.price_change_percentage_24h ?? byId['ethereum']?.price_change_percentage_24h) || 0,
+                            volume24h: (byId['weth']?.total_volume ?? byId['ethereum']?.total_volume) || 0
+                        },
+                        {
+                            symbol: 'LINK/ETH',
+                            price: (byId['chainlink']?.current_price || 0) / (byId['ethereum']?.current_price || 1),
+                            change24h: byId['chainlink']?.price_change_percentage_24h || 0,
+                            volume24h: byId['chainlink']?.total_volume || 0
+                        }
+                    ];
+
+                    displayTradingPairs(pairs);
+
+                    if (DEXAnalytics.state.volumeChartData) {
+                        const { chart24h, chart7d } = DEXAnalytics.state.volumeChartData;
+                        displayVolumeChart(chart24h);
+                        displayWeeklyVolumeChart(chart7d);
+                    } else {
+                        displayVolumeChart();
+                        displayWeeklyVolumeChart();
+                    }
+                } catch (chartError) {
+                    DEXAnalytics.console.error('Error displaying charts:', chartError);
+                    showNotification('Chart display error', 'warning');
+
+                    // Fallback to previous mock pairs if markets request fails
+                    const mockPairs = [
+                        { symbol: 'ETH/USDC', price: 2456.78, change24h: 3.2, volume24h: 125000000 },
+                        { symbol: 'BTC/USDT', price: 43210.50, change24h: -1.8, volume24h: 98000000 },
+                        { symbol: 'USDC/USDT', price: 1.0001, change24h: 0.01, volume24h: 87000000 },
+                        { symbol: 'WETH/DAI', price: 2455.32, change24h: 3.1, volume24h: 76000000 },
+                        { symbol: 'LINK/ETH', price: 0.0067, change24h: 5.4, volume24h: 54000000 }
+                    ];
+                    displayTradingPairs(mockPairs);
+                }
+                
+                // Update timestamp
+                document.getElementById('last-updated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+                showNotification('Dashboard loaded successfully!', 'success', 2000);
+                
+            } catch (error) {
+                DEXAnalytics.console.error('Critical error initializing app:', error);
+                showNotification('Critical error occurred. Please refresh the page.', 'error', 5000);
+            } finally {
+                // Clear timeout and remove loading state
+                if (loadingTimeout) {
+                    clearTimeout(loadingTimeout);
+                }
+                document.body.classList.remove('loading');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set initial theme
+            document.documentElement.setAttribute('data-theme', DEXAnalytics.state.currentTheme);
+            if (DEXAnalytics.state.currentTheme === 'dark') {
+                document.getElementById('theme-icon').className = 'fas fa-sun';
+                document.getElementById('theme-text').textContent = 'Light';
+            }
+            
+            // Bind events
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            document.getElementById('refresh-btn').addEventListener('click', initApp);
+            document.getElementById('favorites-toggle').addEventListener('click', toggleFavoritesView);
+            
+            // Search and filter events
+            document.getElementById('search-input').addEventListener('input', applyFilters);
+            document.getElementById('chain-filter').addEventListener('change', applyFilters);
+            document.getElementById('volume-filter').addEventListener('change', applyFilters);
+            
+            // Initialize app
+            initApp();
+            
+            // Setup auto-refresh
+            setupAutoRefresh();
+            
+            // Animate progress bars
+            updateProgressBars();
+        });
+
+        // Update progress bars with animation
+        function updateProgressBars() {
+            setTimeout(() => {
+                const volumeProgress = document.getElementById('volume-progress');
+                const liquidityProgress = document.getElementById('liquidity-progress');
+                const usersProgress = document.getElementById('users-progress');
+                const tradesProgress = document.getElementById('trades-progress');
+                
+                if (volumeProgress) volumeProgress.style.width = '75%';
+                if (liquidityProgress) liquidityProgress.style.width = '60%';
+                if (usersProgress) usersProgress.style.width = '85%';
+                if (tradesProgress) tradesProgress.style.width = '70%';
+            }, 1000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (DEXAnalytics.state.volumeChart) DEXAnalytics.state.volumeChart.destroy();
+            if (DEXAnalytics.state.weeklyVolumeChart) DEXAnalytics.state.weeklyVolumeChart.destroy();
+            if (DEXAnalytics.state.autoRefreshInterval) clearInterval(DEXAnalytics.state.autoRefreshInterval);
+        });
+        
+        })(window, document); // End of IIFE
+    </script>
+</body>
+</html>
