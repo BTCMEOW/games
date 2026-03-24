@@ -1,0 +1,18 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+.T{background:#03080d;font-family:'Share Tech Mono',monospace;padding:12px;border-radius:8px;color:#8ab8cc;font-size:11px}
+.hdr{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;border-bottom:1px solid #0a1e2a;padding-bottom:9px;margin-bottom:10px}
+.htitle{font-family:'Orbitron',monospace;font-size:12px;c…{font-size:9px;color:#2a5a6a;margin-top:2px}
+.bpv{font-family:'Orbitron',monospace;font-size:15px;color:#00cfff}
+.bpl{font-size:8px;color:#2a5a6a;letter-spacing:2px}
+.bpc{font-size:9px;margin-top:1px}
+…  $('ftr-t').textContent=now.toTimeString().slice(0,8);
+  $('src-st').textContent='LOADING';
+  await Promise.allSettled([fetchCrypto(),fetchFG(),fetchFunding(),fetchFX(),fetchMetals(),fetchOil(),fetchStocks()]);
+  $('src-st').textContent='LIVE';
+}
+
+loadAll();
+setInterval(loadAll,300000);
+</script>
