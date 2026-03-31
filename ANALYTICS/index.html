@@ -1,0 +1,3098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Analytics Dashboard | Real-time Binance Data</title>
+    <!-- Remove unnecessary dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            /* Dark theme (default) */
+            --primary-bg: #0F172A;
+            --secondary-bg: #1E293B;
+            --card-bg: #1E293B;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --accent-orange: #F97316;
+            --accent-orange-hover: #EA580C;
+            --positive: #10B981;
+            --negative: #EF4444;
+            --neutral: #F59E0B;
+            --border-color: #334155;
+        }
+
+        [data-theme="light"] {
+            --primary-bg: #F8FAFC;
+            --secondary-bg: #E2E8F0;
+            --card-bg: #FFFFFF;
+            --text-primary: #1E293B;
+            --text-secondary: #475569;
+            --accent-orange: #F97316;
+            --accent-orange-hover: #EA580C;
+            --positive: #059669;
+            --negative: #DC2626;
+            --neutral: #D97706;
+            --border-color: #CBD5E1;
+        }
+
+        /* Theme transition */
+        body {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .theme-transition {
+            transition: all 0.3s ease;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+        }
+
+        .bg-gray-800 {
+            background-color: var(--secondary-bg) !important;
+        }
+
+        .bg-gray-700 {
+            background-color: var(--card-bg) !important;
+        }
+
+        .text-gray-400 {
+            color: var(--text-secondary) !important;
+        }
+
+        .border-gray-700 {
+            border-color: var(--border-color) !important;
+        }
+
+        .indicator-positive {
+            color: var(--positive) !important;
+        }
+
+        .indicator-negative {
+            color: var(--negative) !important;
+        }
+
+        .indicator-neutral {
+            color: var(--neutral) !important;
+        }
+
+        .bg-orange-600 {
+            background-color: var(--accent-orange) !important;
+        }
+
+        .bg-orange-600:hover {
+            background-color: var(--accent-orange-hover) !important;
+        }
+
+        .text-orange-500 {
+            color: var(--accent-orange) !important;
+        }
+
+        .hover\:text-orange-500:hover {
+            color: var(--accent-orange) !important;
+        }
+
+        /* Chart styles */
+        .chart-container {
+            background-color: var(--card-bg);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Card styles */
+        .indicator-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .indicator-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Table styles */
+        table {
+            border-color: var(--border-color);
+        }
+
+        th {
+            background-color: var(--secondary-bg) !important;
+            color: var(--text-secondary) !important;
+        }
+
+        tr {
+            border-color: var(--border-color);
+        }
+
+        tr:hover {
+            background-color: var(--secondary-bg) !important;
+        }
+
+        /* Button styles */
+        button {
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid rgba(249, 115, 22, 0.3);
+            border-top: 3px solid var(--accent-orange);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-orange);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-orange-hover);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+    <!-- Header -->
+    <header class="bg-gray-800 py-4 px-4 sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <h1 class="text-xl font-bold">BTCmeow <span class="text-orange-500">Analytics</span></h1>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#" class="hover:text-orange-500 transition">Dashboard</a>
+                <a href="#" class="hover:text-orange-500 transition">Markets</a>
+                <a href="#" class="hover:text-orange-500 transition">Alerts</a>
+                <a href="#" class="hover:text-orange-500 transition">API</a>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <button id="donate-button" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md font-medium transition">
+                    <i class="fas fa-heart mr-2"></i> Donate
+                </button>
+                <button id="theme-toggle" class="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-sun text-yellow-400 dark:hidden"></i>
+                    <i class="fas fa-moon text-blue-400 hidden dark:block"></i>
+                </button>
+                <div id="connection-status" class="flex items-center text-sm">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                    <span>Connected</span>
+                </div>
+                <button class="md:hidden text-2xl" id="mobile-menu-button">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden absolute top-16 right-4 bg-gray-800 p-4 rounded-lg z-50">
+        <nav class="flex flex-col space-y-4">
+            <a href="#" class="hover:text-orange-500 transition">Dashboard</a>
+            <a href="#" class="hover:text-orange-500 transition">Markets</a>
+            <a href="#" class="hover:text-orange-500 transition">Alerts</a>
+            <a href="#" class="hover:text-orange-500 transition">API</a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Dashboard Controls -->
+        <div class="bg-gray-800 rounded-xl p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <h2 class="text-2xl font-bold mb-4 md:mb-0">Crypto Market Indicators</h2>
+                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
+                    <div class="relative w-full sm:w-48">
+                        <select id="asset-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5">
+                            <option value="BTCUSDT" selected>Bitcoin (BTC)</option>
+                            <option value="ETHUSDT">Ethereum (ETH)</option>
+                            <option value="BNBUSDT">Binance Coin (BNB)</option>
+                            <option value="SOLUSDT">Solana (SOL)</option>
+                            <option value="XRPUSDT">XRP (XRP)</option>
+                            <option value="ADAUSDT">Cardano (ADA)</option>
+                            <option value="DOGEUSDT">Dogecoin (DOGE)</option>
+                            <option value="DOTUSDT">Polkadot (DOT)</option>
+                        </select>
+                    </div>
+                    <div class="relative w-full sm:w-48">
+                        <select id="timeframe-select" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full p-2.5">
+                            <option value="1h">1 Hour</option>
+                            <option value="4h">4 Hours</option>
+                            <option value="1d" selected>1 Day</option>
+                            <option value="1w">1 Week</option>
+                            <option value="1M">1 Month</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicator Filters -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3">Filter Indicators</h3>
+                <div class="flex flex-wrap gap-2" id="indicator-filters">
+                    <button data-filter="all" class="px-3 py-1 bg-orange-600 rounded-full text-sm font-medium">All</button>
+                    <button data-filter="funding" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Funding</button>
+                    <button data-filter="rsi" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">RSI</button>
+                    <button data-filter="sentiment" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Sentiment</button>
+                    <button data-filter="anomaly" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Anomaly</button>
+                    <button data-filter="longshort" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Long/Short</button>
+                    <button data-filter="openinterest" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Open Interest</button>
+                    <button data-filter="volume" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Volume</button>
+                    <button data-filter="vix" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">VIX</button>
+                    <button data-filter="correlation" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Correlations</button>
+                    <button data-filter="hashrate" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Hash Rate</button>
+                    <button data-filter="mempool" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Mempool</button>
+                    <button data-filter="feargreed" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded-full text-sm font-medium">Fear & Greed</button>
+                </div>
+            </div>
+
+            <!-- Time Range Selector -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3">Time Range</h3>
+                <div class="flex items-center space-x-4 overflow-x-auto pb-2 scrollbar-hide">
+                    <button data-range="24h" class="px-4 py-2 bg-orange-600 rounded-lg font-medium whitespace-nowrap">24h</button>
+                    <button data-range="7d" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium whitespace-nowrap">7d</button>
+                    <button data-range="30d" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium whitespace-nowrap">30d</button>
+                    <button data-range="90d" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium whitespace-nowrap">90d</button>
+                    <button data-range="1y" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium whitespace-nowrap">1y</button>
+                    <button data-range="all" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium whitespace-nowrap">All</button>
+                    <div class="relative flex items-center">
+                        <span class="text-gray-400 mr-2 whitespace-nowrap">Custom:</span>
+                        <input type="date" id="custom-start" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2">
+                        <span class="mx-2 text-gray-400">to</span>
+                        <input type="date" id="custom-end" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block p-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <p class="text-xl font-semibold">Loading data from Binance...</p>
+                <p class="text-gray-400 mt-2" id="loading-message">Fetching price data</p>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-grid">
+            <!-- Price Chart -->
+            <div class="bg-gray-800 rounded-xl p-6 col-span-1 lg:col-span-2">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold"><span id="current-symbol">BTC</span>/USDT Price</h3>
+                    <div class="flex flex-col items-end">
+                        <div class="flex space-x-4">
+                            <span id="current-price" class="text-2xl font-bold">$--.--</span>
+                            <span id="price-change" class="text-green-500 flex items-center">
+                                <i class="fas fa-caret-up mr-1"></i> --.--%
+                            </span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span id="current-time" class="text-sm text-gray-400">--:--:--</span>
+                            <span id="last-update" class="text-sm text-gray-400">Last update: --:--:--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-80">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Funding Rates -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="funding">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Funding Rates</h3>
+                    <div id="next-funding" class="text-sm">
+                        <span class="text-gray-400">Next in:</span>
+                        <span class="font-mono">--h --m</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="fundingChart"></canvas>
+                </div>
+                <div id="exchange-funding" class="mt-4 grid grid-cols-3 gap-2">
+                    <!-- Dynamically populated with exchange funding rates -->
+                </div>
+            </div>
+
+            <!-- RSI Indicator -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="rsi">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">RSI (14)</h3>
+                    <div>
+                        <span id="current-rsi" class="text-2xl font-bold mr-2">--.-</span>
+                        <span id="rsi-status" class="text-yellow-500">Neutral</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+                <div class="mt-4 flex justify-between text-xs">
+                    <span class="text-red-500">Overbought (>70)</span>
+                    <span class="text-green-500">Oversold (<30)</span>
+                </div>
+            </div>
+
+            <!-- Sentiment Analysis -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="sentiment">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Market Sentiment</h3>
+                    <div class="flex items-center">
+                        <span id="sentiment-score" class="text-xl font-bold mr-2">--%</span>
+                        <span id="sentiment-status" class="text-green-500">Bullish</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="sentimentChart"></canvas>
+                </div>
+                
+                <div class="mt-4 grid grid-cols-3 gap-4">
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Price Action</div>
+                        <div id="price-sentiment" class="text-lg font-bold indicator-positive">--%</div>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Order Book</div>
+                        <div id="orderbook-sentiment" class="text-lg font-bold indicator-positive">--%</div>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Funding</div>
+                        <div id="funding-sentiment" class="text-lg font-bold indicator-positive">--%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Long/Short Ratio -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="longshort">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Long/Short Ratio</h3>
+                    <div class="flex items-center">
+                        <span id="long-short-ratio" class="text-xl font-bold mr-2">-.--</span>
+                        <span id="long-short-status" class="text-green-500">More Longs</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="longShortChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Long Positions</div>
+                        <div id="long-positions" class="text-lg font-bold">--.--%</div>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Short Positions</div>
+                        <div id="short-positions" class="text-lg font-bold">--.--%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anomaly Detection -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="anomaly">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Anomaly Detection</h3>
+                    <div class="flex items-center">
+                        <span id="anomaly-count" class="text-xl font-bold mr-2">-</span>
+                        <span id="anomaly-status" class="text-yellow-500">Warnings</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="anomalyChart"></canvas>
+                </div>
+                <div id="anomaly-list" class="mt-4 space-y-2">
+                    <!-- Dynamically populated with anomalies -->
+                </div>
+            </div>
+
+            <!-- Open Interest -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="openinterest">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Open Interest</h3>
+                    <div class="flex items-center">
+                        <span id="open-interest" class="text-xl font-bold mr-2">$--.--B</span>
+                        <span id="oi-change" class="text-green-500">+--.--%</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="oiChart"></canvas>
+                </div>
+                <div id="exchange-oi" class="mt-4 grid grid-cols-3 gap-2">
+                    <!-- Dynamically populated with exchange open interest -->
+                </div>
+            </div>
+
+            <!-- Bitcoin Hash Rate -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="hashrate">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Bitcoin Hash Rate</h3>
+                    <div class="flex items-center">
+                        <span id="hash-rate" class="text-xl font-bold mr-2 cursor-help" title="Current Bitcoin network hash rate. Higher values indicate stronger network security.">-- EH/s</span>
+                        <span id="hash-rate-change" class="text-green-500 cursor-help" title="Percentage change in hash rate. Positive values indicate growing network security.">+--%</span>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Network Difficulty</div>
+                        <div id="network-difficulty" class="text-lg font-bold cursor-help" title="Current mining difficulty. Higher values mean more computing power is needed to mine new blocks.">-- T</div>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Mining Revenue</div>
+                        <div id="mining-revenue" class="text-lg font-bold cursor-help" title="Estimated daily mining revenue. Higher values indicate better profitability for miners.">$--.--M/day</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blockchain.com Mempool -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="mempool">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Mempool Status</h3>
+                    <div class="flex items-center">
+                        <span id="mempool-size" class="text-xl font-bold mr-2">-- MB</span>
+                        <span id="mempool-tx-count" class="text-sm text-gray-400">(-- tx)</span>
+                    </div>
+                </div>
+                <div class="h-64" hidden>
+                    <canvas id="mempoolChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-2">
+                    <div class="bg-gray-700 p-2 rounded text-center">
+                        <div class="text-xs text-gray-400">Low Priority</div>
+                        <div id="low-fee" class="text-sm">-- sat/vB</div>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded text-center">
+                        <div class="text-xs text-gray-400">Medium Priority</div>
+                        <div id="medium-fee" class="text-sm">-- sat/vB</div>
+                    </div>
+                    <div class="bg-gray-700 p-2 rounded text-center">
+                        <div class="text-xs text-gray-400">High Priority</div>
+                        <div id="high-fee" class="text-sm">-- sat/vB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crypto Fear & Greed Index -->
+            <div class="bg-gray-800 rounded-xl p-6 indicator-card" data-indicator="feargreed">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Fear & Greed Index</h3>
+                    <div class="flex items-center">
+                        <span id="fear-greed-value" class="text-xl font-bold mr-2">--</span>
+                        <span id="fear-greed-status" class="text-green-500">Neutral</span>
+                    </div>
+                </div>
+                <div class="h-64">
+                    <canvas id="fearGreedChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Market Sentiment</div>
+                        <div id="fear-greed-classification" class="text-lg font-bold">Neutral</div>
+                    </div>
+                    <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">24h Change</div>
+                        <div id="fear-greed-change" class="text-lg font-bold">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crypto VIX (Volatility Index) -->
+        <div class="bg-gray-800 rounded-xl p-6 mt-6 indicator-card" data-indicator="vix">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <h3 class="text-xl font-bold mr-3">Crypto VIX</h3>
+                    <div class="group relative">
+                        <i class="fas fa-info-circle text-gray-400 hover:text-blue-400 cursor-help"></i>
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-80 z-10">
+                            <div class="font-semibold mb-1">Cryptocurrency Volatility Index</div>
+                            <div class="text-xs">
+                                • Calculated based on BTC historical volatility<br>
+                                • Considers price fluctuations over the last 30 days<br>
+                                • Values: 0-20 (low), 20-40 (moderate), 40+ (high volatility)<br>
+                                • Updates every 30 seconds, stores 100 recent values
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <span id="crypto-vix-value" class="text-xl font-bold mr-2">--.-</span>
+                    <span id="crypto-vix-status" class="text-yellow-500">Moderate</span>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="vixChart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-3 gap-4">
+                <div class="bg-gray-700 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400 mb-1">7-Day Volatility</div>
+                    <div id="vix-7d" class="text-lg font-bold">--.-%</div>
+                </div>
+                <div class="bg-gray-700 p-3 rounded-lg">
+                    <div class="text-sm text-gray-400 mb-1">30-Day Volatility</div>
+                    <div id="vix-30d" class="text-lg font-bold">--.-%</div>
+                </div>
+                <div class="bg-gray-700 p-3 rounded-lg">
+                        <div class="text-sm text-gray-400 mb-1">Annualized Volatility</div>
+                        <div id="vix-ann" class="text-lg font-bold">--.-%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Correlation Matrix -->
+        <div class="bg-gray-800 rounded-xl p-6 mt-6 indicator-card" data-indicator="correlation">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center">
+                    <h3 class="text-xl font-bold mr-3">Asset Correlations</h3>
+                    <div class="group relative">
+                        <i class="fas fa-info-circle text-gray-400 hover:text-blue-400 cursor-help"></i>
+                        <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none w-80 z-10">
+                            <div class="font-semibold mb-1">Asset Correlation Matrix</div>
+                            <div class="text-xs">
+                                • Analyzes relationships between BTC, ETH, ADA, SOL<br>
+                                • Correlation from -1 (inverse) to +1 (direct relationship)<br>
+                                • Helps with portfolio diversification<br>
+                                • Calculated based on price movements over selected period<br>
+                                • Updates every 30 seconds, stores 100 measurements
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <select id="correlation-timeframe" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2">
+                        <option value="7d">7 Days</option>
+                        <option value="30d" selected>30 Days</option>
+                        <option value="90d">90 Days</option>
+                    </select>
+                </div>
+            </div>
+            <div class="h-64">
+                <canvas id="correlationChart"></canvas>
+            </div>
+            <div class="mt-4 grid grid-cols-4 gap-2" id="correlation-matrix">
+                <!-- Dynamically populated with correlation values -->
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-gray-800 rounded-xl p-6 mt-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold">Detailed Indicators</h3>
+                <button class="text-orange-500 hover:text-orange-400 flex items-center">
+                    <i class="fas fa-download mr-2"></i> Export Data
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-400">
+                    <thead class="text-xs uppercase bg-gray-700 text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">Asset</th>
+                            <th scope="col" class="px-6 py-3">Price</th>
+                            <th scope="col" class="px-6 py-3">24h Change</th>
+                            <th scope="col" class="px-6 py-3">Funding</th>
+                            <th scope="col" class="px-6 py-3">RSI</th>
+                            <th scope="col" class="px-6 py-3">Sentiment</th>
+                            <th scope="col" class="px-6 py-3">L/S Ratio</th>
+                            <th scope="col" class="px-6 py-3">Anomaly</th>
+                        </tr>
+                    </thead>
+                    <tbody id="indicators-table-body">
+                        <!-- Dynamically populated with data -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 py-8 px-4 mt-12">
+        <div class="container mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <div class="flex items-center space-x-2 mb-4">
+                       
+                        <h3 class="text-lg font-bold">BTCMeow Analytics</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">Advanced cryptocurrency analytics platform for traders and investors.</p>
+                </div>
+                
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-500 text-sm">
+                <p>&copy; 2023 BTCMeow Analytics. All rights reserved. Not financial advice.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Add donation modal -->
+    <div id="donation-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Support BTCmeow Analytics</h3>
+                <button id="close-donation-modal" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <p class="text-gray-300">Choose your preferred donation method:</p>
+                
+                <!-- Crypto Donations -->
+                <div class="space-y-3">
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">Bitcoin (BTC)</span>
+                            <button class="copy-address text-orange-500 hover:text-orange-400" data-address="bc1q6y4vp34987s58ypqzajpde9daynm7v0xenqvpn">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-400 break-all">bc1q6y4vp34987s58ypqzajpde9daynm7v0xenqvpn</div>
+                    </div>
+                    
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">Ethereum (ETH)</span>
+                            <button class="copy-address text-orange-500 hover:text-orange-400" data-address="0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-400 break-all">0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE</div>
+                    </div>
+                    
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">USDT (TRC20)</span>
+                            <button class="copy-address text-orange-500 hover:text-orange-400" data-address="TVPzLMjjsq6RAHQX8uE3BasqiJaW9WAM6t">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-400 break-all">TVPzLMjjsq6RAHQX8uE3BasqiJaW9WAM6t</div>
+                    </div>
+
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">USDT (BEP20)</span>
+                            <button class="copy-address text-orange-500 hover:text-orange-400" data-address="0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-400 break-all">0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE</div>
+                    </div>
+
+                    <div class="bg-gray-700 p-4 rounded-lg">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-medium">BNB (BEP20)</span>
+                            <button class="copy-address text-orange-500 hover:text-orange-400" data-address="0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="text-sm text-gray-400 break-all">0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE</div>
+                    </div>
+                </div>
+                
+                <!-- QR Code -->
+                <div class="text-center space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">Bitcoin (BTC)</p>
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=bc1q6y4vp34987s58ypqzajpde9daynm7v0xenqvpn" 
+                                 alt="BTC QR Code" 
+                                 class="mx-auto rounded-lg">
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">Ethereum (ETH)</p>
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE" 
+                                 alt="ETH QR Code" 
+                                 class="mx-auto rounded-lg">
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">USDT (TRC20)</p>
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=TVPzLMjjsq6RAHQX8uE3BasqiJaW9WAM6t" 
+                                 alt="USDT TRC20 QR Code" 
+                                 class="mx-auto rounded-lg">
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-400 mb-2">USDT (BEP20)</p>
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=0xdDe97a8eEf6B3557f7c0fe826DCFcb58BC2857EE" 
+                                 alt="USDT BEP20 QR Code" 
+                                 class="mx-auto rounded-lg">
+                        </div>
+                    </div>
+                
+                </div>
+                
+                <p class="text-sm text-gray-400 text-center">
+                    Thank you for supporting BTCmeow Analytics! Your donations help keep the project running and improving.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*
+         * DATA SIMULATION LOGIC:
+         * Since many crypto APIs don't provide historical liquidation, sentiment, and other advanced data,
+         * this dashboard uses intelligent simulation based on real market data:
+         * 
+         * 1. Liquidation Data: Simulated using price volatility and daily trading patterns
+         * 2. Long/Short Ratios: Calculated based on price movements and market sentiment
+         * 3. Sentiment Analysis: Derived from price action and volume indicators
+         * 4. Anomaly Detection: Uses mathematical patterns to identify unusual market behavior
+         * 
+         * All simulated data follows realistic market patterns and correlates with actual price movements.
+         */
+        
+        // Global variables
+        let charts = {};
+        let currentSymbol = 'BTCUSDT';
+        let currentTimeframe = '1d';
+        let currentRange = '24h';
+        let activeFilters = ['all'];
+        let wsConnection = null;
+        let priceWebSocket = null;
+        
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Initialize all charts
+            initCharts();
+            
+            // Load initial data
+            loadData();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Connect to WebSocket for real-time price updates
+            connectWebSocket();
+            
+            // Initialize clock
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // Auto-refresh data every 30 seconds
+            setInterval(() => {
+                if (currentSymbol) {
+                    loadData();
+                }
+                // Update new indicators
+                updateVixData();
+                updateCorrelationData();
+            }, 30000);
+            
+            // Initial load of new indicators
+            setTimeout(() => {
+                updateVixData();
+                updateCorrelationData();
+            }, 2000);
+        });
+        
+        // Initialize all charts
+        function initCharts() {
+            // Destroy existing charts if they exist
+            Object.values(charts).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            
+            // Initialize new charts
+            const getCtx = (id) => {
+                const el = document.getElementById(id);
+                if (!el) return null;
+                try {
+                    return el.getContext('2d');
+                } catch (e) {
+                    return null;
+                }
+            };
+
+            charts = {
+                priceChart: (() => {
+                    const ctx = getCtx('priceChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Price', '#F97316')) : null;
+                })(),
+                fundingChart: (() => {
+                    const ctx = getCtx('fundingChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Funding Rate', '#F97316')) : null;
+                })(),
+                rsiChart: (() => {
+                    const ctx = getCtx('rsiChart');
+                    return ctx ? new Chart(ctx, getRSIChartConfig()) : null;
+                })(),
+                sentimentChart: (() => {
+                    const ctx = getCtx('sentimentChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Sentiment', ['#10B981', '#EF4444'], false, true)) : null;
+                })(),
+                longShortChart: (() => {
+                    const ctx = getCtx('longShortChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Positions', ['#10B981', '#EF4444'], false, true)) : null;
+                })(),
+                anomalyChart: (() => {
+                    const ctx = getCtx('anomalyChart');
+                    return ctx ? new Chart(ctx, getAnomalyChartConfig()) : null;
+                })(),
+                oiChart: (() => {
+                    const ctx = getCtx('oiChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Open Interest', '#8B5CF6')) : null;
+                })(),
+                mempoolChart: (() => {
+                    const ctx = getCtx('mempoolChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Mempool Size', '#8B5CF6')) : null;
+                })(),
+                fearGreedChart: (() => {
+                    const ctx = getCtx('fearGreedChart');
+                    return ctx ? new Chart(ctx, getFearGreedChartConfig()) : null;
+                })(),
+                vixChart: (() => {
+                    const ctx = getCtx('vixChart');
+                    return ctx ? new Chart(ctx, getChartConfig('line', 'Crypto VIX', '#FF6B6B')) : null;
+                })(),
+                correlationChart: (() => {
+                    const ctx = getCtx('correlationChart');
+                    return ctx ? new Chart(ctx, getCorrelationChartConfig()) : null;
+                })()
+            };
+        }
+        
+        // Get chart configuration
+        function getChartConfig(type, label, colors, isBar = false, isPercentage = false) {
+            return {
+                type: type,
+                data: {
+                    labels: [],
+                    datasets: Array.isArray(colors) ? 
+                        colors.map((color, i) => ({
+                            label: i === 0 ? `${label} (${i+1})` : `${label} (${i+1})`,
+                            data: [],
+                            borderColor: color,
+                            backgroundColor: type === 'bar' ? color : `rgba(${hexToRgb(color)}, 0.1)`,
+                            borderWidth: 2,
+                            fill: type !== 'bar',
+                            tension: 0.4
+                        })) : [{
+                            label: label,
+                            data: [],
+                            borderColor: colors,
+                            backgroundColor: type === 'bar' ? colors : `rgba(${hexToRgb(colors)}, 0.1)`,
+                            borderWidth: 2,
+                            fill: type !== 'bar',
+                            tension: 0.4
+                        }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (isPercentage) {
+                                        label += context.parsed.y.toFixed(2) + '%';
+                                    } else {
+                                        label += context.parsed.y.toFixed(type === 'line' ? 2 : 0);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: isBar || isPercentage,
+                            ...(isPercentage && { max: 100 }),
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF',
+                                callback: function(value) {
+                                    return isPercentage ? value + '%' : value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Get RSI chart configuration
+        function getRSIChartConfig() {
+            return {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'RSI (14)',
+                        data: [],
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    yMin: 70,
+                                    yMax: 70,
+                                    borderColor: 'rgb(239, 68, 68)',
+                                    borderWidth: 1,
+                                    borderDash: [6, 6],
+                                    label: {
+                                        content: 'Overbought',
+                                        enabled: true,
+                                        position: 'left'
+                                    }
+                                },
+                                line2: {
+                                    type: 'line',
+                                    yMin: 30,
+                                    yMax: 30,
+                                    borderColor: 'rgb(16, 185, 129)',
+                                    borderWidth: 1,
+                                    borderDash: [6, 6],
+                                    label: {
+                                        content: 'Oversold',
+                                        enabled: true,
+                                        position: 'left'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Get Anomaly chart configuration
+        function getAnomalyChartConfig() {
+            return {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Anomaly Score',
+                        data: [],
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        annotation: {
+                            annotations: {
+                                box1: {
+                                    type: 'box',
+                                    yMin: 1.0,
+                                    yMax: 3.0,
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    borderColor: 'rgba(239, 68, 68, 0.5)',
+                                    borderWidth: 1,
+                                    label: {
+                                        content: 'Warning Zone',
+                                        enabled: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Anomaly Score',
+                                color: '#9CA3AF'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Asset selection
+            document.getElementById('asset-select').addEventListener('change', function() {
+                currentSymbol = this.value;
+                // Обновляем надпись в заголовке сразу при выборе
+                const baseAsset = currentSymbol.replace('USDT', '').replace('/USDT', '');
+                document.getElementById('current-symbol').textContent = baseAsset;
+                loadData();
+                updateWebSocketConnection();
+            });
+            
+            // Timeframe selection
+            document.getElementById('timeframe-select').addEventListener('change', function() {
+                currentTimeframe = this.value;
+                loadData();
+            });
+            
+            // Time range buttons
+            document.querySelectorAll('[data-range]').forEach(button => {
+                button.addEventListener('click', function() {
+                    currentRange = this.getAttribute('data-range');
+                    document.querySelectorAll('[data-range]').forEach(btn => {
+                        btn.classList.remove('bg-orange-600');
+                        btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                    });
+                    this.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                    this.classList.add('bg-orange-600');
+                    loadData();
+                });
+            });
+            
+            // Indicator filters
+            document.querySelectorAll('#indicator-filters button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const filter = this.getAttribute('data-filter');
+                    
+                    if (filter === 'all') {
+                        // Toggle all filters
+                        if (activeFilters.includes('all')) {
+                            activeFilters = [];
+                            this.classList.remove('bg-orange-600');
+                            this.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                        } else {
+                            activeFilters = ['all'];
+                            document.querySelectorAll('#indicator-filters button').forEach(btn => {
+                                btn.classList.remove('bg-orange-600');
+                                btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                            });
+                            this.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                            this.classList.add('bg-orange-600');
+                        }
+                    } else {
+                        // Toggle individual filter
+                        if (activeFilters.includes('all')) {
+                            activeFilters = [filter];
+                            document.querySelectorAll('#indicator-filters button').forEach(btn => {
+                                btn.classList.remove('bg-orange-600');
+                                btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                            });
+                            this.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                            this.classList.add('bg-orange-600');
+                        } else {
+                            const index = activeFilters.indexOf(filter);
+                            if (index > -1) {
+                                activeFilters.splice(index, 1);
+                                this.classList.remove('bg-orange-600');
+                                this.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                            } else {
+                                activeFilters.push(filter);
+                                this.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                                this.classList.add('bg-orange-600');
+                            }
+                            
+                            // If no filters are selected, show all
+                            if (activeFilters.length === 0) {
+                                activeFilters = ['all'];
+                                document.querySelector('#indicator-filters button[data-filter="all"]').classList.add('bg-orange-600');
+                                document.querySelector('#indicator-filters button[data-filter="all"]').classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                            }
+                        }
+                    }
+                    
+                    // Update visibility of indicator cards
+                    updateIndicatorVisibility();
+                });
+            });
+            
+            // Mobile menu toggle
+            document.getElementById('mobile-menu-button').addEventListener('click', function() {
+                document.getElementById('mobile-menu').classList.toggle('hidden');
+            });
+        }
+        
+        function updateCustomDateRange() {
+            const startDate = document.getElementById('custom-start').value;
+            const endDate = document.getElementById('custom-end').value;
+            
+            if (startDate && endDate) {
+                // Сбросить активные кнопки диапазона
+                document.querySelectorAll('[data-range]').forEach(btn => {
+                    btn.classList.remove('bg-orange-600');
+                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                });
+                
+                currentRange = 'custom';
+                loadData();
+            }
+        }
+        
+        // Update visibility of indicator cards based on active filters
+        function updateIndicatorVisibility() {
+            document.querySelectorAll('.indicator-card').forEach(card => {
+                const indicator = card.getAttribute('data-indicator');
+                
+                if (activeFilters.includes('all') || activeFilters.includes(indicator)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Load data from Binance API
+        async function loadData() {
+            showLoading('Fetching data from Binance...');
+            
+            try {
+                // Get symbol info
+                const symbol = currentSymbol;
+                const baseAsset = symbol.replace('USDT', '').replace('/USDT', '');
+                document.getElementById('current-symbol').textContent = baseAsset;
+                
+                // Fetch all data in parallel
+                await Promise.all([
+                    fetchPriceData(symbol),
+                    fetchFundingData(symbol),
+                    fetchRSIData(symbol),
+                    fetchSentimentData(symbol),
+                    fetchLongShortData(symbol),
+                    fetchAnomalyData(symbol),
+                    fetchOpenInterestData(symbol),
+                    fetchAllIndicators(),
+                    fetchBlockchainData(),
+                    fetchMempoolData(),
+                    fetchFearGreedData()
+                ]);
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                hideLoading();
+                alert('Failed to load data. Please try again later.');
+            }
+        }
+        
+        // Fetch price data
+        async function fetchPriceData(symbol) {
+            const timeframeMap = {
+                '1h': '1h',
+                '4h': '4h',
+                '1d': '1d',
+                '1w': '1w',
+                '1M': '1M'
+            };
+            
+            const interval = timeframeMap[currentTimeframe] || '1d';
+            let limit = 100;
+            
+            if (currentRange === '24h') limit = 24;
+            else if (currentRange === '7d') limit = 7 * (interval === '1h' ? 24 : (interval === '4h' ? 6 : 1));
+            else if (currentRange === '30d') limit = 30;
+            else if (currentRange === '90d') limit = 90;
+            else if (currentRange === '1y') limit = 365;
+            else limit = 500; // 'all'
+            
+            const response = await axios.get(`https://api.binance.com/api/v3/klines`, {
+                params: {
+                    symbol: symbol,
+                    interval: interval,
+                    limit: limit
+                }
+            });
+            
+            const prices = response.data.map(k => parseFloat(k[4])); // Closing prices
+            const timestamps = response.data.map(k => {
+                const date = new Date(k[0]);
+                // Для интервалов меньше дня показываем только время
+                if (interval === '1h' || interval === '4h') {
+                    return date.toLocaleTimeString();
+                }
+                // Для больших интервалов показываем дату и время
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            });
+            
+            // Update price chart
+            charts.priceChart.data.labels = timestamps;
+            charts.priceChart.data.datasets[0].data = prices;
+            charts.priceChart.update();
+            
+            // Update current price display
+            const currentPrice = prices[prices.length - 1];
+            const prevPrice = prices[prices.length - 2];
+            const priceChange = ((currentPrice - prevPrice) / prevPrice) * 100;
+            
+            document.getElementById('current-price').textContent = `$${currentPrice.toFixed(2)}`;
+            
+            const priceChangeElement = document.getElementById('price-change');
+            priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
+            priceChangeElement.className = priceChange >= 0 ? 
+                'text-green-500 flex items-center' : 
+                'text-red-500 flex items-center';
+            priceChangeElement.innerHTML = priceChange >= 0 ? 
+                `<i class="fas fa-caret-up mr-1"></i> ${priceChange.toFixed(2)}%` : 
+                `<i class="fas fa-caret-down mr-1"></i> ${Math.abs(priceChange).toFixed(2)}%`;
+        }
+        
+        // Fetch funding data
+        async function fetchFundingData(symbol) {
+            try {
+                // Get funding rate history from Binance
+                const response = await axios.get(`https://fapi.binance.com/fapi/v1/fundingRate`, {
+                    params: {
+                        symbol: symbol,
+                        limit: 100
+                    }
+                });
+                
+                const fundingRates = response.data.map(r => parseFloat(r.fundingRate) * 100);
+                const timestamps = response.data.map(r => new Date(r.fundingTime).toLocaleTimeString());
+                
+                // Update funding chart
+                charts.fundingChart.data.labels = timestamps.reverse();
+                charts.fundingChart.data.datasets[0].data = fundingRates.reverse();
+                charts.fundingChart.update();
+                
+                // Get current funding rate from Binance
+                const currentRateResponse = await axios.get(`https://fapi.binance.com/fapi/v1/premiumIndex`, {
+                    params: {
+                        symbol: symbol
+                    }
+                });
+                
+                const currentRate = parseFloat(currentRateResponse.data.lastFundingRate) * 100;
+                const nextFundingTime = new Date(currentRateResponse.data.nextFundingTime);
+                const now = new Date();
+                const timeToNextFunding = nextFundingTime - now;
+                const hours = Math.max(0, Math.floor(timeToNextFunding / (1000 * 60 * 60)));
+                const minutes = Math.max(0, Math.floor((timeToNextFunding % (1000 * 60 * 60)) / (1000 * 60)));
+                
+                // Update UI
+                document.getElementById('next-funding').innerHTML = `
+                    <span class="text-gray-400">Next in:</span>
+                    <span class="font-mono">${hours}h ${minutes}m</span>
+                `;
+                
+                // Get funding rates for major exchanges (simulated)
+                const exchanges = [
+                    { name: 'Binance', rate: currentRate },
+                
+                ];
+                
+                // Update exchange funding rates
+                const exchangeFundingElement = document.getElementById('exchange-funding');
+                exchangeFundingElement.innerHTML = exchanges.map(exchange => {
+                    const isPositive = exchange.rate >= 0;
+                    return `
+                        <div class="bg-gray-700 p-2 rounded text-center">
+                            <div class="text-xs text-gray-400">${exchange.name}</div>
+                            <div class="text-sm ${isPositive ? 'indicator-positive' : 'indicator-negative'}">
+                                ${exchange.rate.toFixed(4)}%
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error fetching funding data:', error);
+                try {
+             // 1. Запрашиваем реальные данные с Binance API
+                 const response = await axios.get(`https://fapi.binance.com/fapi/v1/fundingRate`, {
+                     params: { symbol: currentSymbol, limit: 24 }
+                    });
+
+               // 2. Проверяем, есть ли данные
+                if (!response.data || response.data.length === 0) {
+                    throw new Error("No funding rate data available");
+                  }
+
+               // 3. Обрабатываем данные
+                const fundingRates = response.data.map(r => parseFloat(r.fundingRate) * 100);
+                const timestamps = response.data.map(r => new Date(r.fundingTime).toLocaleTimeString());
+
+                  // 4. Обновляем график (разворачиваем данные, чтобы новейшие были справа)
+                 charts.fundingChart.data.labels = timestamps.reverse();
+                 charts.fundingChart.data.datasets[0].data = fundingRates.reverse();
+                 charts.fundingChart.update();
+
+              } catch (error) {
+                 console.error("Failed to fetch funding rates:", error);
+
+                 // 5. В случае ошибки:
+                // - Очищаем график
+                 charts.fundingChart.data.labels = [];
+                 charts.fundingChart.data.datasets[0].data = [];
+                 charts.fundingChart.update();
+
+                 // - Показываем ошибку в интерфейсе
+                document.getElementById('next-funding').innerHTML = `
+                     <span class="text-red-500">Failed to load data</span>
+                    `;
+                }
+                
+                // Update UI with fallback data
+                document.getElementById('next-funding').innerHTML = `
+                    <span class="text-gray-400">Next in:</span>
+                    <span class="font-mono">8h 0m</span>
+                `;
+                
+               
+                
+                // Update exchange funding rates
+                const exchangeFundingElement = document.getElementById('exchange-funding');
+                exchangeFundingElement.innerHTML = exchanges.map(exchange => {
+                    const isPositive = exchange.rate >= 0;
+                    return `
+                        <div class="bg-gray-700 p-2 rounded text-center">
+                            <div class="text-xs text-gray-400">${exchange.name}</div>
+                            <div class="text-sm ${isPositive ? 'indicator-positive' : 'indicator-negative'}">
+                                ${exchange.rate.toFixed(4)}%
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        // Fetch RSI data
+        async function fetchRSIData(symbol) {
+            // Binance doesn't provide RSI directly, so we'll calculate it from price data
+            const response = await axios.get(`https://api.binance.com/api/v3/klines`, {
+                params: {
+                    symbol: symbol,
+                    interval: '1h',
+                    limit: 200 // Need enough data to calculate RSI(14)
+                }
+            });
+            
+            const closes = response.data.map(k => parseFloat(k[4]));
+            
+            // Calculate RSI
+            const rsiValues = calculateRSI(closes, 14);
+            const timestamps = response.data.slice(14).map(k => new Date(k[0]).toLocaleTimeString());
+            
+            // Update RSI chart
+            charts.rsiChart.data.labels = timestamps;
+            charts.rsiChart.data.datasets[0].data = rsiValues;
+            charts.rsiChart.update();
+            
+            // Get current RSI
+            const currentRSI = rsiValues[rsiValues.length - 1];
+            
+            // Update UI
+            document.getElementById('current-rsi').textContent = currentRSI.toFixed(1);
+            
+            const rsiStatusElement = document.getElementById('rsi-status');
+            if (currentRSI > 70) {
+                rsiStatusElement.textContent = 'Overbought';
+                rsiStatusElement.className = 'text-red-500';
+            } else if (currentRSI < 30) {
+                rsiStatusElement.textContent = 'Oversold';
+                rsiStatusElement.className = 'text-green-500';
+            } else {
+                rsiStatusElement.textContent = 'Neutral';
+                rsiStatusElement.className = 'text-yellow-500';
+            }
+        }
+        
+        // Calculate RSI
+        function calculateRSI(closes, period) {
+            let gains = [];
+            let losses = [];
+            
+            // Calculate gains and losses
+            for (let i = 1; i < closes.length; i++) {
+                const difference = closes[i] - closes[i - 1];
+                if (difference >= 0) {
+                    gains.push(difference);
+                    losses.push(0);
+                } else {
+                    gains.push(0);
+                    losses.push(Math.abs(difference));
+                }
+            }
+            
+            // Calculate first average gains and losses
+            let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            
+            const rsiValues = [];
+            
+            // Calculate subsequent RSI values
+            for (let i = period; i < gains.length; i++) {
+                avgGain = (avgGain * (period - 1) + gains[i]) / period;
+                avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+                
+                const rs = avgGain / avgLoss;
+                const rsi = 100 - (100 / (1 + rs));
+                rsiValues.push(rsi);
+            }
+            
+            return rsiValues;
+        }
+        
+       // Fetch sentiment data
+async function fetchSentimentData(symbol) {
+    try {
+        // 1. Get data from multiple sources
+        const [priceData, fundingData, orderBookData] = await Promise.all([
+            // Price and volume data
+            axios.get(`https://api.binance.com/api/v3/ticker/24hr`, { params: { symbol } }),
+            
+            // Funding data (for futures)
+            symbol.includes('USDT') ? 
+                axios.get(`https://fapi.binance.com/fapi/v1/premiumIndex`, { params: { symbol } })
+                .catch(() => ({ data: { lastFundingRate: 0 }, })) : 
+                { data: { lastFundingRate: 0 } },
+            
+            // Order book data
+            axios.get(`https://api.binance.com/api/v3/depth`, { params: { symbol, limit: 10 } })
+        ]);
+
+        // Process data
+        const priceChange = parseFloat(priceData.data.priceChangePercent);
+        const volume = parseFloat(priceData.data.volume);
+        const fundingRate = parseFloat(fundingData.data.lastFundingRate) * 100;
+        const timestamp = new Date().toLocaleTimeString();
+
+        // 2. Calculate sentiment score with multiple factors
+        const weights = {
+            priceChange: 0.4,
+            volumeChange: 0.3,
+            fundingRate: 0.2,
+            orderBookImbalance: 0.1
+        };
+
+        // Normalized values (0-100)
+        const priceScore = 50 + (priceChange * 0.5); // Smoother reaction to price changes
+        const volumeScore = Math.min(volume / 10000, 100); // Volume normalization
+        
+        // Order book imbalance analysis
+        const bids = orderBookData.data.bids.reduce((sum, bid) => sum + parseFloat(bid[1]), 0);
+        const asks = orderBookData.data.asks.reduce((sum, ask) => sum + parseFloat(ask[1]), 0);
+        const orderBookImbalance = bids > asks ? 
+            Math.min((bids - asks) / (bids + asks) * 100, 100) : 
+            Math.max(-(asks - bids) / (bids + asks) * 100 + 50, 0);
+
+        // Final sentiment calculation
+        const sentimentScore = 
+            (priceScore * weights.priceChange) +
+            (volumeScore * weights.volumeChange) +
+            ((fundingRate > 0 ? 60 + fundingRate * 10 : 40 + fundingRate * 10) * weights.fundingRate) +
+            (orderBookImbalance * weights.orderBookImbalance);
+
+        // Normalize to 0-100 range
+        const normalizedSentiment = Math.max(0, Math.min(100, sentimentScore));
+
+        // 3. Update chart
+        charts.sentimentChart.data.labels.push(timestamp);
+        charts.sentimentChart.data.datasets[0].data.push(normalizedSentiment);
+        charts.sentimentChart.data.datasets[1].data.push(100 - normalizedSentiment);
+        
+        // Keep only last 24 points
+        if (charts.sentimentChart.data.labels.length > 24) {
+            charts.sentimentChart.data.labels.shift();
+            charts.sentimentChart.data.datasets[0].data.shift();
+            charts.sentimentChart.data.datasets[1].data.shift();
+        }
+        
+        charts.sentimentChart.update();
+
+        // 4. Update UI
+        document.getElementById('sentiment-score').textContent = `${normalizedSentiment.toFixed(0)}%`;
+        
+        const sentimentStatusElement = document.getElementById('sentiment-status');
+        if (normalizedSentiment > 60) {
+            sentimentStatusElement.textContent = 'Bullish';
+            sentimentStatusElement.className = 'text-green-500';
+        } else if (normalizedSentiment < 40) {
+            sentimentStatusElement.textContent = 'Bearish';
+            sentimentStatusElement.className = 'text-red-500';
+        } else {
+            sentimentStatusElement.textContent = 'Neutral';
+            sentimentStatusElement.className = 'text-yellow-500';
+        }
+
+        const priceSentiment = Math.max(0, Math.min(100, priceScore));
+        const orderBookSentiment = Math.max(0, Math.min(100, orderBookImbalance));
+        const fundingSentiment = Math.max(0, Math.min(100, 50 + fundingRate * 10));
+        
+        document.getElementById('price-sentiment').textContent = `${priceSentiment.toFixed(0)}%`;
+        document.getElementById('orderbook-sentiment').textContent = `${orderBookSentiment.toFixed(0)}%`;
+        document.getElementById('funding-sentiment').textContent = `${fundingSentiment.toFixed(0)}%`;
+
+    } catch (error) {
+        console.error('Error fetching sentiment data:', error);
+        // Fallback values or error handling can be added here
+    }
+}
+        
+        // Fetch long/short ratio data
+        async function fetchLongShortData(symbol) {
+            try {
+                const response = await axios.get(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio`, {
+                    params: {
+                        symbol: symbol,
+                        period: '1h',
+                        limit: 24
+                    }
+                });
+                
+                const rows = Array.isArray(response.data) ? response.data : [];
+                if (!rows.length) {
+                    throw new Error('No long/short data');
+                }
+
+                const timestamps = rows.map(r => new Date(parseInt(r.timestamp)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+                const longPct = rows.map(r => (parseFloat(r.longAccount) || 0) * 100);
+                const shortPct = rows.map(r => (parseFloat(r.shortAccount) || 0) * 100);
+                
+                if (charts.longShortChart) {
+                    charts.longShortChart.data.labels = timestamps;
+                    charts.longShortChart.data.datasets[0].data = longPct;
+                    charts.longShortChart.data.datasets[1].data = shortPct;
+                    charts.longShortChart.update();
+                }
+                
+                const last = rows[rows.length - 1];
+                const ratio = parseFloat(last.longShortRatio) || 1;
+                const currentLongPercentage = (parseFloat(last.longAccount) || 0) * 100;
+                const currentShortPercentage = (parseFloat(last.shortAccount) || 0) * 100;
+                
+                // Update UI
+                document.getElementById('long-short-ratio').textContent = ratio.toFixed(2);
+                
+                const longShortStatusElement = document.getElementById('long-short-status');
+                if (ratio > 1.2) {
+                    longShortStatusElement.textContent = 'Strong Longs';
+                    longShortStatusElement.className = 'text-green-500';
+                } else if (ratio > 1) {
+                    longShortStatusElement.textContent = 'More Longs';
+                    longShortStatusElement.className = 'text-green-500';
+                } else if (ratio < 0.8) {
+                    longShortStatusElement.textContent = 'Strong Shorts';
+                    longShortStatusElement.className = 'text-red-500';
+                } else if (ratio < 1) {
+                    longShortStatusElement.textContent = 'More Shorts';
+                    longShortStatusElement.className = 'text-red-500';
+                } else {
+                    longShortStatusElement.textContent = 'Balanced';
+                    longShortStatusElement.className = 'text-yellow-500';
+                }
+                
+                document.getElementById('long-positions').textContent = `${currentLongPercentage.toFixed(1)}%`;
+                document.getElementById('short-positions').textContent = `${currentShortPercentage.toFixed(1)}%`;
+                
+            } catch (error) {
+                console.error('Error fetching long/short data:', error);
+                // Fallback to show error state
+                document.getElementById('long-short-ratio').textContent = '--';
+                document.getElementById('long-short-status').textContent = 'Data unavailable';
+                document.getElementById('long-short-status').className = 'text-gray-500';
+                document.getElementById('long-positions').textContent = '--';
+                document.getElementById('short-positions').textContent = '--';
+            }
+        }
+        
+        // Fetch anomaly data
+        async function fetchAnomalyData(symbol) {
+            try {
+                // Get price data for anomaly detection
+                const response = await axios.get(`https://api.binance.com/api/v3/klines`, {
+                    params: {
+                        symbol: symbol,
+                        interval: '1h',
+                        limit: 24
+                    }
+                });
+                
+                const prices = response.data.map(k => parseFloat(k[4]));
+                const timestamps = response.data.map(k => new Date(k[0]).toLocaleTimeString());
+                
+                // Calculate price changes
+                const priceChanges = [];
+                for (let i = 1; i < prices.length; i++) {
+                    priceChanges.push((prices[i] - prices[i-1]) / prices[i-1] * 100);
+                }
+                
+                // Calculate mean and standard deviation
+                const mean = priceChanges.reduce((a, b) => a + b, 0) / priceChanges.length;
+                const stdDev = Math.sqrt(
+                    priceChanges.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / priceChanges.length
+                );
+                
+                // Detect anomalies (price changes > 2 standard deviations)
+                const anomalies = priceChanges.map((change, i) => ({
+                    score: Math.abs(change - mean) / Math.max(stdDev, 1e-9),
+                    time: timestamps[i + 1]
+                }));
+            
+            // Update anomaly chart
+                charts.anomalyChart.data.labels = timestamps.slice(1);
+                charts.anomalyChart.data.datasets[0].data = anomalies.map(a => a.score);
+            charts.anomalyChart.update();
+            
+                // Count significant anomalies
+                const anomalyCount = anomalies.filter(a => a.score > 2).length;
+            
+            // Update UI
+            document.getElementById('anomaly-count').textContent = anomalyCount;
+            
+            const anomalyStatusElement = document.getElementById('anomaly-status');
+            if (anomalyCount > 5) {
+                anomalyStatusElement.textContent = 'High Alert';
+                anomalyStatusElement.className = 'text-red-500';
+            } else if (anomalyCount > 2) {
+                anomalyStatusElement.textContent = 'Warning';
+                anomalyStatusElement.className = 'text-yellow-500';
+            } else {
+                anomalyStatusElement.textContent = 'Normal';
+                anomalyStatusElement.className = 'text-green-500';
+            }
+            
+                // Update anomaly list
+            const anomalyListElement = document.getElementById('anomaly-list');
+                anomalyListElement.innerHTML = anomalies
+                    .filter(a => a.score > 2)
+                    .map(anomaly => `
+                <div class="flex items-center justify-between bg-gray-700 p-2 rounded">
+                    <div class="flex items-center">
+                                <div class="w-2 h-2 rounded-full ${anomaly.score > 3 ? 'bg-red-500' : 'bg-yellow-500'} mr-2"></div>
+                                <span class="text-sm">Price Anomaly</span>
+                    </div>
+                    <span class="text-xs text-gray-400">${anomaly.time}</span>
+                </div>
+            `).join('');
+            } catch (error) {
+                console.error('Error fetching anomaly data:', error);
+                // Show error state
+                document.getElementById('anomaly-count').textContent = `--`;
+                document.getElementById('anomaly-status').textContent = 'Data unavailable';
+                document.getElementById('anomaly-list').innerHTML = `
+                    <div class="text-center text-gray-400">Data unavailable</div>
+                `;
+            }
+        }
+        
+        async function fetchOpenInterestData(symbol) {
+            try {
+                const hist = await axios.get(`https://fapi.binance.com/futures/data/openInterestHist`, {
+                    params: {
+                        symbol: symbol,
+                        period: '1h',
+                        limit: 24
+                    }
+                });
+
+                const rows = Array.isArray(hist.data) ? hist.data : [];
+                if (!rows.length) {
+                    throw new Error('No open interest history');
+                }
+
+                const timestamps = rows.map(r => new Date(parseInt(r.timestamp)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                const oiValues = rows.map(r => parseFloat(r.sumOpenInterestValue || r.openInterestValue || 0));
+
+                const currentOI = oiValues[oiValues.length - 1] || 0;
+                const prevOI = oiValues.length >= 2 ? (oiValues[oiValues.length - 2] || 0) : 0;
+                const oiChange = prevOI > 0 ? ((currentOI - prevOI) / prevOI) * 100 : 0;
+
+                if (charts.oiChart) {
+                    charts.oiChart.data.labels = timestamps;
+                    charts.oiChart.data.datasets[0].data = oiValues;
+                    charts.oiChart.update();
+                }
+
+                document.getElementById('open-interest').textContent = formatLargeNumber(currentOI);
+
+                const oiChangeElement = document.getElementById('oi-change');
+                oiChangeElement.textContent = `${oiChange >= 0 ? '+' : ''}${oiChange.toFixed(2)}%`;
+                oiChangeElement.className = oiChange >= 0 ? 'text-green-500' : 'text-red-500';
+
+                const exchangeOIElement = document.getElementById('exchange-oi');
+                exchangeOIElement.innerHTML = `
+                    <div class="bg-gray-700 p-2 rounded text-center">
+                        <div class="text-xs text-gray-400">Binance Futures</div>
+                        <div class="text-sm">${formatLargeNumber(currentOI)}</div>
+                        <div class="text-xs text-gray-500">100%</div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error fetching open interest data:', error);
+                document.getElementById('open-interest').textContent = 'N/A';
+                document.getElementById('oi-change').textContent = 'N/A';
+                document.getElementById('exchange-oi').innerHTML = '<div class="text-gray-400">Data unavailable</div>';
+            }
+        }
+ 
+// Number formatting helper (unchanged)
+        function formatLargeNumber(num) {
+              if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+              if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+              if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+              return `$${num.toFixed(2)}`;
+       }
+        
+        
+        
+        // Add this function at the top of the script section
+        async function getValidFuturesSymbols() {
+            try {
+                const response = await axios.get('https://fapi.binance.com/fapi/v1/exchangeInfo');
+                return response.data.symbols.map(s => s.symbol);
+            } catch (error) {
+                console.warn('Error fetching futures symbols:', error);
+                return [];
+            }
+        }
+        
+        // Update the fetchAllIndicators function
+        async function fetchAllIndicators() {
+            const symbols = [
+                'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT', 
+                'ADAUSDT', 'DOGEUSDT', 'DOTUSDT', 'AVAXUSDT', 'POLUSDT',
+                'LINKUSDT', 'UNIUSDT', 'ATOMUSDT', 'LTCUSDT', 'TRXUSDT',
+                'NEARUSDT', 'ALGOUSDT', 'FILUSDT', 'VETUSDT', 'MANAUSDT',
+                'SANDUSDT', 'APEUSDT', 'GMTUSDT', 'GALAUSDT', 'IMXUSDT',
+                'OPUSDT', 'ARBUSDT', 'SUIUSDT', 'APTUSDT', 'LDOUSDT'
+            ];
+
+            // Get valid futures symbols
+            const validFuturesSymbols = await getValidFuturesSymbols();
+            
+            // Get all data in parallel
+            const allData = await Promise.all(symbols.map(async symbol => {
+                try {
+                    // Get klines data for RSI calculation
+                    const klinesResponse = await axios.get(`https://api.binance.com/api/v3/klines`, {
+                        params: {
+                            symbol: symbol,
+                            interval: '1h',
+                            limit: 100
+                        }
+                    });
+
+                    // Get 24hr ticker data
+                    const tickerResponse = await axios.get(`https://api.binance.com/api/v3/ticker/24hr`, { 
+                        params: { symbol } 
+                    });
+
+                    const priceData = tickerResponse.data;
+                    const klines = klinesResponse.data;
+
+                    // Calculate RSI
+                    const closes = klines.map(k => parseFloat(k[4]));
+                    const rsi = calculateRSI(closes, 14);
+                    const currentRSI = rsi[rsi.length - 1];
+
+                    // Calculate sentiment
+                    const sentiment = calculateSentiment(priceData, klines);
+
+                    // Calculate anomaly score
+                    const anomaly = calculateAnomalyScore(priceData, klines);
+
+                    // Get futures data if available
+                    let fundingRate = 0;
+                    let openInterest = 0;
+                    
+                    if (validFuturesSymbols.includes(symbol)) {
+                        try {
+                            const [fundingData, oiData] = await Promise.all([
+                                axios.get(`https://fapi.binance.com/fapi/v1/premiumIndex`, { 
+                                    params: { symbol } 
+                                }),
+                                axios.get(`https://fapi.binance.com/fapi/v1/openInterest`, { 
+                                    params: { symbol } 
+                                })
+                            ]);
+                            
+                            fundingRate = parseFloat(fundingData.data.lastFundingRate) * 100;
+                            openInterest = parseFloat(oiData.data.openInterest);
+                        } catch (futuresError) {
+                            console.warn(`Futures data not available for ${symbol}:`, futuresError);
+                        }
+                    }
+
+                    const priceChange = parseFloat(priceData.priceChangePercent);
+                    const currentPrice = parseFloat(priceData.lastPrice);
+                    
+                    const longShortRatio = await getLongShortRatio(symbol);
+
+                    return {
+                        symbol,
+                        price: currentPrice,
+                        priceChange,
+                        fundingRate,
+                        rsi: {
+                            value: currentRSI.toFixed(1),
+                            class: getRSIClass(currentRSI)
+                        },
+                        sentiment: {
+                            value: sentiment.score.toFixed(0),
+                            class: sentiment.class
+                        },
+                        longShortRatio,
+                        anomaly: {
+                            count: anomaly.count,
+                            class: anomaly.class
+                        }
+                    };
+                } catch (error) {
+                    console.warn(`Error fetching data for ${symbol}:`, error);
+                    return null;
+                }
+            }));
+            
+            // Filter out failed requests
+            const validData = allData.filter(data => data !== null);
+            
+            // Update table
+            updateIndicatorsTable(validData);
+        }
+
+        // Helper function to calculate RSI
+        function calculateRSI(closes, period) {
+            let gains = [];
+            let losses = [];
+            
+            // Calculate gains and losses
+            for (let i = 1; i < closes.length; i++) {
+                const difference = closes[i] - closes[i - 1];
+                if (difference >= 0) {
+                    gains.push(difference);
+                    losses.push(0);
+                } else {
+                    gains.push(0);
+                    losses.push(Math.abs(difference));
+                }
+            }
+            
+            // Calculate first average gains and losses
+            let avgGain = gains.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            let avgLoss = losses.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            
+            const rsiValues = [];
+            
+            // Calculate subsequent RSI values
+            for (let i = period; i < gains.length; i++) {
+                avgGain = (avgGain * (period - 1) + gains[i]) / period;
+                avgLoss = (avgLoss * (period - 1) + losses[i]) / period;
+                
+                const rs = avgGain / avgLoss;
+                const rsi = 100 - (100 / (1 + rs));
+                rsiValues.push(rsi);
+            }
+            
+            return rsiValues;
+        }
+
+        // Helper function to get RSI class
+        function getRSIClass(rsi) {
+            if (rsi > 70) return 'text-red-500';
+            if (rsi < 30) return 'text-green-500';
+            return 'text-yellow-500';
+        }
+
+        // Helper function to calculate sentiment
+        function calculateSentiment(priceData, klines) {
+            try {
+                // Price change component (40% weight)
+                const priceChange = parseFloat(priceData.priceChangePercent) || 0;
+                const priceScore = Math.min(Math.max((priceChange + 100) / 2, 0), 100);
+                
+                // Volume change component (30% weight)
+                const volumes = klines.map(k => parseFloat(k[5]) || 0).filter(v => Number.isFinite(v) && v >= 0);
+                const avgVolume = volumes.length ? (volumes.reduce((a, b) => a + b, 0) / volumes.length) : 0;
+                const lastVolume = volumes.length ? volumes[volumes.length - 1] : 0;
+                const volumeChangePct = avgVolume > 0 ? ((lastVolume - avgVolume) / avgVolume) * 100 : 0;
+                const volumeScore = Math.min(Math.max(50 + (volumeChangePct * 0.2), 0), 100);
+                
+                // Momentum component (30% weight)
+                const recentPrices = klines.slice(-5).map(k => parseFloat(k[4]) || 0);
+                const priceMomentum = recentPrices.length > 0 ? 
+                    ((recentPrices[recentPrices.length - 1] - recentPrices[0]) / recentPrices[0] * 100) : 0;
+                const momentumScore = Math.min(Math.max(50 + (priceMomentum * 0.5), 0), 100);
+                
+                // Weighted calculation
+                const priceWeight = 0.4;
+                const volumeWeight = 0.3;
+                const momentumWeight = 0.3;
+                
+                const sentiment = (priceScore * priceWeight) + 
+                                 (volumeScore * volumeWeight) + 
+                                 (momentumScore * momentumWeight);
+                
+                const normalizedSentiment = Math.min(Math.max(sentiment, 0), 100);
+                
+                // Add color coding and explanation
+                let sentimentClass = 'text-gray-500';
+                let sentimentExplanation = '';
+                
+                if (normalizedSentiment > 70) {
+                    sentimentClass = 'text-green-500';
+                    sentimentExplanation = 'Strong bullish sentiment';
+                } else if (normalizedSentiment < 30) {
+                    sentimentClass = 'text-red-500';
+                    sentimentExplanation = 'Strong bearish sentiment';
+                } else {
+                    sentimentClass = 'text-yellow-500';
+                    sentimentExplanation = 'Neutral market sentiment';
+                }
+                
+                return {
+                    score: normalizedSentiment,
+                    class: sentimentClass,
+                    explanation: sentimentExplanation
+                };
+            } catch (error) {
+                console.warn('Error calculating sentiment:', error);
+                return { 
+                    score: 50, 
+                    class: 'text-gray-500',
+                    explanation: 'Error calculating sentiment'
+                };
+            }
+        }
+
+        // Helper function to calculate anomaly score
+        function calculateAnomalyScore(priceData, klines) {
+            try {
+                // Extract price and volume data from klines
+                const prices = klines.map(k => parseFloat(k[4]));
+                const volumes = klines.map(k => parseFloat(k[5]));
+                
+                // Calculate standard deviations
+                const priceStdDev = calculateStdDev(prices);
+                const volumeStdDev = calculateStdDev(volumes);
+                
+                // Calculate averages
+                const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
+                const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+                
+                // Get latest values
+                const lastPrice = prices[prices.length - 1];
+                const lastVolume = volumes[volumes.length - 1];
+                
+                // Calculate price and volume changes
+                const priceChange = Math.abs(parseFloat(priceData.priceChangePercent));
+                const volumeChange = avgVolume > 0 ? Math.abs(((lastVolume - avgVolume) / avgVolume) * 100) : 0;
+                
+                // Initialize anomaly score
+                let anomalyScore = 0;
+                
+                // Price anomalies (using standard deviation)
+                const priceDeviation = Math.abs(lastPrice - avgPrice) / Math.max(priceStdDev, 1e-9);
+                if (priceDeviation > 3) anomalyScore += 3;
+                else if (priceDeviation > 2) anomalyScore += 2;
+                else if (priceDeviation > 1.5) anomalyScore += 1;
+                
+                // Volume anomalies (using standard deviation)
+                const volumeDeviation = Math.abs(lastVolume - avgVolume) / Math.max(volumeStdDev, 1e-9);
+                if (volumeDeviation > 3) anomalyScore += 3;
+                else if (volumeDeviation > 2) anomalyScore += 2;
+                else if (volumeDeviation > 1.5) anomalyScore += 1;
+                
+                // Additional checks for extreme changes
+                if (priceChange > 15) anomalyScore += 2;
+                else if (priceChange > 10) anomalyScore += 1;
+                
+                if (volumeChange > 200) anomalyScore += 2;
+                else if (volumeChange > 100) anomalyScore += 1;
+                
+                // Cap the anomaly score at 5
+                anomalyScore = Math.min(anomalyScore, 5);
+                
+                return {
+                    count: anomalyScore,
+                    class: anomalyScore >= 4 ? 'text-red-500' : 
+                           anomalyScore >= 2 ? 'text-yellow-500' : 
+                           'text-green-500'
+                };
+            } catch (error) {
+                console.warn('Error calculating anomaly score:', error);
+                return { count: 0, class: 'text-green-500' };
+            }
+        }
+
+        // Helper function to calculate standard deviation
+        function calculateStdDev(data) {
+            const avg = data.reduce((a, b) => a + b, 0) / data.length;
+            const variance = data.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / data.length;
+            return Math.sqrt(variance);
+        }
+
+        // Helper function to calculate volatility
+        function calculateVolatility(values) {
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / values.length;
+            return Math.sqrt(variance) / mean;
+        }
+
+        async function getLongShortRatio(symbol) {
+            try {
+                const response = await axios.get(`https://fapi.binance.com/futures/data/globalLongShortAccountRatio`, {
+                    params: {
+                        symbol: symbol,
+                        period: '1h',
+                        limit: 1
+                    }
+                });
+                const rows = Array.isArray(response.data) ? response.data : [];
+                if (!rows.length) return null;
+                const ratio = parseFloat(rows[0].longShortRatio);
+                return Number.isFinite(ratio) ? ratio : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        // Update the WebSocket connection handling
+        let wsReconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        const RECONNECT_DELAY = 3000; // 3 seconds
+        let wsReconnectTimeout = null;
+
+        function connectWebSocket() {
+            if (!window.WebSocket) {
+                document.getElementById('connection-status').innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                    <span>WebSocket not supported</span>
+                `;
+                return;
+            }
+
+            // Clear any existing reconnection timeout
+            if (wsReconnectTimeout) {
+                clearTimeout(wsReconnectTimeout);
+                wsReconnectTimeout = null;
+            }
+            
+            // Close existing connection if any
+            if (priceWebSocket) {
+                try {
+                    priceWebSocket.close();
+                } catch (error) {
+                    console.warn('Error closing existing WebSocket:', error);
+                }
+                priceWebSocket = null;
+            }
+
+            try {
+                // Update connection status to connecting
+                updateConnectionStatus('connecting');
+
+                // Create WebSocket connection with proper subscription message
+                priceWebSocket = new WebSocket('wss://stream.binance.com:9443/ws');
+                
+                priceWebSocket.onopen = function() {
+                    console.log('WebSocket connected');
+                    wsReconnectAttempts = 0; // Reset reconnect attempts on successful connection
+                    updateConnectionStatus('connected');
+                    
+                    // Subscribe to the ticker stream after connection is established
+                    const subscribeMsg = {
+                        method: 'SUBSCRIBE',
+                        params: [`${currentSymbol.toLowerCase()}@ticker`],
+                        id: 1
+                    };
+                    priceWebSocket.send(JSON.stringify(subscribeMsg));
+                };
+                
+                priceWebSocket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Handle subscription confirmation
+                        if (data.result !== undefined) {
+                            console.log('Subscription confirmed:', data);
+                            return;
+                        }
+                        
+                        // Handle error messages
+                        if (data.e === 'error') {
+                            console.error('WebSocket error message:', data);
+                            handleWebSocketError();
+                            return;
+                        }
+                        
+                        // Handle ticker data
+                        if (data.e === '24hrTicker') {
+                            updatePriceDisplay(data);
+                        }
+                    } catch (error) {
+                        console.error('Error processing WebSocket message:', error);
+                    }
+                };
+                
+                priceWebSocket.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    handleWebSocketError();
+                };
+
+                priceWebSocket.onclose = function(event) {
+                    console.log('WebSocket disconnected:', event.code, event.reason);
+                    handleWebSocketError();
+                };
+
+            } catch (error) {
+                console.error('Error creating WebSocket connection:', error);
+                handleWebSocketError();
+            }
+        }
+
+        function handleWebSocketError() {
+            updateConnectionStatus('disconnected');
+            
+            // Attempt to reconnect if we haven't exceeded max attempts
+            if (wsReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                wsReconnectAttempts++;
+                const delay = RECONNECT_DELAY * Math.pow(2, wsReconnectAttempts - 1); // Exponential backoff
+                
+                console.log(`Attempting to reconnect in ${delay/1000} seconds (Attempt ${wsReconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
+                
+                wsReconnectTimeout = setTimeout(() => {
+                    connectWebSocket();
+                }, delay);
+            } else {
+                console.error('Max reconnection attempts reached');
+                updateConnectionStatus('failed');
+            }
+        }
+
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById('connection-status');
+            let statusHTML = '';
+            
+            switch (status) {
+                case 'connected':
+                    statusHTML = `
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                        <span>Connected</span>
+                    `;
+                    break;
+                case 'connecting':
+                    statusHTML = `
+                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></span>
+                        <span>Connecting...</span>
+                    `;
+                    break;
+                case 'disconnected':
+                    statusHTML = `
+                        <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                        <span>Disconnected</span>
+                    `;
+                    break;
+                case 'failed':
+                    statusHTML = `
+                        <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                        <span>Connection Failed</span>
+                    `;
+                    break;
+                default:
+                    statusHTML = `
+                        <span class="w-2 h-2 rounded-full bg-gray-500 mr-2"></span>
+                        <span>Unknown</span>
+                    `;
+            }
+            
+            statusElement.innerHTML = statusHTML;
+        }
+
+        // Update WebSocket connection when symbol changes
+        function updateWebSocketConnection() {
+            wsReconnectAttempts = 0; // Reset reconnect attempts when changing symbol
+            
+            // Unsubscribe from current symbol before reconnecting
+            if (priceWebSocket && priceWebSocket.readyState === WebSocket.OPEN) {
+                const unsubscribeMsg = {
+                    method: 'UNSUBSCRIBE',
+                    params: [`${currentSymbol.toLowerCase()}@ticker`],
+                    id: 1
+                };
+                priceWebSocket.send(JSON.stringify(unsubscribeMsg));
+            }
+            
+            // Close existing connection and reconnect
+            if (priceWebSocket) {
+                priceWebSocket.close();
+            }
+            
+            connectWebSocket();
+        }
+        
+        // Show loading state
+        function showLoading(message) {
+            document.getElementById('loading-state').classList.remove('hidden');
+            document.getElementById('loading-message').textContent = message;
+        }
+        
+        // Hide loading state
+        function hideLoading() {
+            document.getElementById('loading-state').classList.add('hidden');
+        }
+        
+        // Helper function to convert hex to RGB
+        function hexToRgb(hex) {
+            // Remove # if present
+            hex = hex.replace('#', '');
+            
+            // Parse r, g, b values
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            
+            return `${r}, ${g}, ${b}`;
+        }
+
+        // Theme management
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', savedTheme);
+        
+        // Update theme toggle button
+        function updateThemeButton(theme) {
+            const sunIcon = themeToggle.querySelector('.fa-sun');
+            const moonIcon = themeToggle.querySelector('.fa-moon');
+            
+            if (theme === 'light') {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+        
+        // Initialize theme button
+        updateThemeButton(savedTheme);
+        
+        // Theme toggle click handler
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeButton(newTheme);
+            
+            // Update chart colors
+            updateChartColors(newTheme);
+        });
+        
+        // Update chart colors based on theme
+        function updateChartColors(theme) {
+            const isDark = theme === 'dark';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const textColor = isDark ? '#94A3B8' : '#475569';
+            
+            Object.values(charts).forEach(chart => {
+                if (chart.options.scales) {
+                    // Update grid colors
+                    if (chart.options.scales.y) {
+                        chart.options.scales.y.grid.color = gridColor;
+                        chart.options.scales.y.ticks.color = textColor;
+                    }
+                    if (chart.options.scales.x) {
+                        chart.options.scales.x.grid.color = gridColor;
+                        chart.options.scales.x.ticks.color = textColor;
+                    }
+                }
+                
+                // Update legend colors if present
+                if (chart.options.plugins && chart.options.plugins.legend) {
+                    chart.options.plugins.legend.labels.color = textColor;
+                }
+                
+                chart.update();
+            });
+        }
+        
+        // Initialize chart colors
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            updateChartColors(currentTheme);
+        });
+
+        // Update the updateIndicatorsTable function
+        function updateIndicatorsTable(data) {
+            const tableBody = document.getElementById('indicators-table-body');
+            tableBody.innerHTML = data.map(item => {
+                const asset = item.symbol.replace('USDT', '');
+                const logoMap = {
+                    'BTC': 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
+                    'ETH': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+                    'BNB': 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
+                    'SOL': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+                    'XRP': 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
+                    'ADA': 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
+                    'DOGE': 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',
+                    'DOT': 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
+                    'AVAX': 'https://assets.coingecko.com/coins/images/12559/small/coin-round-red.png',
+                    'POL': 'https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png', // Updated for POL
+                    'LINK': 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png',
+                    'UNI': 'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
+                    'ATOM': 'https://assets.coingecko.com/coins/images/1481/small/cosmos_hub.png',
+                    'LTC': 'https://assets.coingecko.com/coins/images/2/small/litecoin.png',
+                    'TRX': 'https://assets.coingecko.com/coins/images/1094/small/tron-logo.png',
+                    'NEAR': 'https://assets.coingecko.com/coins/images/10365/small/near_icon.png',
+                    'ALGO': 'https://assets.coingecko.com/coins/images/4380/small/download.png',
+                    'FIL': 'https://assets.coingecko.com/coins/images/12817/small/filecoin.png',
+                    'VET': 'https://assets.coingecko.com/coins/images/116/small/VeChain-Logo-768x725.png',
+                    'MANA': 'https://assets.coingecko.com/coins/images/878/small/decentraland-mana.png',
+                    'SAND': 'https://assets.coingecko.com/coins/images/12129/small/sandbox_logo.jpg',
+                    'APE': 'https://assets.coingecko.com/coins/images/24383/small/apecoin.jpg',
+                    'GMT': 'https://assets.coingecko.com/coins/images/24127/small/token-gmt.png',
+                    'GALA': 'https://assets.coingecko.com/coins/images/12493/small/GALA-COINGECKO.png',
+                    'IMX': 'https://assets.coingecko.com/coins/images/17233/small/imx.png',
+                    'OP': 'https://assets.coingecko.com/coins/images/25244/small/Optimism.png',
+                    'ARB': 'https://assets.coingecko.com/coins/images/16547/small/photo_2023-03-29_21.47.00.jpeg',
+                    'SUI': 'https://assets.coingecko.com/coins/images/26375/small/sui_asset.jpeg',
+                    'APT': 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
+                    'LDO': 'https://assets.coingecko.com/coins/images/13573/small/Lido_DAO.png'
+                };
+                
+                const logo = logoMap[asset] || 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png';
+                const priceChangeClass = item.priceChange >= 0 ? 'text-green-500' : 'text-red-500';
+                const fundingRateClass = item.fundingRate >= 0 ? 'text-green-500' : 'text-red-500';
+                
+                return `
+                    <tr class="hover:bg-gray-800">
+                        <td class="px-4 py-2">
+                            <div class="flex items-center space-x-2">
+                                <img src="${logo}" alt="${asset}" class="w-6 h-6 rounded-full">
+                                <span>${asset}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-2">$${item.price.toLocaleString()}</td>
+                        <td class="px-4 py-2 ${priceChangeClass}">${item.priceChange.toFixed(2)}%</td>
+                        <td class="px-4 py-2 ${fundingRateClass}">${item.fundingRate.toFixed(4)}%</td>
+                        <td class="px-4 py-2 ${item.rsi.class}">${item.rsi.value}</td>
+                        <td class="px-4 py-2 ${item.sentiment.class}">${item.sentiment.value}</td>
+                        <td class="px-4 py-2 ${item.longShortRatio && item.longShortRatio > 1 ? 'text-green-500' : 'text-red-500'}">${item.longShortRatio ? item.longShortRatio.toFixed(2) : '--'}</td>
+                        <td class="px-4 py-2 ${item.anomaly.class}" title="
+                            ${item.anomaly.count === 0 ? 'No anomalies detected' : 
+                            item.anomaly.count === 1 ? 'Minor anomaly in price or volume' :
+                            item.anomaly.count === 2 ? 'Medium anomaly: significant price or volume change' :
+                            item.anomaly.count === 3 ? 'High anomaly: sharp price and volume changes' :
+                            'Critical anomaly: extreme changes in multiple indicators'}
+                        ">
+                            ${Array(item.anomaly.count).fill('⚠️').join('')}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // New indicator update functions
+        async function updateVixData() {
+            try {
+                const calcAnnVolFromCloses = (closes, periodsPerYear) => {
+                    if (!Array.isArray(closes) || closes.length < 2) return null;
+                    const returns = [];
+                    for (let i = 1; i < closes.length; i++) {
+                        const a = parseFloat(closes[i - 1]);
+                        const b = parseFloat(closes[i]);
+                        if (!a || !b || a <= 0 || b <= 0) continue;
+                        returns.push(Math.log(b / a));
+                    }
+                    if (returns.length < 2) return null;
+                    const mean = returns.reduce((x, y) => x + y, 0) / returns.length;
+                    const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+                    return Math.sqrt(variance * periodsPerYear) * 100;
+                };
+
+                const [k7, k30] = await Promise.all([
+                    axios.get('https://api.binance.com/api/v3/klines', { params: { symbol: 'BTCUSDT', interval: '1h', limit: 168 } }),
+                    axios.get('https://api.binance.com/api/v3/klines', { params: { symbol: 'BTCUSDT', interval: '1h', limit: 720 } })
+                ]);
+
+                const closes7 = (k7.data || []).map(c => parseFloat(c[4]));
+                const closes30 = (k30.data || []).map(c => parseFloat(c[4]));
+                const annFactor = 365 * 24;
+                const vol7 = calcAnnVolFromCloses(closes7, annFactor);
+                const vol30 = calcAnnVolFromCloses(closes30, annFactor);
+                if (vol30 === null) return;
+                const vix = vol30;
+
+                document.getElementById('crypto-vix-value').textContent = vix.toFixed(2);
+                document.getElementById('vix-7d').textContent = `${(vol7 ?? 0).toFixed(2)}%`;
+                document.getElementById('vix-30d').textContent = `${vol30.toFixed(2)}%`;
+                document.getElementById('vix-ann').textContent = `${vol30.toFixed(2)}%`;
+                
+                // Update chart
+                const now = new Date();
+                if (charts.vixChart) {
+                    charts.vixChart.data.labels.push(now.toLocaleTimeString());
+                    charts.vixChart.data.datasets[0].data.push(vix);
+                    
+                    if (charts.vixChart.data.labels.length > 100) {
+                        charts.vixChart.data.labels.shift();
+                        charts.vixChart.data.datasets[0].data.shift();
+                    }
+                    
+                    charts.vixChart.update();
+                }
+            } catch (error) {
+                console.error('Error updating VIX data:', error);
+            }
+        }
+        
+        async function updateWhaleData() {
+            return;
+        }
+        
+        async function updateCorrelationData() {
+            try {
+                const tf = (document.getElementById('correlation-timeframe')?.value || '30d').toLowerCase();
+                const cfg = tf === '7d'
+                    ? { interval: '1h', limit: 168 }
+                    : tf === '90d'
+                        ? { interval: '4h', limit: 540 }
+                        : { interval: '1h', limit: 720 };
+
+                const pearson = (a, b) => {
+                    const n = Math.min(a.length, b.length);
+                    if (n < 3) return null;
+                    const xs = a.slice(-n);
+                    const ys = b.slice(-n);
+                    const mx = xs.reduce((p, q) => p + q, 0) / n;
+                    const my = ys.reduce((p, q) => p + q, 0) / n;
+                    let num = 0;
+                    let dx = 0;
+                    let dy = 0;
+                    for (let i = 0; i < n; i++) {
+                        const vx = xs[i] - mx;
+                        const vy = ys[i] - my;
+                        num += vx * vy;
+                        dx += vx * vx;
+                        dy += vy * vy;
+                    }
+                    const den = Math.sqrt(dx * dy);
+                    if (!den) return null;
+                    return num / den;
+                };
+
+                const toReturns = (closes) => {
+                    const out = [];
+                    for (let i = 1; i < closes.length; i++) {
+                        const a = closes[i - 1];
+                        const b = closes[i];
+                        if (!a || !b || a <= 0 || b <= 0) continue;
+                        out.push(Math.log(b / a));
+                    }
+                    return out;
+                };
+
+                const fetchCloses = async (symbol) => {
+                    const r = await axios.get('https://api.binance.com/api/v3/klines', { params: { symbol, interval: cfg.interval, limit: cfg.limit } });
+                    return (r.data || []).map(k => parseFloat(k[4]));
+                };
+
+                const [btc, eth, ada, sol] = await Promise.all([
+                    fetchCloses('BTCUSDT'),
+                    fetchCloses('ETHUSDT'),
+                    fetchCloses('ADAUSDT'),
+                    fetchCloses('SOLUSDT')
+                ]);
+
+                const btcR = toReturns(btc);
+                const ethR = toReturns(eth);
+                const adaR = toReturns(ada);
+                const solR = toReturns(sol);
+
+                const corrBTCETH = pearson(btcR, ethR);
+                const corrBTCADA = pearson(btcR, adaR);
+                const corrBTCSOL = pearson(btcR, solR);
+
+                const now = new Date();
+                if (charts.correlationChart) {
+                    const datasets = charts.correlationChart.data.datasets;
+                    if (Number.isFinite(corrBTCETH)) datasets[0].data.push({ x: now, y: corrBTCETH });
+                    if (Number.isFinite(corrBTCADA)) datasets[1].data.push({ x: now, y: corrBTCADA });
+                    if (Number.isFinite(corrBTCSOL)) datasets[2].data.push({ x: now, y: corrBTCSOL });
+
+                    datasets.forEach(dataset => {
+                        if (dataset.data.length > 100) dataset.data.shift();
+                    });
+
+                    charts.correlationChart.update();
+                }
+
+                const assets = ['BTC', 'ETH', 'ADA', 'SOL'];
+                const corr = {
+                    'BTC': { BTC: 1, ETH: corrBTCETH, ADA: corrBTCADA, SOL: corrBTCSOL },
+                    'ETH': { BTC: corrBTCETH, ETH: 1, ADA: pearson(ethR, adaR), SOL: pearson(ethR, solR) },
+                    'ADA': { BTC: corrBTCADA, ETH: pearson(adaR, ethR), ADA: 1, SOL: pearson(adaR, solR) },
+                    'SOL': { BTC: corrBTCSOL, ETH: pearson(solR, ethR), ADA: pearson(solR, adaR), SOL: 1 }
+                };
+
+                const matrixEl = document.getElementById('correlation-matrix');
+                if (matrixEl) {
+                    const cell = (v, label) => {
+                        const val = Number.isFinite(v) ? v : null;
+                        const text = val === null ? 'N/A' : val.toFixed(2);
+                        const intensity = val === null ? 0 : Math.min(1, Math.abs(val));
+                        const bg = val === null ? 'bg-gray-700' : (val >= 0 ? 'bg-green-700' : 'bg-red-700');
+                        const style = val === null ? '' : `style="opacity:${0.35 + intensity * 0.65}"`;
+                        return `<div class="${bg} p-2 rounded text-center" ${style}><div class="text-xs text-gray-300">${label}</div><div class="text-sm font-semibold">${text}</div></div>`;
+                    };
+                    const header = assets.map(a => `<div class="bg-gray-700 p-2 rounded text-center"><div class="text-xs text-gray-300">${a}</div></div>`).join('');
+                    const rows = assets.map(r => assets.map(c => cell(corr[r][c], `${r}-${c}`)).join('')).join('');
+                    matrixEl.innerHTML = header + rows;
+                }
+            } catch (error) {
+                console.error('Error updating correlation data:', error);
+            }
+        }
+        
+        async function updateSocialData() {
+            return;
+        }
+
+        // Add donation modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const donateButton = document.getElementById('donate-button');
+            const donationModal = document.getElementById('donation-modal');
+            const closeDonationModal = document.getElementById('close-donation-modal');
+            const copyButtons = document.querySelectorAll('.copy-address');
+            
+            // Show donation modal
+            donateButton.addEventListener('click', function() {
+                donationModal.classList.remove('hidden');
+                donationModal.classList.add('flex');
+            });
+            
+            // Close donation modal
+            closeDonationModal.addEventListener('click', function() {
+                donationModal.classList.add('hidden');
+                donationModal.classList.remove('flex');
+            });
+            
+            // Close modal when clicking outside
+            donationModal.addEventListener('click', function(e) {
+                if (e.target === donationModal) {
+                    donationModal.classList.add('hidden');
+                    donationModal.classList.remove('flex');
+                }
+            });
+            
+            // Copy address functionality
+            copyButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const address = this.getAttribute('data-address');
+                    navigator.clipboard.writeText(address).then(() => {
+                        // Show copied feedback
+                        const originalHTML = this.innerHTML;
+                        this.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            this.innerHTML = originalHTML;
+                        }, 2000);
+                    });
+                });
+            });
+        });
+
+        // Add updatePriceDisplay function
+        function updatePriceDisplay(data) {
+            try {
+                if (data.e === '24hrTicker') {
+                    const currentPrice = parseFloat(data.c);
+                    const priceChange = parseFloat(data.P);
+                    
+                    // Update current price
+                    document.getElementById('current-price').textContent = `$${currentPrice.toFixed(2)}`;
+                    
+                    // Update price change
+                    const priceChangeElement = document.getElementById('price-change');
+                    priceChangeElement.textContent = `${priceChange.toFixed(2)}%`;
+                    priceChangeElement.className = priceChange >= 0 ? 
+                        'text-green-500 flex items-center' : 
+                        'text-red-500 flex items-center';
+                    priceChangeElement.innerHTML = priceChange >= 0 ? 
+                        `<i class="fas fa-caret-up mr-1"></i> ${priceChange.toFixed(2)}%` : 
+                        `<i class="fas fa-caret-down mr-1"></i> ${Math.abs(priceChange).toFixed(2)}%`;
+                    
+                    // Update last update time
+                    const now = new Date();
+                    document.getElementById('last-update').textContent = `Last update: ${now.toLocaleTimeString()}`;
+                    
+                    // Update price chart only if the timeframe matches
+                    if (charts.priceChart) {
+                        const timeframe = currentTimeframe;
+                        const shouldUpdate = 
+                            (timeframe === '1h' && now.getMinutes() === 0) || // Update every hour for 1h timeframe
+                            (timeframe === '4h' && now.getHours() % 4 === 0 && now.getMinutes() === 0) || // Update every 4 hours
+                            (timeframe === '1d' && now.getHours() === 0 && now.getMinutes() === 0) || // Update daily
+                            (timeframe === '1w' && now.getDay() === 0 && now.getHours() === 0 && now.getMinutes() === 0) || // Update weekly
+                            (timeframe === '1M' && now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() === 0); // Update monthly
+                        
+                        if (shouldUpdate) {
+                            const timestamp = now.toLocaleString();
+                            const priceData = charts.priceChart.data;
+                            
+                            // Add new data point
+                            priceData.labels.push(timestamp);
+                            priceData.datasets[0].data.push(currentPrice);
+                            
+                            // Remove old data points if more than 100
+                            if (priceData.labels.length > 100) {
+                                priceData.labels.shift();
+                                priceData.datasets[0].data.shift();
+                            }
+                            
+                            charts.priceChart.update();
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating price display:', error);
+            }
+        }
+
+        // Add this function after the updatePriceDisplay function
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('current-time').textContent = timeString;
+        }
+
+        // Update the sentiment display to include explanation
+        function updateSentimentDisplay(sentiment) {
+            const sentimentElement = document.getElementById('sentiment-score');
+            const statusElement = document.getElementById('sentiment-status');
+            
+            sentimentElement.textContent = `${sentiment.score.toFixed(0)}%`;
+            statusElement.textContent = sentiment.explanation;
+            statusElement.className = sentiment.class;
+        }
+
+        // Get Fear & Greed chart configuration
+        function getFearGreedChartConfig() {
+            return {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Fear & Greed Index',
+                        data: [],
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        annotation: {
+                            annotations: {
+                                extremeFear: {
+                                    type: 'line',
+                                    yMin: 25,
+                                    yMax: 25,
+                                    borderColor: 'rgb(239, 68, 68)',
+                                    borderWidth: 1,
+                                    borderDash: [6, 6],
+                                    label: {
+                                        content: 'Extreme Fear',
+                                        enabled: true,
+                                        position: 'left'
+                                    }
+                                },
+                                extremeGreed: {
+                                    type: 'line',
+                                    yMin: 75,
+                                    yMax: 75,
+                                    borderColor: 'rgb(16, 185, 129)',
+                                    borderWidth: 1,
+                                    borderDash: [6, 6],
+                                    label: {
+                                        content: 'Extreme Greed',
+                                        enabled: true,
+                                        position: 'left'
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // Correlation matrix chart configuration
+        function getCorrelationChartConfig() {
+            return {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'BTC-ETH Correlation',
+                        data: [],
+                        backgroundColor: 'rgba(255, 107, 107, 0.6)',
+                        borderColor: '#FF6B6B',
+                        borderWidth: 1
+                    }, {
+                        label: 'BTC-ADA Correlation',
+                        data: [],
+                        backgroundColor: 'rgba(78, 205, 196, 0.6)',
+                        borderColor: '#4ECDC4',
+                        borderWidth: 1
+                    }, {
+                        label: 'BTC-SOL Correlation',
+                        data: [],
+                        backgroundColor: 'rgba(69, 183, 209, 0.6)',
+                        borderColor: '#45B7D1',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toFixed(3)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        },
+                        y: {
+                            min: -1,
+                            max: 1,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#9CA3AF'
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        // Add new data fetching functions
+        async function fetchBlockchainData() {
+            try {
+                // Use multiple data sources for redundancy
+                const [blockchairResponse, blockchainInfoResponse] = await Promise.all([
+                    axios.get('https://api.blockchair.com/v1/bitcoin/stats'),
+                    axios.get('https://blockchain.info/q/hashrate')
+                ]);
+
+                if (blockchairResponse.data && blockchairResponse.data.data) {
+                    const data = blockchairResponse.data.data;
+                    
+                    // Update hash rate display (convert from H/s to EH/s)
+                    const hashRate = data.hashrate_24h / 1e18;
+                    document.getElementById('hash-rate').textContent = `${hashRate.toFixed(2)} EH/s`;
+                    
+                    // Calculate hash rate change with proper error handling
+                    let hashRateChange = 0;
+                    if (data.hashrate_24h_previous && data.hashrate_24h_previous !== 0) {
+                        hashRateChange = ((data.hashrate_24h - data.hashrate_24h_previous) / data.hashrate_24h_previous) * 100;
+                    }
+                    const hashRateChangeElement = document.getElementById('hash-rate-change');
+                    hashRateChangeElement.textContent = `${hashRateChange >= 0 ? '+' : ''}${hashRateChange.toFixed(2)}%`;
+                    hashRateChangeElement.className = hashRateChange >= 0 ? 'text-green-500' : 'text-red-500';
+
+                    // Update network difficulty (convert from difficulty to T)
+                    const difficulty = data.difficulty / 1e12;
+                    document.getElementById('network-difficulty').textContent = `${difficulty.toFixed(2)} T`;
+
+                    // Calculate mining revenue
+                    const blockReward = 6.25; // BTC
+                    const blocksPerDay = 144; // Average blocks per day
+                    const btcPrice = data.market_price_usd;
+                    const miningRevenue = blockReward * btcPrice * blocksPerDay;
+                    document.getElementById('mining-revenue').textContent = `$${(miningRevenue / 1e6).toFixed(2)}M/day`;
+                }
+            } catch (error) {
+                console.error('Error fetching blockchain data:', error);
+                // Set fallback values
+                document.getElementById('hash-rate').textContent = '-- EH/s';
+                document.getElementById('hash-rate-change').textContent = '--%';
+                document.getElementById('network-difficulty').textContent = '-- T';
+                document.getElementById('mining-revenue').textContent = '$--.--M/day';
+            }
+        }
+
+        async function fetchMempoolData() {
+            try {
+                // Use multiple data sources for redundancy
+                const [blockchairResponse, mempoolSpaceResponse] = await Promise.all([
+                    axios.get('https://api.blockchair.com/v1/bitcoin/stats'),
+                    axios.get('https://mempool.space/api/v1/fees/recommended')
+                ]);
+
+                if (blockchairResponse.data && blockchairResponse.data.data) {
+                    const data = blockchairResponse.data.data;
+                    const mempoolData = mempoolSpaceResponse.data;
+                    
+                    // Update mempool display
+                    const mempoolSize = data.mempool_size || 0;
+                    document.getElementById('mempool-size').textContent = `${mempoolSize.toFixed(2)} MB`;
+                    document.getElementById('mempool-tx-count').textContent = `(${data.mempool_tx || 0} tx)`;
+
+                    // Update fee estimates from mempool.space with proper error handling
+                    if (mempoolData) {
+                        const lowFee = mempoolData.minimumFee || 1;
+                        const mediumFee = mempoolData.mediumFee || 3;
+                        const highFee = mempoolData.fastestFee || 6;
+
+                        document.getElementById('low-fee').textContent = `${lowFee} sat/vB`;
+                        document.getElementById('medium-fee').textContent = `${mediumFee} sat/vB`;
+                        document.getElementById('high-fee').textContent = `${highFee} sat/vB`;
+                    } else {
+                        // Fallback values if mempool.space data is not available
+                        document.getElementById('low-fee').textContent = '1 sat/vB';
+                        document.getElementById('medium-fee').textContent = '3 sat/vB';
+                        document.getElementById('high-fee').textContent = '6 sat/vB';
+                    }
+
+                    // Fetch historical mempool data
+                    const historicalResponse = await axios.get('https://api.blockchair.com/v1/bitcoin/stats/mempool', {
+                        params: {
+                            limit: 24 // Get last 24 hours of data
+                        }
+                    });
+
+                    if (historicalResponse.data && historicalResponse.data.data && Array.isArray(historicalResponse.data.data)) {
+                        const historicalData = historicalResponse.data.data;
+                        const chartData = {
+                            labels: historicalData.map(d => new Date(d.timestamp * 1000).toLocaleTimeString()),
+                            values: historicalData.map(d => d.size)
+                        };
+                        updateMempoolChart(chartData);
+                    } else {
+                        // If historical data is not available, use current data point
+                        const chartData = {
+                            labels: [new Date().toLocaleTimeString()],
+                            values: [mempoolSize]
+                        };
+                        updateMempoolChart(chartData);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching mempool data:', error);
+                // Set fallback values
+                document.getElementById('mempool-size').textContent = '-- MB';
+                document.getElementById('mempool-tx-count').textContent = '(-- tx)';
+                document.getElementById('low-fee').textContent = '-- sat/vB';
+                document.getElementById('medium-fee').textContent = '-- sat/vB';
+                document.getElementById('high-fee').textContent = '-- sat/vB';
+            }
+        }
+
+        // Update the chart update functions to handle the new data format
+        function updateMempoolChart(data) {
+            const chart = charts.mempoolChart;
+            
+            // Update chart with historical data
+            chart.data.labels = data.labels;
+            chart.data.datasets[0].data = data.values;
+            
+            // Update chart with proper error handling
+            try {
+                chart.update();
+            } catch (error) {
+                console.error('Error updating mempool chart:', error);
+                // Reset chart data if update fails
+                chart.data.labels = [];
+                chart.data.datasets[0].data = [];
+                chart.update();
+            }
+        }
+
+        async function fetchFearGreedData() {
+            try {
+                const response = await axios.get('https://api.alternative.me/fng/', {
+                    params: {
+                        limit: 30,
+                        format: 'json',
+                        date_format: 'world'
+                    }
+                });
+
+                if (response.data && response.data.data && response.data.data.length > 0) {
+                    const currentData = response.data.data[0];
+                    const previousData = response.data.data[1];
+                    
+                    // Update fear & greed index
+                    const currentValue = parseInt(currentData.value);
+                    const previousValue = parseInt(previousData.value);
+                    const change = currentValue - previousValue;
+                    
+                    // Update display
+                    document.getElementById('fear-greed-value').textContent = currentValue.toString();
+                    
+                    const changeElement = document.getElementById('fear-greed-change');
+                    changeElement.textContent = `${change >= 0 ? '+' : ''}${change}`;
+                    changeElement.className = change >= 0 ? 'text-green-500' : 'text-red-500';
+                    
+                    // Update classification
+                    let classification = 'Neutral';
+                    let statusClass = 'text-yellow-500';
+                    
+                    if (currentValue >= 80) {
+                        classification = 'Extreme Greed';
+                        statusClass = 'text-red-500';
+                    } else if (currentValue >= 60) {
+                        classification = 'Greed';
+                        statusClass = 'text-orange-500';
+                    } else if (currentValue >= 40) {
+                        classification = 'Neutral';
+                        statusClass = 'text-yellow-500';
+                    } else if (currentValue >= 20) {
+                        classification = 'Fear';
+                        statusClass = 'text-orange-500';
+                    } else {
+                        classification = 'Extreme Fear';
+                        statusClass = 'text-green-500';
+                    }
+                    
+                    const classificationElement = document.getElementById('fear-greed-classification');
+                    classificationElement.textContent = classification;
+                    classificationElement.className = `text-lg font-bold ${statusClass}`;
+                    
+                    const statusElement = document.getElementById('fear-greed-status');
+                    statusElement.textContent = classification;
+                    statusElement.className = statusClass;
+                    
+                    // Update chart with historical data
+                    const chartData = response.data.data.slice(0, 30).reverse();
+                    charts.fearGreedChart.data.labels = chartData.map(d => d.timestamp);
+                    charts.fearGreedChart.data.datasets[0].data = chartData.map(d => parseInt(d.value));
+                    charts.fearGreedChart.update();
+                }
+            } catch (error) {
+                console.error('Error fetching fear & greed data:', error);
+                // Set fallback values
+                document.getElementById('fear-greed-value').textContent = '--';
+                document.getElementById('fear-greed-change').textContent = '--';
+                document.getElementById('fear-greed-classification').textContent = '--';
+                document.getElementById('fear-greed-status').textContent = '--';
+            }
+        }
+
+    </script>
+</body>
+</html>
