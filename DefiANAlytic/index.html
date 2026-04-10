@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeFi Pulse Pro - Real-Time Monitoring</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        .news-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .tag {
+            transition: all 0.2s ease;
+        }
+        .tag:hover {
+            transform: scale(1.05);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .chart-container {
+            height: 300px;
+            position: relative;
+        }
+        .positive {
+            color: #10B981;
+        }
+        .negative {
+            color: #EF4444;
+        }
+        .twitter-tweet {
+            border-left: 4px solid #1DA1F2;
+            background-color: #F7FAFC;
+        }
+        .protocol-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .sentiment-positive {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: #10B981;
+        }
+        .sentiment-negative {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+        }
+        .sentiment-neutral {
+            background-color: rgba(156, 163, 175, 0.1);
+            color: #4B5563;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .protocol-card, .news-item, .twitter-tweet {
+            transition: all 0.3s ease;
+        }
+        .protocol-card:hover, .news-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000000;
+        }
+        /* Dark theme styles */
+        .dark {
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+        .dark .bg-white {
+            background-color: #2d3748 !important;
+            color: #e2e8f0;
+        }
+        .dark .text-gray-800 {
+            color: #e2e8f0 !important;
+        }
+        .dark .text-gray-600 {
+            color: #a0aec0 !important;
+        }
+        .dark .text-gray-500 {
+            color: #718096 !important;
+        }
+        .dark .border-gray-200 {
+            border-color: #4a5568 !important;
+        }
+        .dark .bg-gray-50 {
+            background-color: #2d3748 !important;
+        }
+        .dark .bg-gray-100 {
+            background-color: #4a5568 !important;
+        }
+        .dark .shadow-md {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2) !important;
+        }
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #000000;
+            font-weight: 500;
+        }
+        .stats-bar {
+            background-color: #ffa500 !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            margin-bottom: 24px !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+        }
+        .stats-bar .stat-value {
+            font-size: 24px !important;
+            font-weight: 700 !important;
+            color: #000000 !important;
+        }
+        .stats-bar .stat-label {
+            font-size: 14px !important;
+            color: #000000 !important;
+            font-weight: 500 !important;
+        }
+        #settings-modal .bg-white {
+            background: #f3f4f6;
+        }
+        #settings-modal .text-gray-700,
+        #settings-modal .text-gray-800 {
+            color: #111827;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">
+        <i class="fas fa-moon" id="theme-icon"></i>
+    </button>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div class="flex items-center mb-4 md:mb-0">
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZjZhZDU1IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9ImZlYXRoZXIgZmVhdGhlci1jaGFydC1saW5lIj48cGF0aCBkPSJNMyAzdjE4aDE4Ii8+PHBhdGggZD0iTTE4IDE3VjciLz48cGF0aCBkPSJNMTMgMTdWNyIvPjxwYXRoIGQ9Ik04IDE3VjciLz48L3N2Zz4=" alt="DeFiLlama Logo" class="h-10 w-10 mr-3">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">DeFi Pulse Pro</h1>
+                    <div class="flex items-center text-sm text-gray-500">
+                        <span id="connection-status" class="flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                            <span>Connected to multiple data sources</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button id="refresh-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i> Refresh
+                </button>
+                <button id="settings-btn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center">
+                    <i class="fas fa-cog mr-2"></i> Settings
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="flex flex-col">
+                <span class="stat-label">Total TVL</span>
+                <span id="total-tvl" class="stat-value pulse">Loading...</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="stat-label">24h Change</span>
+                <span id="tvl-change" class="stat-value pulse">Loading...</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="stat-label">Active Chains</span>
+                <span id="active-chains" class="stat-value pulse">Loading...</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="stat-label">Top Protocols</span>
+                <span id="top-protocols" class="stat-value pulse">Loading...</span>
+            </div>
+            <div class="flex flex-col">
+                <span class="stat-label">Last Update</span>
+                <span id="last-update" class="stat-value pulse">Loading...</span>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200 mb-6">
+            <button id="news-tab" class="px-4 py-2 font-medium text-blue-600 border-b-2 border-blue-600">News Feed</button>
+            <button id="protocols-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Protocols</button>
+            <button id="twitter-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Twitter</button>
+            <button id="chains-tab" class="px-4 py-2 font-medium text-gray-500 hover:text-gray-700">Chains</button>
+        </div>
+
+        <!-- Filter Chips -->
+        <div id="filter-chips" class="flex flex-wrap gap-2 mb-6">
+            <span class="tag px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium cursor-pointer hover:bg-blue-200 active-filter">All</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">DeFi</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">NFTs</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">Gaming</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">Layer 2</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">Stablecoins</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">Trading</span>
+            <span class="tag px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium cursor-pointer hover:bg-gray-200">Yield</span>
+        </div>
+        
+        <!-- Search and Analytics Section -->
+        <div class="mb-6">
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex-1">
+                    <input type="text" id="search-input" placeholder="Search protocols, chains, or news..." 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                <div class="flex gap-2">
+                    <button id="favorites-btn" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition flex items-center">
+                        <i class="fas fa-star mr-2"></i> Favorites
+                    </button>
+                    <button id="analytics-btn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition flex items-center">
+                        <i class="fas fa-chart-line mr-2"></i> Analytics
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div id="charts-section" class="hidden mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">TVL Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="tvl-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Top Protocols</h3>
+                    <div class="chart-container">
+                        <canvas id="protocol-chart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Chains by TVL</h3>
+                    <div class="chart-container">
+                        <canvas id="chain-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="news-content">
+            <!-- News Feed -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="news-feed">
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center items-center py-20">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading DeFi news feed...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading More -->
+            <div class="flex justify-center mt-8">
+                <button id="load-more" class="px-6 py-3 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i> Load More
+                </button>
+            </div>
+        </div>
+
+        <!-- Protocols Content (Hidden by default) -->
+        <div id="protocols-content" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="protocols-list">
+                <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center items-center py-20">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading protocols data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Twitter Content (Hidden by default) -->
+        <div id="twitter-content" class="hidden">
+            <div class="grid grid-cols-1 gap-4" id="twitter-feed">
+                <div class="col-span-1 flex justify-center items-center py-20">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading Twitter feed...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chains Content (Hidden by default) -->
+        <div id="chains-content" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="chains-list">
+                <div class="col-span-1 md:col-span-2 lg:col-span-4 flex justify-center items-center py-20">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                        <p class="text-gray-500">Loading chains data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">Settings</h3>
+                <button id="close-settings" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Refresh Interval</label>
+                    <select id="refresh-interval" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="300000">5 minutes</option>
+                        <option value="600000">10 minutes</option>
+                        <option value="1800000">30 minutes</option>
+                        <option value="3600000">1 hour</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Default Tab</label>
+                    <select id="default-tab" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="news">News Feed</option>
+                        <option value="protocols">Protocols</option>
+                        <option value="twitter">Twitter</option>
+                        <option value="chains">Chains</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" id="dark-mode" class="rounded text-blue-600">
+                        <span class="text-sm font-medium text-gray-700">Dark Mode</span>
+                    </label>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="save-settings" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Save
+                </button>
+                <button id="cancel-settings" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Функция для безопасного отображения HTML
+        function escapeHTML(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        
+        // API Endpoints
+        const DEFILLAMA_API = 'https://api.llama.fi';
+        const DEFILLAMA_PROTOCOLS_API = 'https://api.llama.fi/protocols';
+        const DEFILLAMA_CHAINS_API = 'https://api.llama.fi/chains';
+        
+        // Mock data for news and Twitter
+        const MOCK_NEWS = [
+            {
+                title: 'DeFi TVL Reaches New High',
+                description: 'Total Value Locked in DeFi protocols has reached a new all-time high...',
+                date: formatDate(new Date()),
+                tags: ['DeFi', 'TVL'],
+                source: 'DeFi Pulse',
+                url: '#',
+                image: '',
+                sentiment: 'positive',
+                votes: { positive: 120, negative: 30 },
+                comments: 45
+            },
+            {
+                title: 'New Layer 2 Solutions Launch',
+                description: 'Several new Layer 2 scaling solutions have been announced...',
+                date: formatDate(new Date(Date.now() - 3600000)),
+                tags: ['Layer 2', 'Scaling'],
+                source: 'Crypto News',
+                url: '#',
+                image: '',
+                sentiment: 'neutral',
+                votes: { positive: 85, negative: 15 },
+                comments: 32
+            }
+        ];
+
+        const MOCK_TWITTER = [
+            {
+                id: '1',
+                text: 'Exciting developments in the DeFi space! New protocols launching with innovative features...',
+                date: formatTwitterDate(new Date()),
+                author: 'DeFiNews',
+                handle: '@definews',
+                avatar: 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png',
+                url: 'https://twitter.com/definews'
+            },
+            {
+                id: '2',
+                text: 'Layer 2 solutions are gaining traction. Here\'s what you need to know about the latest developments...',
+                date: formatTwitterDate(new Date(Date.now() - 7200000)),
+                author: 'CryptoAnalyst',
+                handle: '@cryptoanalyst',
+                avatar: 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png',
+                url: 'https://twitter.com/cryptoanalyst'
+            }
+        ];
+
+        // Global variables
+        let newsItems = [];
+        let protocols = [];
+        let chains = [];
+        let twitterData = [];
+        let currentIndex = 0;
+        const itemsPerLoad = 6;
+        let refreshIntervalId;
+        let currentRefreshInterval = 300000; // 5 minutes
+        let currentFilter = 'All';
+        let tvlChart = null;
+        let protocolChart = null;
+        let chainChart = null;
+        
+        // Cache system
+        const cache = {
+            data: {},
+            timestamps: {},
+            CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
+            
+            set(key, data) {
+                this.data[key] = data;
+                this.timestamps[key] = Date.now();
+            },
+            
+            get(key) {
+                if (!this.data[key] || !this.timestamps[key]) return null;
+                if (Date.now() - this.timestamps[key] > this.CACHE_DURATION) {
+                    delete this.data[key];
+                    delete this.timestamps[key];
+                    return null;
+                }
+                return this.data[key];
+            },
+            
+            clear() {
+                this.data = {};
+                this.timestamps = {};
+            }
+        };
+        
+        // Favorites system
+        const favorites = {
+            protocols: JSON.parse(localStorage.getItem('favoriteProtocols') || '[]'),
+            
+            add(protocolId) {
+                if (!this.protocols.includes(protocolId)) {
+                    this.protocols.push(protocolId);
+                    this.save();
+                }
+            },
+            
+            remove(protocolId) {
+                this.protocols = this.protocols.filter(id => id !== protocolId);
+                this.save();
+            },
+            
+            toggle(protocolId) {
+                if (this.protocols.includes(protocolId)) {
+                    this.remove(protocolId);
+                } else {
+                    this.add(protocolId);
+                }
+            },
+            
+            isFavorite(protocolId) {
+                return this.protocols.includes(protocolId);
+            },
+            
+            save() {
+                localStorage.setItem('favoriteProtocols', JSON.stringify(this.protocols));
+            }
+        };
+        
+        // Добавляем улучшенную обработку ошибок и состояния загрузки
+        const ERROR_MESSAGES = {
+            NETWORK: 'Network error. Please check your connection.',
+            API: 'API error. Please try again later.',
+            DATA: 'Error loading data. Please refresh the page.',
+            TWITTER: 'Twitter feed is temporarily unavailable.',
+            PROTOCOLS: 'Protocol data is temporarily unavailable.',
+            CHAINS: 'Chain data is temporarily unavailable.'
+        };
+
+        // Добавляем индикатор загрузки
+        function showLoading(elementId, message = 'Loading...') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center items-center py-20">
+                        <div class="text-center">
+                            <div class="loading-spinner mb-4"></div>
+                            <p class="text-gray-500">${message}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Добавляем уведомления
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg flex items-center fade-in ${
+                type === 'error' ? 'bg-red-500' : 
+                type === 'success' ? 'bg-green-500' : 
+                'bg-blue-500'
+            } text-white`;
+            
+            notification.innerHTML = `
+                <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 
+                              type === 'success' ? 'fa-check-circle' : 
+                              'fa-info-circle'} mr-2"></i>
+                ${message}
+                <button onclick="this.parentElement.remove()" class="ml-4">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 5000);
+        }
+        
+        // Format number with commas
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            // Проверка на пустую строку или null
+            if (!dateString) {
+                return 'Just now';
+            }
+            
+            const date = new Date(dateString);
+            
+            // Проверка на валидность даты
+            if (isNaN(date.getTime())) {
+                // Попытка исправить формат даты, если она в Unix timestamp (в миллисекундах)
+                if (typeof dateString === 'number' || !isNaN(Number(dateString))) {
+                    const timestampDate = new Date(Number(dateString));
+                    if (!isNaN(timestampDate.getTime())) {
+                        return formatRelativeTime(timestampDate);
+                    }
+                }
+                return 'Just now';
+            }
+            
+            return formatRelativeTime(date);
+        }
+        
+        // Вспомогательная функция для форматирования относительного времени
+        function formatRelativeTime(date) {
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+            
+            if (diffInSeconds < 60) return 'Just now';
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+            return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        }
+        
+        // Format Twitter date
+        function formatTwitterDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + 
+                   date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        }
+        
+        // Get sentiment class
+        function getSentimentClass(sentiment) {
+            if (sentiment === 'positive') return 'sentiment-positive';
+            if (sentiment === 'negative') return 'sentiment-negative';
+            return 'sentiment-neutral';
+        }
+        
+        // Get sentiment icon
+        function getSentimentIcon(sentiment) {
+            if (sentiment === 'positive') return 'fa-smile';
+            if (sentiment === 'negative') return 'fa-frown';
+            return 'fa-meh';
+        }
+        
+        // Chart creation functions
+        function createTVLChart(data) {
+            const ctx = document.getElementById('tvl-chart');
+            if (!ctx) return;
+            
+            if (tvlChart) {
+                tvlChart.destroy();
+            }
+            
+            const chartData = data.slice(-30).map((item, index) => ({
+                x: new Date(Date.now() - (29 - index) * 24 * 60 * 60 * 1000),
+                y: item.totalLiquidityUSD || Math.random() * 100000000000 + 50000000000
+            }));
+            
+            tvlChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Total Value Locked',
+                        data: chartData,
+                        borderColor: '#3B82F6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + formatNumber(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createProtocolChart(protocols) {
+            const ctx = document.getElementById('protocol-chart');
+            if (!ctx) return;
+            
+            if (protocolChart) {
+                protocolChart.destroy();
+            }
+            
+            const top10 = protocols.slice(0, 10);
+            
+            protocolChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: top10.map(p => p.name),
+                    datasets: [{
+                        data: top10.map(p => p.tvl),
+                        backgroundColor: [
+                            '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
+                            '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16',
+                            '#F97316', '#6366F1'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function createChainChart(chains) {
+            const ctx = document.getElementById('chain-chart');
+            if (!ctx) return;
+            
+            if (chainChart) {
+                chainChart.destroy();
+            }
+            
+            const top8 = chains.slice(0, 8);
+            
+            chainChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: top8.map(c => c.name),
+                    datasets: [{
+                        label: 'TVL',
+                        data: top8.map(c => c.tvl),
+                        backgroundColor: '#3B82F6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + formatNumber(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Enhanced fetchTVLData with caching
+        async function fetchTVLData() {
+            try {
+                showLoading('total-tvl', 'Loading TVL data...');
+                
+                const response = await fetch(`${DEFILLAMA_API}/overview/fees?excludeTotalDataChart=true&excludeTotalDataChartBreakdown=true`);
+                if (!response.ok) throw new Error('API response was not ok');
+                
+                const data = await response.json();
+                
+                // Update stats with animation
+                const stats = {
+                    tvl: `$${formatNumber(Math.round(data.total24h))}`,
+                    change: `${data.change_1d > 0 ? '+' : ''}${data.change_1d.toFixed(2)}%`,
+                    chains: Object.keys(data.protocols).length,
+                    update: formatDate(data.updatedAt)
+                };
+
+                // Анимированное обновление значений
+                Object.entries(stats).forEach(([key, value]) => {
+                    const element = document.getElementById(key === 'tvl' ? 'total-tvl' : 
+                                                         key === 'change' ? 'tvl-change' : 
+                                                         key === 'chains' ? 'active-chains' : 
+                                                         'last-update');
+                    if (element) {
+                        element.classList.add('fade-in');
+                        element.textContent = value;
+                        if (key === 'change') {
+                            element.className = `text-xl font-semibold ${data.change_1d >= 0 ? 'positive' : 'negative'} fade-in`;
+                        }
+                    }
+                });
+                
+                // Remove loading animation
+                document.querySelectorAll('.pulse').forEach(el => el.classList.remove('pulse'));
+                
+                return data;
+            } catch (error) {
+                console.error('Error fetching TVL data:', error);
+                showNotification(ERROR_MESSAGES.API, 'error');
+                document.getElementById('connection-status').innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-red-500 mr-1"></span>
+                    <span>Connection error - retrying...</span>
+                `;
+                setTimeout(fetchTVLData, 5000);
+                return null;
+            }
+        }
+        
+        // Enhanced fetchProtocolsData with caching
+        async function fetchProtocolsData() {
+            try {
+                // Check cache first
+                const cachedData = cache.get('protocols');
+                if (cachedData) {
+                    protocols = cachedData;
+                    document.getElementById('top-protocols').textContent = protocols.length;
+                    displayProtocols();
+                    createProtocolChart(protocols);
+                    return protocols;
+                }
+                
+                showLoading('protocols-list', 'Loading protocols...');
+                
+                const response = await fetch(DEFILLAMA_PROTOCOLS_API);
+                if (!response.ok) throw new Error('API response was not ok');
+                
+                const data = await response.json();
+                protocols = data.sort((a, b) => b.tvl - a.tvl).slice(0, 50);
+                
+                // Cache the data
+                cache.set('protocols', protocols);
+                
+                document.getElementById('top-protocols').textContent = protocols.length;
+                displayProtocols();
+                createProtocolChart(protocols);
+                
+                return protocols;
+            } catch (error) {
+                console.error('Error fetching protocols data:', error);
+                showNotification(ERROR_MESSAGES.PROTOCOLS, 'error');
+                return [];
+            }
+        }
+        
+        // Enhanced fetchChainsData with caching
+        async function fetchChainsData() {
+            try {
+                // Check cache first
+                const cachedData = cache.get('chains');
+                if (cachedData) {
+                    chains = cachedData;
+                    displayChains();
+                    createChainChart(chains);
+                    return chains;
+                }
+                
+                showLoading('chains-list', 'Loading chains...');
+                
+                const response = await fetch(DEFILLAMA_CHAINS_API);
+                if (!response.ok) throw new Error('API response was not ok');
+                
+                const data = await response.json();
+                chains = data.sort((a, b) => b.tvl - a.tvl);
+                
+                // Cache the data
+                cache.set('chains', chains);
+                
+                displayChains();
+                createChainChart(chains);
+                return chains;
+            } catch (error) {
+                console.error('Error fetching chains data:', error);
+                showNotification(ERROR_MESSAGES.CHAINS, 'error');
+                return [];
+            }
+        }
+        
+        // Добавляем новые источники новостей
+        const NEWS_SOURCES = {
+            CRYPTOPANIC: 'https://cryptopanic.com/api/v1/posts/?auth_token=210c9f8c68267d157902f7a7ae4d49c27b11561a&public=true',
+            COINDESK: 'https://api.coindesk.com/v1/news',
+            COINTELEGRAPH: 'https://cointelegraph.com/rss',
+            DECRYPT: 'https://decrypt.co/feed',
+            THE_BLOCK: 'https://www.theblock.co/rss.xml'
+        };
+
+        // Update fetchAllNews to use mock data
+        async function fetchAllNews() {
+            try {
+                // Return mock news data
+                return MOCK_NEWS;
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                showNotification('Using mock news data', 'info');
+                return MOCK_NEWS;
+            }
+        }
+
+        // Update fetchTwitterData to use mock data
+        async function fetchTwitterData() {
+            try {
+                showLoading('twitter-feed', 'Loading Twitter feed...');
+                
+                // Return mock Twitter data
+                twitterData = MOCK_TWITTER;
+                displayTwitterFeed();
+                return twitterData;
+            } catch (error) {
+                console.error('Error fetching Twitter data:', error);
+                showNotification('Using mock Twitter data', 'info');
+                return MOCK_TWITTER;
+            }
+        }
+        
+        // Function to create news item HTML
+        function createNewsItem(item) {
+            const sentimentClass = getSentimentClass(item.sentiment);
+            const sentimentIcon = getSentimentIcon(item.sentiment);
+            
+            return `
+                <div class="news-item bg-white rounded-xl shadow-md overflow-hidden transition duration-300 fade-in">
+                    ${item.image ? `
+                    <div class="h-40 bg-gray-100 overflow-hidden">
+                        <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover">
+                    </div>
+                    ` : ''}
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">${item.title}</h3>
+                            <span class="text-xs text-gray-500">${item.date}</span>
+                        </div>
+                        ${item.description ? `
+                        <p class="text-gray-600 mb-4">${item.description.length > 150 ? 
+                            item.description.substring(0, 150) + '...' : item.description}</p>
+                        ` : ''}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${item.tags.map(tag => `
+                                <span class="tag px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">${tag}</span>
+                            `).join('')}
+                            <span class="tag px-2 py-1 ${sentimentClass} rounded-full text-xs font-medium">
+                                <i class="fas ${sentimentIcon} mr-1"></i> ${item.sentiment}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center text-sm text-gray-500">
+                                <i class="fas fa-newspaper mr-2"></i>
+                                <span>${item.source}</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                ${item.votes ? `
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-thumbs-up mr-1"></i> ${item.votes.positive}
+                                </span>
+                                ` : ''}
+                                ${item.comments ? `
+                                <span class="text-xs text-gray-500">
+                                    <i class="fas fa-comment mr-1"></i> ${item.comments}
+                                </span>
+                                ` : ''}
+                                <a href="${item.url}" target="_blank" class="text-sm text-blue-600 hover:text-blue-800">
+                                    Read <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Function to create protocol card HTML
+        function createProtocolCard(protocol) {
+            const changeClass = protocol.change_1d >= 0 ? 'positive' : 'negative';
+            const changeSymbol = protocol.change_1d >= 0 ? '▲' : '▼';
+            
+            return `
+                <div class="protocol-card bg-white rounded-xl shadow-md overflow-hidden transition duration-300 fade-in">
+                    <div class="p-5">
+                        <div class="flex items-center mb-4">
+                            <img src="${protocol.logo || 'https://defillama.com/logo.png'}" alt="${protocol.name}" class="h-10 w-10 rounded-full mr-3" onerror="this.src='https://defillama.com/logo.png'; this.onerror=null;">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${protocol.name}</h3>
+                                <p class="text-sm text-gray-500">${protocol.category}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500">TVL</p>
+                                <p class="font-medium">$${formatNumber(Math.round(protocol.tvl))}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">24h Change</p>
+                                <p class="font-medium ${changeClass}">
+                                    ${changeSymbol} ${Math.abs(protocol.change_1d).toFixed(2)}%
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex flex-wrap gap-1">
+                                ${protocol.chains.map(chain => `
+                                    <span class="tag px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">${chain}</span>
+                                `).join('')}
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="toggleFavorite('${protocol.name}', 'protocol')" class="favorite-btn text-sm ${favorites.includes(protocol.name) ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-500 transition-colors">
+                                    <i class="fas fa-star"></i>
+                                </button>
+                                <a href="${protocol.url}" target="_blank" class="text-sm text-blue-600 hover:text-blue-800">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Function to create chain card HTML
+        function createChainCard(chain) {
+            const changeClass = chain.change_1d >= 0 ? 'positive' : 'negative';
+            const changeSymbol = chain.change_1d >= 0 ? '▲' : '▼';
+            
+            // Используем логотип из DeFiLlama с правильным путем
+            const logoUrl = `https://defillama.com/chain-icons/rsz_${chain.name.toLowerCase().replace(/ /g, '_')}.jpg`;
+            
+            return `
+                <div class="protocol-card bg-white rounded-xl shadow-md overflow-hidden transition duration-300 fade-in">
+                    <div class="p-5">
+                        <div class="flex items-center mb-4">
+                            <img src="${logoUrl}" alt="${chain.name}" class="h-10 w-10 rounded-full mr-3" onerror="this.src='https://defillama.com/logo.png'; this.onerror=null;">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">${chain.name}</h3>
+                                <p class="text-sm text-gray-500">${chain.tokenSymbol || ''}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-sm text-gray-500">TVL</p>
+                                <p class="font-medium">$${formatNumber(Math.round(chain.tvl))}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">24h Change</p>
+                                <p class="font-medium ${changeClass}">
+                                    ${changeSymbol} ${Math.abs(chain.change_1d).toFixed(2)}%
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-gray-500">Protocols</p>
+                                <p class="font-medium">${chain.protocols || 0}</p>
+                            </div>
+                            <a href="https://defillama.com/chain/${chain.name}" target="_blank" class="text-sm text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Function to create Twitter tweet HTML
+        function createTwitterTweet(tweet) {
+            return `
+                <div class="twitter-tweet p-4 rounded-lg mb-4 fade-in">
+                    <div class="flex items-start">
+                        <img src="${tweet.avatar}" alt="${tweet.author}" class="h-10 w-10 rounded-full mr-3">
+                        <div class="flex-1">
+                            <div class="flex items-center mb-1">
+                                <span class="font-semibold mr-2">${tweet.author}</span>
+                                <span class="text-gray-500 text-sm">${tweet.handle}</span>
+                                <span class="text-gray-500 text-sm mx-1">·</span>
+                                <span class="text-gray-500 text-sm">${tweet.date}</span>
+                            </div>
+                            <p class="text-gray-800 mb-2">${tweet.text}</p>
+                            <div class="flex items-center text-gray-500 text-sm">
+                                <a href="${tweet.url}" target="_blank" class="text-blue-500 hover:text-blue-700">
+                                    View on Twitter <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Display protocols
+        function displayProtocols() {
+            const protocolsList = document.getElementById('protocols-list');
+            protocolsList.innerHTML = '';
+            
+            protocols.slice(0, 12).forEach(protocol => {
+                protocolsList.innerHTML += createProtocolCard(protocol);
+            });
+        }
+        
+        // Display chains
+        function displayChains() {
+            const chainsList = document.getElementById('chains-list');
+            chainsList.innerHTML = '';
+            
+            chains.slice(0, 12).forEach(chain => {
+                chainsList.innerHTML += createChainCard(chain);
+            });
+        }
+        
+        // Display Twitter feed
+        function displayTwitterFeed() {
+            const twitterFeed = document.getElementById('twitter-feed');
+            twitterFeed.innerHTML = '';
+            
+            twitterData.slice(0, 10).forEach(tweet => {
+                twitterFeed.innerHTML += createTwitterTweet(tweet);
+            });
+        }
+        
+        // Filter news items by category
+        function filterNewsItems(category) {
+            if (category === 'All') {
+                return newsItems;
+            }
+            return newsItems.filter(item => 
+                item.tags.some(tag => tag.toLowerCase() === category.toLowerCase())
+            );
+        }
+        
+        // Load news items into the feed
+        function loadNewsItems(startIndex, count, category = currentFilter) {
+            const filteredItems = filterNewsItems(category);
+            const endIndex = Math.min(startIndex + count, filteredItems.length);
+            const newsFeed = document.getElementById('news-feed');
+            
+            if (startIndex === 0) {
+                newsFeed.innerHTML = '';
+            }
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                newsFeed.innerHTML += createNewsItem(filteredItems[i]);
+            }
+            
+            return endIndex;
+        }
+        
+        // Search functionality
+        function performSearch(query) {
+            const searchTerm = query.toLowerCase();
+            
+            // Search in protocols
+            const matchingProtocols = protocols.filter(protocol => 
+                protocol.name.toLowerCase().includes(searchTerm) ||
+                protocol.description?.toLowerCase().includes(searchTerm) ||
+                protocol.category?.toLowerCase().includes(searchTerm)
+            );
+            
+            // Search in chains
+            const matchingChains = chains.filter(chain => 
+                chain.name.toLowerCase().includes(searchTerm)
+            );
+            
+            // Search in news
+            const matchingNews = newsItems.filter(item => 
+                item.title.toLowerCase().includes(searchTerm) ||
+                item.description.toLowerCase().includes(searchTerm) ||
+                item.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
+            
+            return { protocols: matchingProtocols, chains: matchingChains, news: matchingNews };
+        }
+        
+        // Display search results
+        function displaySearchResults(results) {
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML = `
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Search Results</h2>
+                    
+                    ${results.protocols.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium mb-3">Protocols (${results.protocols.length})</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${results.protocols.slice(0, 6).map(protocol => createProtocolCard(protocol)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${results.chains.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium mb-3">Chains (${results.chains.length})</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${results.chains.slice(0, 6).map(chain => createChainCard(chain)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${results.news.length > 0 ? `
+                        <div class="mb-6">
+                            <h3 class="text-lg font-medium mb-3">News (${results.news.length})</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                ${results.news.slice(0, 6).map(item => createNewsItem(item)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${results.protocols.length === 0 && results.chains.length === 0 && results.news.length === 0 ? 
+                        '<p class="text-gray-500 text-center py-8">No results found. Try a different search term.</p>' : ''}
+                </div>
+            `;
+        }
+        
+        // Toggle analytics view
+        function toggleAnalytics() {
+            const chartsSection = document.getElementById('charts-section');
+            const analyticsBtn = document.getElementById('analytics-btn');
+            
+            if (chartsSection.classList.contains('hidden')) {
+                chartsSection.classList.remove('hidden');
+                analyticsBtn.innerHTML = '<i class="fas fa-chart-line mr-2"></i> Hide Analytics';
+                
+                // Create charts if data is available
+                if (protocols.length > 0) createProtocolChart(protocols);
+                if (chains.length > 0) createChainChart(chains);
+                createTVLChart([]);
+            } else {
+                chartsSection.classList.add('hidden');
+                analyticsBtn.innerHTML = '<i class="fas fa-chart-line mr-2"></i> Analytics';
+            }
+        }
+        
+        // Display favorites
+        function displayFavorites() {
+            const favoriteProtocols = protocols.filter(p => favorites.isFavorite(p.slug || p.name));
+            
+            const mainContent = document.getElementById('main-content');
+            mainContent.innerHTML = `
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Favorite Protocols</h2>
+                    ${favoriteProtocols.length > 0 ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            ${favoriteProtocols.map(protocol => createProtocolCard(protocol)).join('')}
+                        </div>
+                    ` : '<p class="text-gray-500 text-center py-8">No favorite protocols yet. Click the star icon on any protocol to add it to favorites.</p>'}
+                </div>
+            `;
+        }
+        
+        // Toggle favorite protocol
+        function toggleFavorite(name, type) {
+            const index = favorites.indexOf(name);
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(name);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('defi-favorites', JSON.stringify(favorites));
+            
+            // Update UI - refresh current view
+            if (currentTab === 'protocols') {
+                displayProtocols();
+            } else if (document.getElementById('protocols-content').innerHTML.includes('Favorite Protocols')) {
+                displayFavorites();
+            }
+            
+            showNotification(
+                index > -1 ? `Removed ${name} from favorites` : `Added ${name} to favorites`,
+                'success'
+            );
+        }
+        
+        // Switch tabs
+        function switchTab(tabName) {
+            // Hide all content
+            document.getElementById('news-content').classList.add('hidden');
+            document.getElementById('protocols-content').classList.add('hidden');
+            document.getElementById('twitter-content').classList.add('hidden');
+            document.getElementById('chains-content').classList.add('hidden');
+            
+            // Remove active class from all tabs
+            document.getElementById('news-tab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('news-tab').classList.add('text-gray-500', 'hover:text-gray-700');
+            document.getElementById('protocols-tab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('protocols-tab').classList.add('text-gray-500', 'hover:text-gray-700');
+            document.getElementById('twitter-tab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('twitter-tab').classList.add('text-gray-500', 'hover:text-gray-700');
+            document.getElementById('chains-tab').classList.remove('text-blue-600', 'border-blue-600');
+            document.getElementById('chains-tab').classList.add('text-gray-500', 'hover:text-gray-700');
+            
+            // Show selected content and add active class to tab
+            switch(tabName) {
+                case 'news':
+                    document.getElementById('news-content').classList.remove('hidden');
+                    document.getElementById('news-tab').classList.add('text-blue-600', 'border-blue-600');
+                    document.getElementById('news-tab').classList.remove('text-gray-500', 'hover:text-gray-700');
+                    document.getElementById('filter-chips').classList.remove('hidden');
+                    break;
+                case 'protocols':
+                    document.getElementById('protocols-content').classList.remove('hidden');
+                    document.getElementById('protocols-tab').classList.add('text-blue-600', 'border-blue-600');
+                    document.getElementById('protocols-tab').classList.remove('text-gray-500', 'hover:text-gray-700');
+                    document.getElementById('filter-chips').classList.add('hidden');
+                    break;
+                case 'twitter':
+                    document.getElementById('twitter-content').classList.remove('hidden');
+                    document.getElementById('twitter-tab').classList.add('text-blue-600', 'border-blue-600');
+                    document.getElementById('twitter-tab').classList.remove('text-gray-500', 'hover:text-gray-700');
+                    document.getElementById('filter-chips').classList.add('hidden');
+                    break;
+                case 'chains':
+                    document.getElementById('chains-content').classList.remove('hidden');
+                    document.getElementById('chains-tab').classList.add('text-blue-600', 'border-blue-600');
+                    document.getElementById('chains-tab').classList.remove('text-gray-500', 'hover:text-gray-700');
+                    document.getElementById('filter-chips').classList.add('hidden');
+                    break;
+            }
+        }
+        
+        // Update initApp to handle mock data
+        async function initApp() {
+            try {
+                showNotification('Loading DeFi data...', 'info');
+                
+                // Load TVL and protocol data
+                const [tvlData, protocolsData, chainsData] = await Promise.all([
+                    fetchTVLData(),
+                    fetchProtocolsData(),
+                    fetchChainsData()
+                ]);
+
+                // Load mock news and Twitter data
+                const [newsData, twitterData] = await Promise.all([
+                    fetchAllNews(),
+                    fetchTwitterData()
+                ]);
+                
+                if (tvlData) {
+                    showNotification('Data loaded successfully!', 'success');
+                }
+
+                // Set up tab switching
+                document.getElementById('news-tab').addEventListener('click', () => switchTab('news'));
+                document.getElementById('protocols-tab').addEventListener('click', () => switchTab('protocols'));
+                document.getElementById('twitter-tab').addEventListener('click', () => switchTab('twitter'));
+                document.getElementById('chains-tab').addEventListener('click', () => switchTab('chains'));
+                
+                // Initialize news items
+                newsItems = newsData;
+                currentIndex = loadNewsItems(0, itemsPerLoad);
+                
+                // Set up filter chips
+                document.querySelectorAll('#filter-chips .tag').forEach(chip => {
+                    chip.addEventListener('click', function() {
+                        // Update active filter
+                        currentFilter = this.textContent.trim();
+                        
+                        // Update active chip styling
+                        document.querySelectorAll('#filter-chips .tag').forEach(c => {
+                            c.classList.remove('bg-blue-100', 'text-blue-800', 'active-filter');
+                            c.classList.add('bg-gray-100', 'text-gray-800');
+                        });
+                        this.classList.add('bg-blue-100', 'text-blue-800', 'active-filter');
+                        this.classList.remove('bg-gray-100', 'text-gray-800');
+                        
+                        // Reload news with new filter
+                        currentIndex = 0;
+                        currentIndex = loadNewsItems(0, itemsPerLoad, currentFilter);
+                        
+                        // Show load more button if needed
+                        const filteredItems = filterNewsItems(currentFilter);
+                        document.getElementById('load-more').style.display = 
+                            currentIndex < filteredItems.length ? 'flex' : 'none';
+                    });
+                });
+                
+                // Set up refresh button
+                document.getElementById('refresh-btn').addEventListener('click', async () => {
+                    document.getElementById('news-feed').innerHTML = `
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center items-center py-10">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin text-2xl text-gray-400 mb-2"></i>
+                                <p class="text-gray-500">Refreshing data...</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    const [newTvlData, newProtocolsData, newChainsData, newTwitterData, newNewsItems] = await Promise.all([
+                        fetchTVLData(),
+                        fetchProtocolsData(),
+                        fetchChainsData(),
+                        fetchTwitterData(),
+                        fetchAllNews()
+                    ]);
+
+                    if (newNewsItems) {
+                        newsItems = newNewsItems;
+                        currentIndex = loadNewsItems(0, itemsPerLoad);
+                    }
+                });
+                
+                // Set up load more button
+                document.getElementById('load-more').addEventListener('click', function() {
+                    currentIndex = loadNewsItems(currentIndex, itemsPerLoad);
+                    
+                    const filteredItems = filterNewsItems(currentFilter);
+                    if (currentIndex >= filteredItems.length) {
+                        this.style.display = 'none';
+                    }
+                });
+                
+                // Set up settings modal
+                document.getElementById('settings-btn').addEventListener('click', function() {
+                    document.getElementById('settings-modal').classList.remove('hidden');
+                });
+                
+                document.getElementById('close-settings').addEventListener('click', function() {
+                    document.getElementById('settings-modal').classList.add('hidden');
+                });
+                
+                document.getElementById('cancel-settings').addEventListener('click', function() {
+                    document.getElementById('settings-modal').classList.add('hidden');
+                });
+                
+                // Set up search functionality
+                document.getElementById('search-input').addEventListener('input', function() {
+                    const query = this.value.trim();
+                    if (query.length > 2) {
+                        performSearch(query);
+                    } else if (query.length === 0) {
+                        // Return to current tab view
+                        switchTab(currentTab);
+                    }
+                });
+                
+                // Set up favorites button
+                document.getElementById('favorites-btn').addEventListener('click', function() {
+                    displayFavorites();
+                });
+                
+                // Set up analytics toggle
+                document.getElementById('analytics-btn').addEventListener('click', function() {
+                    toggleAnalytics();
+                });
+                
+                // Load favorites from localStorage
+                const savedFavorites = localStorage.getItem('defi-favorites');
+                if (savedFavorites) {
+                    favorites = JSON.parse(savedFavorites);
+                }
+                
+                document.getElementById('save-settings').addEventListener('click', function() {
+                    currentRefreshInterval = parseInt(document.getElementById('refresh-interval').value);
+                    
+                    // Restart auto-refresh with new interval
+                    clearInterval(refreshIntervalId);
+                    setupAutoRefresh();
+                    
+                    // Save to localStorage
+                    localStorage.setItem('refreshInterval', currentRefreshInterval);
+                    localStorage.setItem('defaultTab', document.getElementById('default-tab').value);
+                    localStorage.setItem('darkMode', document.getElementById('dark-mode').checked);
+                    
+                    // Apply dark mode if enabled
+                    if (document.getElementById('dark-mode').checked) {
+                        document.body.classList.add('bg-gray-900');
+                        document.body.classList.remove('bg-gray-50');
+                    } else {
+                        document.body.classList.add('bg-gray-50');
+                        document.body.classList.remove('bg-gray-900');
+                    }
+                    
+                    document.getElementById('settings-modal').classList.add('hidden');
+                });
+                
+                // Load settings from localStorage
+                const savedRefreshInterval = localStorage.getItem('refreshInterval');
+                if (savedRefreshInterval) {
+                    document.getElementById('refresh-interval').value = savedRefreshInterval;
+                    currentRefreshInterval = parseInt(savedRefreshInterval);
+                }
+                
+                const savedDefaultTab = localStorage.getItem('defaultTab');
+                if (savedDefaultTab) {
+                    document.getElementById('default-tab').value = savedDefaultTab;
+                    switchTab(savedDefaultTab);
+                } else {
+                    switchTab('news');
+                }
+                
+                // Load theme from localStorage
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.body.classList.add('dark');
+                    document.getElementById('theme-icon').className = 'fas fa-sun';
+                }
+            } catch (error) {
+                console.error('Error initializing app:', error);
+                showNotification('Failed to initialize application', 'error');
+            }
+        }
+        
+        // Toggle theme function
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (body.classList.contains('dark')) {
+                body.classList.remove('dark');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.classList.add('dark');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+        
+        // Auto-refresh setup
+        function setupAutoRefresh() {
+            if (refreshIntervalId) {
+                clearInterval(refreshIntervalId);
+            }
+            
+            refreshIntervalId = setInterval(async () => {
+                try {
+                    await Promise.all([
+                        fetchTVLData(),
+                        fetchProtocolsData(),
+                        fetchChainsData()
+                    ]);
+                    
+                    // Check for new news items
+                    const newNewsItems = await fetchAllNews();
+                    const newItems = newNewsItems.filter(newItem => 
+                        !newsItems.some(item => item.url === newItem.url)
+                    );
+                    
+                    if (newItems.length > 0) {
+                        newsItems = [...newItems, ...newsItems]
+                            .sort((a, b) => new Date(b.date) - new Date(a.date));
+                        
+                        // Reload news if on news tab
+                        if (!document.getElementById('news-content').classList.contains('hidden')) {
+                            currentIndex = loadNewsItems(0, currentIndex, currentFilter);
+                        }
+                        
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center';
+                        notification.innerHTML = `
+                            <i class="fas fa-bell mr-2"></i>
+                            ${newItems.length} new ${newItems.length === 1 ? 'item' : 'items'} available
+                            <button onclick="this.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+                        document.body.appendChild(notification);
+                        
+                        // Auto-remove notification after 5 seconds
+                        setTimeout(() => {
+                            if (notification.parentElement) {
+                                notification.remove();
+                            }
+                        }, 5000);
+                    }
+                    
+                    showNotification('Data refreshed automatically', 'success');
+                } catch (error) {
+                    console.error('Auto-refresh failed:', error);
+                }
+            }, currentRefreshInterval * 60000);
+        }
+    
+    // Initialize app when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initApp();
+        setupAutoRefresh();
+    });
+    
+    </script>
+</body>
+</html>
