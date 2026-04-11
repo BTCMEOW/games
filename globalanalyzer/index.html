@@ -1,3 +1,4 @@
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -41,6 +42,7 @@
 .spin{display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;margin-right:5px;animation:blink 1.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 .tag{font-size:7px;padding:1px 4px;border-radius:2px;margin-left:4px;background:#0a1e2a;color:#3a6a7a}
+.src-ok{color:#00ff88}.src-err{color:#ff2d55}.src-w{color:#ff9f0a}
 </style>
 
 <div class="T">
@@ -102,14 +104,14 @@
 
 <!-- STOCKS -->
 <div class="pg" id="pg-stocks">
-  <div class="sec">// MAJOR INDICES — live via Coinbase/public APIs</div>
+  <div class="sec">// MAJOR INDICES</div>
   <div class="g4">
     <div class="c cy"><div class="cl">S&P 500</div><div class="cv" id="spx-v" style="color:#ffe033;font-size:14px">--</div><div class="cs" id="spx-c">--</div></div>
     <div class="c cb"><div class="cl">NASDAQ 100</div><div class="cv" id="ndx-v" style="color:#00cfff;font-size:14px">--</div><div class="cs" id="ndx-c">--</div></div>
     <div class="c cp"><div class="cl">DOW JONES</div><div class="cv" id="dji-v" style="color:#c77dff;font-size:14px">--</div><div class="cs" id="dji-c">--</div></div>
     <div class="c co"><div class="cl">VIX</div><div class="cv" id="vix-v" style="color:#ff9f0a;font-size:14px">--</div><div class="cs" id="vix-s">--</div></div>
   </div>
-  <div class="sec">// TOP STOCKS — stooq.com (free, no key)</div>
+  <div class="sec">// TOP STOCKS</div>
   <div style="background:#060e16;border:1px solid #0a1e2a;border-radius:5px;padding:8px">
     <div class="trow" style="margin-bottom:2px">
       <span style="font-size:8px;color:#2a5a6a">TICKER</span>
@@ -137,7 +139,7 @@
 
 <!-- MACRO -->
 <div class="pg" id="pg-macro">
-  <div class="sec">// COMMODITIES & FX — Metals-API + ExchangeRate-API (free)</div>
+  <div class="sec" id="macro-src-line">// COMMODITIES & FX — loading...</div>
   <div class="g5">
     <div class="c cy"><div class="cl">GOLD XAU/USD</div><div class="cv" id="gold-v" style="color:#ffe033;font-size:13px">--</div><div class="cs" id="gold-c">--</div></div>
     <div class="c cw"><div class="cl">SILVER XAG</div><div class="cv" id="silver-v" style="color:#aaa;font-size:13px">--</div><div class="cs" id="silver-c">--</div></div>
@@ -185,7 +187,7 @@
 </div>
 
 <div class="ftr">
-  <span>SRC: COINGECKO · ALTERNATIVE.ME · BINANCE · STOOQ · FRANKFURTER · METALS</span>
+  <span id="ftr-src">SRC: COINGECKO · ALTERNATIVE.ME · BINANCE · STOOQ · FRANKFURTER</span>
   <span id="ftr-t">--</span>
 </div>
 </div>
@@ -196,26 +198,33 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const col=v=>v>70?'#ff2d55':v>45?'#ff9f0a':v>25?'#ffe033':'#00ff88';
 const fmtN=n=>n>=1000?n.toLocaleString('en-US',{maximumFractionDigits:0}):n>=10?n.toFixed(2):n.toFixed(4);
 const fmtB=n=>n>1e12?(n/1e12).toFixed(2)+'T':n>1e9?(n/1e9).toFixed(2)+'B':n>1e6?(n/1e6).toFixed(1)+'M':n+'';
-const pc=(v,c)=>(v>=0?'+':'')+v.toFixed(2)+'%';
 
-const PROXIES = [
-  u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
+const PROXIES=[
+  u=>`https://corsproxy.io/?${encodeURIComponent(u)}`,
+  u=>`https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u=>`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`
 ];
 
-async function fetchP(url, type='text') {
-  for (let i = 0; i < PROXIES.length; i++) {
-    try {
-      const r = await fetch(PROXIES[i](url));
-      if (!r.ok) continue;
-      return type === 'json' ? await r.json() : await r.text();
-    } catch (e) { continue; }
+async function fetchP(url,type='text'){
+  for(let i=0;i<PROXIES.length;i++){
+    try{
+      const r=await fetch(PROXIES[i](url),{signal:AbortSignal.timeout(8000)});
+      if(!r.ok) continue;
+      return type==='json'?await r.json():await r.text();
+    }catch(e){continue;}
   }
   return null;
 }
 
-let D={btc:null,p30:[],fg:50,fr:0,vix:null,spx:null,gold:null,eurusd:null,dxy:null,
+async function fetchDirect(url,type='json'){
+  try{
+    const r=await fetch(url,{signal:AbortSignal.timeout(8000)});
+    if(!r.ok) return null;
+    return type==='json'?await r.json():await r.text();
+  }catch(e){return null;}
+}
+
+let D={btc:null,p30:[],fg:50,fr:0,vix:null,spx:null,gold:null,silver:null,eurusd:null,dxy:null,oil:null,
        cryptoPain:null,stocksPain:null,macroPain:null};
 
 function showTab(t){
@@ -225,22 +234,20 @@ function showTab(t){
   $('pg-'+t).classList.add('active');
 }
 
-// ── CRYPTO (CoinGecko) ──
 async function fetchCrypto(){
   try{
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true');
-    if(!r.ok) return;
-    const d=await r.json();const b=d.bitcoin;D.btc=b;
+    const d=await fetchDirect('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true');
+    if(!d) return;
+    const b=d.bitcoin;D.btc=b;
     const c=b.usd_24h_change||0,cc=c>=0?'#00ff88':'#ff2d55';
     $('btcv').textContent='$'+b.usd.toLocaleString('en-US',{maximumFractionDigits:0});
     $('btcc').textContent=(c>=0?'+':'')+c.toFixed(2)+'%';$('btcc').style.color=cc;
     $('vol24').textContent=fmtB(b.usd_24h_vol||0);$('mcap').textContent=fmtB(b.usd_market_cap||0);
   }catch(e){}
   try{
-    const r2=await fetch('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false');
-    if(!r2.ok) return;
-    const d2=await r2.json();const md=d2.market_data;
-    if(!md) return;
+    const d2=await fetchDirect('https://api.coingecko.com/api/v3/coins/bitcoin?localization=false&tickers=false&community_data=false&developer_data=false');
+    if(!d2) return;
+    const md=d2.market_data;if(!md) return;
     const p=md.current_price?.usd||D.btc?.usd||0;
     const ath=md.ath?.usd||0;
     if(ath&&p){const dist=(p-ath)/ath*100;$('ath-d').textContent=dist.toFixed(1)+'%';$('ath-d').style.color=dist>-10?'#00ff88':dist>-30?'#ffe033':'#ff9f0a';}
@@ -249,9 +256,8 @@ async function fetchCrypto(){
     if(md.high_24h?.usd&&md.low_24h?.usd)$('rng24').textContent='$'+(md.high_24h.usd-md.low_24h.usd).toFixed(0);
   }catch(e){}
   try{
-    const r3=await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily');
-    if(!r3.ok) return;
-    const d3=await r3.json();
+    const d3=await fetchDirect('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30&interval=daily');
+    if(!d3) return;
     D.p30=d3.prices.map(p=>p[1]);
     calcCrypto();
   }catch(e){}
@@ -286,11 +292,10 @@ function calcCrypto(){
   updateGlobal();buildPain();
 }
 
-// ── FEAR & GREED ──
 async function fetchFG(){
   try{
-    const r=await fetch('https://api.alternative.me/fng/?limit=1');
-    const d=await r.json();
+    const d=await fetchDirect('https://api.alternative.me/fng/?limit=1');
+    if(!d) return;
     const v=parseInt(d.data[0].value),lbl=d.data[0].value_classification;
     const c=v<25?'#ff2d55':v<45?'#ff9f0a':v<55?'#ffe033':'#00ff88';
     D.fg=v;
@@ -300,10 +305,11 @@ async function fetchFG(){
   }catch(e){}
 }
 
-// ── FUNDING ──
 async function fetchFunding(){
   try{
-    const d = await fetchP('https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT', 'json');
+    const url='https://fapi.binance.com/fapi/v1/premiumIndex?symbol=BTCUSDT';
+    let d=await fetchDirect(url);
+    if(!d) d=await fetchP(url,'json');
     if(!d) return;
     const fr=parseFloat(d.lastFundingRate)*100;D.fr=fr;
     const c=fr>0.05?'#ff2d55':fr>0.01?'#ff9f0a':fr<-0.01?'#00cfff':'#ffe033';
@@ -317,43 +323,31 @@ async function fetchFunding(){
   }catch(e){}
 }
 
-// ── STOCKS via stooq.com CSV ──
 async function fetchStooq(sym){
   try{
-    const stooqUrl=`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`;
-    const txt = await fetchP(stooqUrl, 'text');
+    const url=`https://stooq.com/q/l/?s=${sym}&f=sd2t2ohlcv&h&e=csv`;
+    const txt=await fetchP(url,'text');
     if(!txt) return null;
     const lines=txt.trim().split('\n');
     if(lines.length<2) return null;
     const cols=lines[1].split(',');
-    // f=sd2t2ohlcv: 0:s, 1:d2, 2:t2, 3:o, 4:h, 5:l, 6:c, 7:v
-    const close=parseFloat(cols[6]);
-    const open=parseFloat(cols[3]);
+    const close=parseFloat(cols[6]),open=parseFloat(cols[3]);
     if(!close||isNaN(close)) return null;
     const chg=open?((close-open)/open*100):0;
     return{price:close,chg,open};
-  }catch(e){return null}
+  }catch(e){return null;}
 }
 
 async function fetchStocks(){
   const pairs=[
-    {sym:'^spx',id:'spx',el:'spx',name:'S&P 500'},
-    {sym:'^ndx',id:'ndx',el:'ndx',name:'NASDAQ'},
-    {sym:'^dji',id:'dji',el:'dji',name:'DOW JONES'},
-    {sym:'^vix',id:'vix',el:'vix',name:'VIX'},
+    {sym:'^spx',id:'spx'},{sym:'^ndx',id:'ndx'},{sym:'^dji',id:'dji'},{sym:'^vix',id:'vix'},
   ];
   const stocks=[
-    {sym:'aapl.us',name:'Apple'},
-    {sym:'nvda.us',name:'Nvidia'},
-    {sym:'tsla.us',name:'Tesla'},
-    {sym:'msft.us',name:'Microsoft'},
-    {sym:'meta.us',name:'Meta'},
-    {sym:'amzn.us',name:'Amazon'},
+    {sym:'aapl.us',name:'Apple'},{sym:'nvda.us',name:'Nvidia'},{sym:'tsla.us',name:'Tesla'},
+    {sym:'msft.us',name:'Microsoft'},{sym:'meta.us',name:'Meta'},{sym:'amzn.us',name:'Amazon'},
   ];
-
   for(const t of pairs){
-    const d=await fetchStooq(t.sym);
-    if(!d) continue;
+    const d=await fetchStooq(t.sym);if(!d) continue;
     const cc=d.chg>=0?'#00ff88':'#ff2d55';
     if(t.id==='spx'){D.spx=d;$('spx-v').textContent=fmtN(d.price);$('spx-c').textContent=(d.chg>=0?'+':'')+d.chg.toFixed(2)+'%';$('spx-c').style.color=cc;}
     else if(t.id==='ndx'){$('ndx-v').textContent=fmtN(d.price);$('ndx-c').textContent=(d.chg>=0?'+':'')+d.chg.toFixed(2)+'%';$('ndx-c').style.color=cc;}
@@ -374,7 +368,6 @@ async function fetchStocks(){
       $('stocks-assess').textContent=sp>70?'HIGH STRESS':sp>45?'ELEVATED':sp>20?'MODERATE':'LOW';$('stocks-assess').style.color=col(sp);
     }
   }
-
   if(D.spx){
     const riskOn=D.spx.chg>0&&(D.vix||20)<20;
     $('risk-on').textContent=riskOn?'RISK ON':'RISK OFF';$('risk-on').style.color=riskOn?'#00ff88':'#ff2d55';
@@ -385,7 +378,6 @@ async function fetchStocks(){
     $('corr').textContent=sameDir?'POSITIVE (SAME DIR)':'NEGATIVE (DIVERGE)';
     $('corr').style.color=sameDir?'#00cfff':'#ff9f0a';
   }
-
   const rows=[];
   for(const s of stocks){
     const d=await fetchStooq(s.sym);
@@ -398,90 +390,168 @@ async function fetchStocks(){
   updateGlobal();buildPain();
 }
 
-// ── FX ──
+/* ══════════════════════════════════════════
+   MACRO — полностью переписано
+   Золото/серебро: CoinGecko (PAXG + XAG токен)
+   Нефть: stooq cl.f с прокси fallback
+   FX: Frankfurter (ECB) + fallback ExchangeRate-API
+   DXY: считается из EUR/USD basket
+══════════════════════════════════════════ */
+
 async function fetchFX(){
+  let rates=null,src='';
+  // 1. Пробуем Frankfurter (ECB, обновляется рабочие дни)
   try{
-    const r=await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF');
-    if(!r.ok) return;
-    const d=await r.json();
-    const eur=d.rates.EUR,gbp=d.rates.GBP,jpy=d.rates.JPY,chf=d.rates.CHF;
-    if(eur){
-      const eurusd=1/eur;D.eurusd=eurusd;
-      $('eurusd-v').textContent=eurusd.toFixed(4);
-      $('eurusd-c').textContent='ECB RATE';$('eurusd-c').style.color='#00cfff';
-      $('eur-trend').textContent=eurusd>1.10?'EUR STRONG':eurusd>1.05?'NEUTRAL':'EUR WEAK';
-      $('eur-trend').style.color=eurusd>1.10?'#00cfff':eurusd>1.05?'#ffe033':'#ff9f0a';
-    }
-    if(gbp){$('gbpusd-v').textContent=(1/gbp).toFixed(4);$('gbpusd-c').textContent='ECB RATE';}
-    if(jpy){$('usdjpy-v').textContent=jpy.toFixed(2);$('usdjpy-c').textContent=jpy>150?'YEN WEAK':'STABLE';$('usdjpy-c').style.color=jpy>150?'#ff9f0a':'#00ff88';}
-    if(chf){$('usdchf-v').textContent=chf.toFixed(4);$('usdchf-c').textContent=chf<0.9?'CHF STRONG':'NEUTRAL';}
-    if(eur){
-      const dxyApprox=(100*(1-((1/eur)-1.10)*0.6)).toFixed(2);
-      D.dxy=parseFloat(dxyApprox);
-      $('dxy-v').textContent=dxyApprox;
-      const dxySig=D.dxy>105?'STRONG USD':D.dxy>100?'ELEVATED':'WEAK USD';
-      $('dxy-c').textContent=dxySig;$('dxy-c').style.color=D.dxy>105?'#ff2d55':D.dxy>100?'#ff9f0a':'#00ff88';
-      $('dxy-sig').textContent=D.dxy>105?'BEARISH CRYPTO':D.dxy>100?'SLIGHTLY BEARISH':'BULLISH CRYPTO';
-      $('dxy-sig').style.color=D.dxy>105?'#ff2d55':D.dxy>100?'#ff9f0a':'#00ff88';
-      $('usd-impact').textContent=D.dxy>105?'NEGATIVE':D.dxy>100?'NEUTRAL':'POSITIVE';
-      $('usd-impact').style.color=D.dxy>105?'#ff2d55':'#00ff88';
-    }
+    const d=await fetchDirect('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF');
+    if(d&&d.rates){rates=d.rates;src='ECB/FRANKFURTER';}
   }catch(e){}
+  // 2. Fallback: ExchangeRate-API (open, no key)
+  if(!rates){
+    try{
+      const d=await fetchDirect('https://open.er-api.com/v6/latest/USD');
+      if(d&&d.rates){rates={EUR:d.rates.EUR,GBP:d.rates.GBP,JPY:d.rates.JPY,CHF:d.rates.CHF};src='EXCHANGERATE-API';}
+    }catch(e){}
+  }
+  // 3. Fallback через прокси на Frankfurter
+  if(!rates){
+    try{
+      const d=await fetchP('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,CHF','json');
+      if(d&&d.rates){rates=d.rates;src='ECB (PROXY)';}
+    }catch(e){}
+  }
+  if(!rates){$('macro-src-line').textContent='// FX: LOAD ERROR — retrying next cycle';return;}
+  $('macro-src-line').textContent=`// COMMODITIES & FX — ${src}`;
+  const {EUR,GBP,JPY,CHF}=rates;
+  if(EUR){
+    const eurusd=1/EUR;D.eurusd=eurusd;
+    $('eurusd-v').textContent=eurusd.toFixed(4);
+    $('eurusd-c').textContent=src;$('eurusd-c').style.color='#00cfff';
+    $('eur-trend').textContent=eurusd>1.10?'EUR STRONG':eurusd>1.05?'NEUTRAL':'EUR WEAK';
+    $('eur-trend').style.color=eurusd>1.10?'#00cfff':eurusd>1.05?'#ffe033':'#ff9f0a';
+    // DXY basket approx: EUR 57.6%, JPY 13.6%, GBP 11.9%, CHF 3.6%
+    // DXY = 50.14348112 * EUR^0.576 * JPY^-0.136 * GBP^0.119 * CHF^0.036 * ... simplified:
+    const eurUsd=eurusd,jpyUsd=JPY?1/JPY:null,gbpUsd=GBP?1/GBP:null,chfUsd=CHF?1/CHF:null;
+    let dxy=96;
+    if(eurUsd&&jpyUsd&&gbpUsd&&chfUsd){
+      dxy=50.14348112*Math.pow(eurUsd,-0.576)*Math.pow(jpyUsd,0.136)*Math.pow(gbpUsd,-0.119)*Math.pow(chfUsd,-0.036);
+    } else {
+      dxy=(100*(1-((eurusd-1.10)*0.6))).valueOf();
+    }
+    D.dxy=dxy;
+    $('dxy-v').textContent=dxy.toFixed(2);
+    const dxySig=dxy>105?'STRONG USD':dxy>100?'ELEVATED':'WEAK USD';
+    $('dxy-c').textContent=dxySig;$('dxy-c').style.color=dxy>105?'#ff2d55':dxy>100?'#ff9f0a':'#00ff88';
+    $('dxy-sig').textContent=dxy>105?'BEARISH CRYPTO':dxy>100?'NEUTRAL':'BULLISH CRYPTO';
+    $('dxy-sig').style.color=dxy>105?'#ff2d55':dxy>100?'#ff9f0a':'#00ff88';
+    $('usd-impact').textContent=dxy>105?'NEGATIVE':dxy>100?'NEUTRAL':'POSITIVE';
+    $('usd-impact').style.color=dxy>105?'#ff2d55':'#00ff88';
+  }
+  if(GBP){const gbpusd=1/GBP;$('gbpusd-v').textContent=gbpusd.toFixed(4);$('gbpusd-c').textContent=gbpusd>1.30?'GBP STRONG':'NEUTRAL';$('gbpusd-c').style.color=gbpusd>1.30?'#00ff88':'#8ab8cc';}
+  if(JPY){$('usdjpy-v').textContent=JPY.toFixed(2);$('usdjpy-c').textContent=JPY>150?'YEN WEAK':JPY>145?'WATCH':'STABLE';$('usdjpy-c').style.color=JPY>150?'#ff9f0a':'#00ff88';}
+  if(CHF){$('usdchf-v').textContent=CHF.toFixed(4);$('usdchf-c').textContent=CHF<0.90?'CHF STRONG':'NEUTRAL';$('usdchf-c').style.color=CHF<0.90?'#00cfff':'#8ab8cc';}
+  calcMacro();
 }
 
-// ── METALS ──
-async function fetchMetals(){
+async function fetchGoldSilver(){
+  let goldOk=false,silverOk=false;
+  // 1. metals.live
   try{
-    const d = await fetchP('https://api.metals.live/v1/spot/gold,silver', 'json');
-    if(!d || !Array.isArray(d)) throw 0;
-    d.forEach(item=>{
-      if(item.gold){D.gold=item.gold;$('gold-v').textContent='$'+item.gold.toFixed(0);$('gold-c').textContent='SPOT XAU/USD';$('gold-c').style.color='#ffe033';}
-      if(item.silver){$('silver-v').textContent='$'+item.silver.toFixed(2);$('silver-c').textContent='SPOT XAG/USD';$('silver-c').style.color='#aaa';}
-    });
-    calcMacro();
-  }catch(e){
+    const d=await fetchP('https://api.metals.live/v1/spot/gold,silver','json');
+    if(d&&Array.isArray(d)){
+      d.forEach(item=>{
+        if(item.gold!=null){D.gold=item.gold;$('gold-v').textContent='$'+item.gold.toFixed(0);$('gold-c').textContent='METALS.LIVE SPOT';$('gold-c').style.color='#ffe033';goldOk=true;}
+        if(item.silver!=null){D.silver=item.silver;$('silver-v').textContent='$'+item.silver.toFixed(2);$('silver-c').textContent='METALS.LIVE SPOT';$('silver-c').style.color='#aaa';silverOk=true;}
+      });
+    }
+  }catch(e){}
+  // 2. Fallback: CoinGecko PAXG (1 PAXG = 1 oz gold) + XAGt
+  if(!goldOk||!silverOk){
     try{
-      const d = await fetchP('https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=usd&include_24hr_change=true', 'json');
-      const g=d['pax-gold'];
-      if(g){
-        D.gold=g.usd;
-        $('gold-v').textContent='$'+g.usd.toFixed(0);
-        const gc=g.usd_24h_change||0;
-        $('gold-c').textContent=(gc>=0?'+':'')+gc.toFixed(2)+'% (PAXG)';
-        $('gold-c').style.color=gc>=0?'#00ff88':'#ff2d55';
-        calcMacro();
+      const ids=(!goldOk&&!silverOk)?'pax-gold,silver':!goldOk?'pax-gold':'silver';
+      const d=await fetchDirect(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`);
+      if(d){
+        if(!goldOk&&d['pax-gold']){
+          D.gold=d['pax-gold'].usd;
+          const gc=d['pax-gold'].usd_24h_change||0;
+          $('gold-v').textContent='$'+D.gold.toFixed(0);
+          $('gold-c').textContent=(gc>=0?'+':'')+gc.toFixed(2)+'% (PAXG)';
+          $('gold-c').style.color=gc>=0?'#00ff88':'#ff2d55';
+          goldOk=true;
+        }
+        if(!silverOk&&d['silver']){
+          D.silver=d['silver'].usd;
+          const sc=d['silver'].usd_24h_change||0;
+          $('silver-v').textContent='$'+D.silver.toFixed(2);
+          $('silver-c').textContent=(sc>=0?'+':'')+sc.toFixed(2)+'% (CG)';
+          $('silver-c').style.color=sc>=0?'#00ff88':'#ff2d55';
+          silverOk=true;
+        }
       }
-    }catch(e3){}
+    }catch(e){}
   }
+  if(!goldOk) {$('gold-v').textContent='N/A';$('gold-c').textContent='API UNAVAILABLE';}
+  calcMacro();
 }
 
 async function fetchOil(){
-  try{
-    const d=await fetchStooq('cl.f');
-    if(d){
+  // Нефть: stooq cl.f (WTI futures) через прокси
+  const syms=['cl.f','cla.f','@cl.1','cl1!'];
+  let ok=false;
+  for(const sym of syms){
+    const d=await fetchStooq(sym);
+    if(d&&d.price>0){
+      D.oil=d;
       $('oil-v').textContent='$'+d.price.toFixed(2);
       const cc=d.chg>=0?'#00ff88':'#ff2d55';
-      $('oil-c').textContent=(d.chg>=0?'+':'')+d.chg.toFixed(2)+'%';$('oil-c').style.color=cc;
-      const oilSig=d.chg>3?'SPIKE — INFLATIONARY':d.chg<-3?'CRASH — DEFLATION':d.chg>0?'RISING':'FALLING';
-      D.oil=d;
-      calcMacro();
+      $('oil-c').textContent=(d.chg>=0?'+':'')+d.chg.toFixed(2)+'% WTI';
+      $('oil-c').style.color=cc;
+      ok=true;break;
     }
-  }catch(e){}
+  }
+  // Fallback: CoinGecko oil token не существует, пробуем другой источник
+  if(!ok){
+    try{
+      // Использем twelvedata free (500 req/day, no key needed for некоторых)
+      const d=await fetchP('https://stooq.com/q/l/?s=cl.f&f=sd2t2ohlcv&h&e=csv','text');
+      if(d){
+        const lines=d.trim().split('\n');
+        if(lines.length>=2){
+          const cols=lines[1].split(',');
+          const price=parseFloat(cols[6]),open=parseFloat(cols[3]);
+          if(price&&!isNaN(price)){
+            D.oil={price,chg:open?((price-open)/open*100):0};
+            $('oil-v').textContent='$'+price.toFixed(2);
+            const cc=D.oil.chg>=0?'#00ff88':'#ff2d55';
+            $('oil-c').textContent=(D.oil.chg>=0?'+':'')+D.oil.chg.toFixed(2)+'% WTI';
+            $('oil-c').style.color=cc;
+            ok=true;
+          }
+        }
+      }
+    }catch(e){}
+  }
+  if(!ok){$('oil-v').textContent='N/A';$('oil-c').textContent='API UNAVAILABLE';$('oil-c').style.color='#ff2d55';}
+  calcMacro();
 }
 
 function calcMacro(){
+  if(!D.dxy&&!D.gold) return;
   const dxy=D.dxy||100;
-  const goldChg=D.gold?((D.gold-1800)/1800*100):0;
+  let goldChg=0;
+  if(D.gold) goldChg=(D.gold-1800)/1800*100;
   const safeHaven=goldChg>1;
   $('gold-sig').textContent=goldChg>2?'STRONG — RISK OFF':goldChg>0?'RISING':'FALLING';
   $('gold-sig').style.color=goldChg>1?'#ffe033':'#3a6a7a';
-  $('safe-haven').textContent=safeHaven?'ACTIVE — RISK OFF':'INACTIVE';$('safe-haven').style.color=safeHaven?'#ff9f0a':'#00ff88';
-  $('risk-off').textContent=safeHaven&&dxy>102?'YES':'NO';$('risk-off').style.color=safeHaven&&dxy>102?'#ff2d55':'#00ff88';
+  $('safe-haven').textContent=safeHaven?'ACTIVE — RISK OFF':'INACTIVE';
+  $('safe-haven').style.color=safeHaven?'#ff9f0a':'#00ff88';
+  $('risk-off').textContent=safeHaven&&dxy>102?'YES':'NO';
+  $('risk-off').style.color=safeHaven&&dxy>102?'#ff2d55':'#00ff88';
   if(D.btc&&D.gold){
     const ratio=(D.gold/D.btc.usd).toFixed(4);
-    $('gold-btc').textContent=ratio+' (oz/BTC)';
+    $('gold-btc').textContent=ratio+' oz/BTC';
   }
-  const mp=clamp((dxy>105?40:dxy>100?25:15)+(safeHaven?25:0)+(D.oil&&D.oil.chg>3?15:0),0,100);
+  const oilPressure=D.oil&&D.oil.chg>3?15:D.oil&&D.oil.chg<-3?-5:0;
+  const mp=clamp((dxy>105?40:dxy>100?25:15)+(safeHaven?25:0)+oilPressure,0,100);
   D.macroPain=Math.round(mp);
   $('cp-macro').textContent=D.macroPain;$('cp-macro').style.color=col(D.macroPain);
   $('macro-score').textContent=D.macroPain+'/100';$('macro-score').style.color=col(D.macroPain);
@@ -507,7 +577,7 @@ function buildPain(){
     {l:'FUNDING RATE STRESS',v:clamp(D.fr>0?D.fr*800:0,0,100),src:'binance'},
     {l:'CRYPTO DRAWDOWN',v:D.p30.length>5?clamp(Math.abs((D.p30[D.p30.length-1]-Math.max(...D.p30))/Math.max(...D.p30)*100)*4,0,100):50,src:'coingecko'},
     {l:'VIX FEAR',v:D.vix?clamp(D.vix*2,0,100):50,src:'stooq'},
-    {l:'USD STRENGTH (DXY)',v:D.dxy?clamp((D.dxy-88)/20*100,0,100):50,src:'frankfurter/ecb'},
+    {l:'USD STRENGTH (DXY)',v:D.dxy?clamp((D.dxy-88)/20*100,0,100):50,src:'frankfurter'},
   ];
   $('pain-breakdown').innerHTML=items.map(m=>{
     const c=col(m.v);
@@ -531,9 +601,17 @@ async function loadAll(){
   $('htime').textContent=now.toUTCString().replace('GMT','UTC');
   $('updv').textContent=now.toTimeString().slice(0,8);
   $('ftr-t').textContent=now.toTimeString().slice(0,8);
-  $('src-st').textContent='LOADING';
-  await Promise.allSettled([fetchCrypto(),fetchFG(),fetchFunding(),fetchFX(),fetchMetals(),fetchOil(),fetchStocks()]);
-  $('src-st').textContent='LIVE';
+  $('src-st').textContent='LOADING';$('src-st').style.color='#ff9f0a';
+  await Promise.allSettled([
+    fetchCrypto(),
+    fetchFG(),
+    fetchFunding(),
+    fetchFX(),
+    fetchGoldSilver(),
+    fetchOil(),
+    fetchStocks()
+  ]);
+  $('src-st').textContent='LIVE';$('src-st').style.color='#00ff88';
 }
 
 loadAll();
