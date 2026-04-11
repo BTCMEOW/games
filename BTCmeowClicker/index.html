@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tommy Cat Meow City Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+        .pixel-art {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        .progress-bar {
+            height: 20px;
+            background-color: #4a5568;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #f6ad55;
+            transition: width 0.3s ease;
+        }
+        .building { transition: all 0.2s ease; }
+        .building:hover { transform: scale(1.05); }
+        .meow-button { transition: all 0.1s ease; }
+        .meow-button:active { transform: scale(0.95); }
+        .cat-ear { clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen font-mono">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8">
+            <div class="flex items-center mb-4 md:mb-0">
+                <div class="relative w-16 h-16 mr-4">
+                    <div class="absolute w-full h-full bg-black rounded-full"></div>
+                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 flex justify-center">
+                        <div class="cat-ear w-8 h-6 bg-black"></div>
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex space-x-1">
+                        <div class="w-2 h-2 bg-yellow-300 rounded-full"></div>
+                        <div class="w-2 h-2 bg-yellow-300 rounded-full"></div>
+                    </div>
+                    <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-6 h-2 bg-pink-500 rounded-full"></div>
+                </div>
+                <h1 class="text-3xl font-bold text-yellow-400">Tommy Cat</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="bg-gray-800 px-4 py-2 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-paw text-yellow-400 mr-2"></i>
+                        <span id="meow-count" class="text-xl font-bold">0</span>
+                        <span class="ml-1">Meows</span>
+                    </div>
+                </div>
+                <div class="bg-gray-800 px-4 py-2 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-coins text-yellow-400 mr-2"></i>
+                        <span id="fish-count" class="text-xl font-bold">0</span>
+                        <span class="ml-1">Fish</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Left Column -->
+            <div class="lg:w-1/3 flex flex-col items-center">
+                <div class="bg-gray-800 p-6 rounded-xl w-full mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-center text-yellow-400">Meow Generator</h2>
+                    <div class="flex justify-center mb-4">
+                        <button id="meow-button" class="meow-button relative w-48 h-48 bg-black rounded-full flex items-center justify-center hover:bg-gray-900 focus:outline-none">
+                            <div class="absolute w-full h-full bg-black rounded-full"></div>
+                            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 flex justify-center">
+                                <div class="cat-ear w-16 h-12 bg-black"></div>
+                            </div>
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex space-x-3">
+                                <div class="w-4 h-4 bg-yellow-300 rounded-full"></div>
+                                <div class="w-4 h-4 bg-yellow-300 rounded-full"></div>
+                            </div>
+                            <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-12 h-3 bg-pink-500 rounded-full"></div>
+                            <span class="absolute text-white text-xl font-bold">MEOW!</span>
+                        </button>
+                    </div>
+                    <div class="text-center">
+                        <p class="mb-2">Click Tommy to generate meows</p>
+                        <p id="meow-per-second" class="text-yellow-400">0 meows per second</p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-800 p-6 rounded-xl w-full">
+                    <h2 class="text-xl font-bold mb-4 text-center text-yellow-400">Upgrades</h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="upgrade-item bg-gray-700 p-4 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold">Better Scratcher</h3>
+                                <p class="text-sm text-gray-300">+1 meow per click</p>
+                            </div>
+                            <button class="upgrade-btn bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded" data-cost="10" data-upgrade="click-power">
+                                Buy (10 fish)
+                            </button>
+                        </div>
+                        <div class="upgrade-item bg-gray-700 p-4 rounded-lg flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold">Catnip Boost</h3>
+                                <p class="text-sm text-gray-300">+10% to all meow production</p>
+                            </div>
+                            <button class="upgrade-btn bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded" data-cost="100" data-upgrade="global-multiplier">
+                                Buy (100 fish)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Buildings -->
+            <div class="lg:w-2/3">
+                <div class="bg-gray-800 p-6 rounded-xl">
+                    <h2 class="text-xl font-bold mb-6 text-center text-yellow-400">Cat City Buildings</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="building bg-gray-700 p-4 rounded-lg flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold">Lazy Cat</h3>
+                                <span id="lazy-cat-count" class="bg-gray-600 px-2 py-1 rounded">0</span>
+                            </div>
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmFkNTUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMjJjNS41MjMgMCAxMC00LjQ3NyAxMC0xMFMxNy41MjMgMiAxMiAyIDIgNi40NzcgMiAxMnM0LjQ3NyAxMCAxMCAxMHoiLz48cGF0aCBkPSJNOCAxNHMxLjUgMiA0IDIgNC0yIDQtMiIvPjxsaW5lIHgxPSI5IiB5MT0iOSIgeDI9IjkuMDEiIHkyPSI5Ii8+PGxpbmUgeDE9IjE1IiB5MT0iOSIgeDI9IjE1LjAxIiB5Mj0iOSIvPjwvc3ZnPg==" class="w-16 h-16 mx-auto mb-2 pixel-art rounded" alt="Lazy Cat">
+                            <p class="text-sm text-gray-300 mb-2">Produces 1 meow every 5 seconds</p>
+                            <div class="progress-bar mb-2">
+                                <div id="lazy-cat-progress" class="progress-fill w-0"></div>
+                            </div>
+                            <button class="building-btn bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded" data-building="lazy-cat">
+                                Buy (15 fish)
+                            </button>
+                        </div>
+
+                        <div class="building bg-gray-700 p-4 rounded-lg flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold">Playful Kitten</h3>
+                                <span id="playful-kitten-count" class="bg-gray-600 px-2 py-1 rounded">0</span>
+                            </div>
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmFkNTUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48bGluZSB4MT0iNiIgeTE9IjMiIHgyPSI2IiB5Mj0iMTUiLz48Y2lyY2xlIGN4PSIxOCIgY3k9IjYiIHI9IjMiLz48Y2lyY2xlIGN4PSI2IiBjeT0iMTgiIHI9IjMiLz48cGF0aCBkPSJNMTggOWE5IDkgMCAwIDEtOSA5Ii8+PC9zdmc+" class="w-16 h-16 mx-auto mb-2 pixel-art rounded" alt="Playful Kitten">
+                            <p class="text-sm text-gray-300 mb-2">Produces 5 meows every 3 seconds</p>
+                            <div class="progress-bar mb-2">
+                                <div id="playful-kitten-progress" class="progress-fill w-0"></div>
+                            </div>
+                            <button class="building-btn bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded" data-building="playful-kitten">
+                                Buy (100 fish)
+                            </button>
+                        </div>
+
+                        <div class="building bg-gray-700 p-4 rounded-lg flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold">Cat Cafe</h3>
+                                <span id="cat-cafe-count" class="bg-gray-600 px-2 py-1 rounded">0</span>
+                            </div>
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmFkNTUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTggOGgxYTIgMiAwIDAgMSAyIDJ2NGEyIDIgMCAwIDEtMiAyaC0xIi8+PHBhdGggZD0iTTIgOGgxNnY5YTIgMiAwIDAgMS0yIDJINGEyIDIgMCAwIDEtMi0yVjh6Ii8+PGxpbmUgeDE9IjYiIHkxPSIxIiB4Mj0iNiIgeTI9IjQiLz48bGluZSB4MT0iMTAiIHkxPSIxIiB4Mj0iMTAiIHkyPSI0Ii8+PGxpbmUgeDE9IjE0IiB5MT0iMSIgeDI9IjE0IiB5Mj0iNCIvPjwvc3ZnPg==" class="w-16 h-16 mx-auto mb-2 pixel-art rounded" alt="Cat Cafe">
+                            <p class="text-sm text-gray-300 mb-2">Produces 20 meows every 2 seconds</p>
+                            <div class="progress-bar mb-2">
+                                <div id="cat-cafe-progress" class="progress-fill w-0"></div>
+                            </div>
+                            <button class="building-btn bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded" data-building="cat-cafe">
+                                Buy (500 fish)
+                            </button>
+                        </div>
+
+                        <div class="building bg-gray-700 p-4 rounded-lg flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-bold">Cat Tower</h3>
+                                <span id="cat-tower-count" class="bg-gray-600 px-2 py-1 rounded">0</span>
+                            </div>
+                            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmNmFkNTUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cG9seWdvbiBwb2ludHM9IjEyIDIgMTkgOSAxMiAxNiA1IDkgMTIgMiIvPjxwb2x5Z29uIHBvaW50cz0iMTIgOCAxOSAxNSAxMiAyMiA1IDE1IDEyIDgiLz48L3N2Zz4=" class="w-16 h-16 mx-auto mb-2 pixel-art rounded" alt="Cat Tower">
+                            <p class="text-sm text-gray-300 mb-2">Produces 100 meows every second</p>
+                            <div class="progress-bar mb-2">
+                                <div id="cat-tower-progress" class="progress-fill w-0"></div>
+                            </div>
+                            <button class="building-btn bg-yellow-500 hover:bg-yellow-600 text-black py-2 rounded" data-building="cat-tower">
+                                Buy (3000 fish)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Achievements -->
+                <div class="bg-gray-800 p-6 rounded-xl mt-6">
+                    <h2 class="text-xl font-bold mb-4 text-center text-yellow-400">Cat Achievements</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="achievement bg-gray-700 p-3 rounded-lg text-center opacity-50" id="ach-0">
+                            <i class="fas fa-trophy text-yellow-400 text-2xl mb-2"></i>
+                            <h3 class="font-bold text-sm">First Meow</h3>
+                            <p class="text-xs text-gray-300">Click 10 times</p>
+                        </div>
+                        <div class="achievement bg-gray-700 p-3 rounded-lg text-center opacity-50" id="ach-1">
+                            <i class="fas fa-crown text-yellow-400 text-2xl mb-2"></i>
+                            <h3 class="font-bold text-sm">Cat Lover</h3>
+                            <p class="text-xs text-gray-300">Own 5 cats</p>
+                        </div>
+                        <div class="achievement bg-gray-700 p-3 rounded-lg text-center opacity-50" id="ach-2">
+                            <i class="fas fa-star text-yellow-400 text-2xl mb-2"></i>
+                            <h3 class="font-bold text-sm">Fish Tycoon</h3>
+                            <p class="text-xs text-gray-300">Earn 10,000 fish total</p>
+                        </div>
+                        <div class="achievement bg-gray-700 p-3 rounded-lg text-center opacity-50" id="ach-3">
+                            <i class="fas fa-medal text-yellow-400 text-2xl mb-2"></i>
+                            <h3 class="font-bold text-sm">Purrfect City</h3>
+                            <p class="text-xs text-gray-300">Own all buildings</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>Tommy Cat Meow City Builder - A purrfect idle game for cat lovers!</p>
+            <p class="mt-2">Meow sounds: <span id="meow-sound-status" class="text-yellow-400">ON</span>
+                <button id="toggle-sound" class="ml-2 px-2 py-1 bg-gray-700 rounded">Toggle Sound</button>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // ─── Game State ──────────────────────────────────────────────────────────
+        const gameState = {
+            meows: 0,
+            fish: 0,
+            totalFishEarned: 0,          // FIX: track total for "Fish Tycoon" achievement
+            clickCount: 0,               // FIX: track clicks for "First Meow" achievement
+            meowPerClick: 1,
+            globalMultiplier: 1,
+            buildings: {
+                'lazy-cat':       { count: 0, production: 1,   interval: 5000, progress: 0, baseCost: 15,   costMultiplier: 1.15 },
+                'playful-kitten': { count: 0, production: 5,   interval: 3000, progress: 0, baseCost: 100,  costMultiplier: 1.15 },
+                'cat-cafe':       { count: 0, production: 20,  interval: 2000, progress: 0, baseCost: 500,  costMultiplier: 1.15 },
+                'cat-tower':      { count: 0, production: 100, interval: 1000, progress: 0, baseCost: 3000, costMultiplier: 1.15 }
+            },
+            upgrades: {
+                'click-power':       { level: 0, baseCost: 10,  costMultiplier: 1.5 },
+                'global-multiplier': { level: 0, baseCost: 100, costMultiplier: 2   }
+            },
+            soundEnabled: true
+        };
+
+        // Upgrade effects separated from state so they can be re-applied on load
+        // FIX: upgrade effects were stored as functions inside state → not serialisable
+        const upgradeEffects = {
+            'click-power':       () => { gameState.meowPerClick += 1; },
+            'global-multiplier': () => { gameState.globalMultiplier *= 1.1; }
+        };
+
+        // ─── DOM ─────────────────────────────────────────────────────────────────
+        const meowCountEl      = document.getElementById('meow-count');
+        const fishCountEl      = document.getElementById('fish-count');
+        const meowPerSecondEl  = document.getElementById('meow-per-second');
+        const meowButton       = document.getElementById('meow-button');
+        const buildingButtons  = document.querySelectorAll('.building-btn');
+        const upgradeButtons   = document.querySelectorAll('.upgrade-btn');
+        const toggleSoundBtn   = document.getElementById('toggle-sound');
+        const meowSoundStatus  = document.getElementById('meow-sound-status');
+
+        // ─── Audio ───────────────────────────────────────────────────────────────
+        const meowSounds = [
+            'https://assets.mixkit.co/sfx/preview/mixkit-cat-meow-117.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-cat-purring-119.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-cat-angry-122.mp3'
+        ].map(url => {
+            const a = new Audio(url);
+            a.preload = 'auto';
+            return a;
+        });
+
+        // FIX: wrap play() in .catch() — browsers may block autoplay and reject the Promise
+        function playRandomMeow() {
+            if (!gameState.soundEnabled) return;
+            const snd = meowSounds[Math.floor(Math.random() * meowSounds.length)];
+            snd.currentTime = 0;
+            snd.play().catch(() => {});   // silence NotAllowedError silently
+        }
+
+        // ─── Init ────────────────────────────────────────────────────────────────
+        function init() {
+            loadGame();
+            updateUI();
+            startGameLoop();
+            setupEventListeners();
+        }
+
+        // ─── Game Loop ───────────────────────────────────────────────────────────
+        // FIX: progress accumulation was (1000/interval * count) per 1 s tick
+        //      → correct formula: each tick adds (tickMs / interval * 100) percent per building slot
+        //      → but count buildings independently so N buildings don't multiply progress speed
+        //      → buildings all share the same timer; count just scales output
+        const TICK_MS = 250; // finer tick → smoother progress bars
+
+        function startGameLoop() {
+            let saveTimer = 0;
+
+            setInterval(() => {
+                for (const id in gameState.buildings) {
+                    const b = gameState.buildings[id];
+                    if (b.count === 0) continue;
+
+                    // progress advances based on elapsed time vs interval
+                    const step = (TICK_MS / b.interval) * 100;
+                    b.progress += step;
+
+                    if (b.progress >= 100) {
+                        b.progress -= 100;   // FIX: subtract instead of reset to 0 — prevents skip on fast buildings
+                        const produced = b.production * b.count * gameState.globalMultiplier;
+                        gameState.meows += produced;
+                        const fishEarned = Math.floor(produced / 10);
+                        gameState.fish += fishEarned;
+                        gameState.totalFishEarned += fishEarned;
+                        // FIX: play sound at most once per batch, not per-building per-tick
+                        playRandomMeow();
+                    }
+
+                    const el = document.getElementById(`${id}-progress`);
+                    if (el) el.style.width = `${Math.min(b.progress, 100)}%`;
+                }
+
+                updateUI(false); // pass false = skip save on every visual tick
+
+                saveTimer += TICK_MS;
+                if (saveTimer >= 5000) { // FIX: save every 5 s, not every tick
+                    saveGame();
+                    saveTimer = 0;
+                }
+            }, TICK_MS);
+        }
+
+        // ─── Event Listeners ─────────────────────────────────────────────────────
+        function setupEventListeners() {
+            meowButton.addEventListener('click', () => {
+                const gained = gameState.meowPerClick * gameState.globalMultiplier;
+                gameState.meows += gained;
+                const fishEarned = Math.floor(gained / 10);
+                gameState.fish += fishEarned;
+                gameState.totalFishEarned += fishEarned;
+                gameState.clickCount++;   // FIX: track clicks
+
+                meowButton.classList.add('scale-95');
+                setTimeout(() => meowButton.classList.remove('scale-95'), 100);
+
+                playRandomMeow();
+                updateUI(false);
+            });
+
+            buildingButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.building;
+                    const b  = gameState.buildings[id];
+                    const cost = currentCost(b);
+
+                    if (gameState.fish >= cost) {
+                        gameState.fish -= cost;
+                        b.count++;
+                        updateBuildingButton(btn, b);
+                        updateUI(false);
+
+                        btn.classList.add('scale-95');
+                        setTimeout(() => btn.classList.remove('scale-95'), 100);
+                    }
+                });
+            });
+
+            upgradeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id  = btn.dataset.upgrade;
+                    const upg = gameState.upgrades[id];
+                    const cost = currentUpgradeCost(upg);
+
+                    if (gameState.fish >= cost) {
+                        gameState.fish -= cost;
+                        upg.level++;
+                        upgradeEffects[id]();   // FIX: call effect from separate map
+                        updateUpgradeButton(btn, upg);
+                        updateUI(false);
+
+                        btn.classList.add('scale-95');
+                        setTimeout(() => btn.classList.remove('scale-95'), 100);
+                    }
+                });
+            });
+
+            toggleSoundBtn.addEventListener('click', () => {
+                gameState.soundEnabled = !gameState.soundEnabled;
+                meowSoundStatus.textContent = gameState.soundEnabled ? 'ON' : 'OFF';
+                saveGame();
+            });
+        }
+
+        // ─── Helpers ─────────────────────────────────────────────────────────────
+        function currentCost(b) {
+            return Math.floor(b.baseCost * Math.pow(b.costMultiplier, b.count));
+        }
+        function currentUpgradeCost(upg) {
+            return Math.floor(upg.baseCost * Math.pow(upg.costMultiplier, upg.level));
+        }
+        function updateBuildingButton(btn, b) {
+            btn.textContent = `Buy (${currentCost(b)} fish)`;
+        }
+        function updateUpgradeButton(btn, upg) {
+            btn.textContent = `Buy (${currentUpgradeCost(upg)} fish)`;
+        }
+
+        // ─── UI Update ───────────────────────────────────────────────────────────
+        function updateUI(doSave = true) {
+            meowCountEl.textContent = Math.floor(gameState.meows).toLocaleString();
+            fishCountEl.textContent = Math.floor(gameState.fish).toLocaleString();
+
+            // Achievements — FIX: use stable element IDs instead of querySelectorAll index
+            if (gameState.clickCount >= 10)
+                document.getElementById('ach-0').classList.remove('opacity-50');
+
+            const totalCats = (gameState.buildings['lazy-cat'].count +
+                               gameState.buildings['playful-kitten'].count);
+            if (totalCats >= 5)
+                document.getElementById('ach-1').classList.remove('opacity-50');
+
+            // FIX: check totalFishEarned, not current balance
+            if (gameState.totalFishEarned >= 10000)
+                document.getElementById('ach-2').classList.remove('opacity-50');
+
+            const hasAll = Object.values(gameState.buildings).every(b => b.count > 0);
+            if (hasAll)
+                document.getElementById('ach-3').classList.remove('opacity-50');
+
+            // Meows/sec
+            let mps = 0;
+            for (const id in gameState.buildings) {
+                const b = gameState.buildings[id];
+                mps += (b.production * b.count * gameState.globalMultiplier) / (b.interval / 1000);
+            }
+            meowPerSecondEl.textContent = `${mps.toFixed(1)} meows per second`;
+
+            // Building counts
+            for (const id in gameState.buildings) {
+                const el = document.getElementById(`${id}-count`);
+                if (el) el.textContent = gameState.buildings[id].count;
+            }
+
+            if (doSave) saveGame();
+        }
+
+        // ─── Save / Load ─────────────────────────────────────────────────────────
+        function saveGame() {
+            // FIX: only serialise plain data, not functions
+            const data = {
+                meows:            gameState.meows,
+                fish:             gameState.fish,
+                totalFishEarned:  gameState.totalFishEarned,
+                clickCount:       gameState.clickCount,
+                meowPerClick:     gameState.meowPerClick,
+                globalMultiplier: gameState.globalMultiplier,
+                soundEnabled:     gameState.soundEnabled,
+                buildings: {},
+                upgrades:  {}
+            };
+            for (const id in gameState.buildings) {
+                data.buildings[id] = {
+                    count:    gameState.buildings[id].count,
+                    progress: gameState.buildings[id].progress
+                };
+            }
+            for (const id in gameState.upgrades) {
+                data.upgrades[id] = { level: gameState.upgrades[id].level };
+            }
+            try {
+                localStorage.setItem('tommyCatGame', JSON.stringify(data));
+            } catch (e) {
+                console.warn('Save failed:', e);
+            }
+        }
+
+        function loadGame() {
+            let saved;
+            try {
+                const raw = localStorage.getItem('tommyCatGame');
+                if (!raw) return;
+                saved = JSON.parse(raw);
+                if (!saved || typeof saved !== 'object') throw new Error('bad format');
+            } catch (e) {
+                console.error('Load failed, resetting:', e);
+                localStorage.removeItem('tommyCatGame');
+                return;
+            }
+
+            if (saved.meows            != null) gameState.meows            = saved.meows;
+            if (saved.fish             != null) gameState.fish             = saved.fish;
+            if (saved.totalFishEarned  != null) gameState.totalFishEarned  = saved.totalFishEarned;
+            if (saved.clickCount       != null) gameState.clickCount       = saved.clickCount;
+            if (saved.meowPerClick     != null) gameState.meowPerClick     = saved.meowPerClick;
+            if (saved.globalMultiplier != null) gameState.globalMultiplier = saved.globalMultiplier;
+            if (saved.soundEnabled     != null) gameState.soundEnabled     = saved.soundEnabled;
+
+            if (saved.buildings) {
+                for (const id in gameState.buildings) {
+                    if (!saved.buildings[id]) continue;
+                    if (saved.buildings[id].count    != null) gameState.buildings[id].count    = saved.buildings[id].count;
+                    if (saved.buildings[id].progress != null) gameState.buildings[id].progress = saved.buildings[id].progress;
+                }
+            }
+
+            if (saved.upgrades) {
+                for (const id in gameState.upgrades) {
+                    if (!saved.upgrades[id] || saved.upgrades[id].level == null) continue;
+                    const savedLevel = saved.upgrades[id].level;
+                    // FIX: re-apply upgrade effects the correct number of times
+                    for (let i = 0; i < savedLevel; i++) {
+                        upgradeEffects[id]();
+                    }
+                    gameState.upgrades[id].level = savedLevel;
+                }
+            }
+
+            meowSoundStatus.textContent = gameState.soundEnabled ? 'ON' : 'OFF';
+
+            // Restore button labels
+            buildingButtons.forEach(btn => {
+                const b = gameState.buildings[btn.dataset.building];
+                if (b) updateBuildingButton(btn, b);
+            });
+            upgradeButtons.forEach(btn => {
+                const upg = gameState.upgrades[btn.dataset.upgrade];
+                if (upg) updateUpgradeButton(btn, upg);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
