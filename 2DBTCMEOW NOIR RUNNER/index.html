@@ -1,70 +1,178 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>2D Runner Game</title>
+    <meta charset="UTF-8">
+    <title>Shadow Runner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            margin: 0;
-            padding: 0;
+            background: #02010a;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: #000;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            overflow: hidden;
         }
-        canvas {
-            border: 2px solid #333;
-            background: #000;
+
+        /* Animated scanline overlay on whole page */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0,0,0,0.03) 0px,
+                rgba(0,0,0,0.03) 1px,
+                transparent 1px,
+                transparent 3px
+            );
+            pointer-events: none;
+            z-index: 100;
         }
+
         #gameContainer {
             position: relative;
+            width: 800px;
+            height: 600px;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(140, 60, 255, 0.4),
+                0 0 30px rgba(120, 40, 220, 0.35),
+                0 0 80px rgba(80, 20, 160, 0.2),
+                0 0 0 8px rgba(0,0,0,0.6);
         }
-        #score {
+
+        /* Corner decorations */
+        #gameContainer::before,
+        #gameContainer::after {
+            content: '';
             position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 20px;
+            width: 20px;
+            height: 20px;
+            border-color: rgba(160,80,255,0.7);
+            border-style: solid;
+            z-index: 50;
         }
-        #health {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            color: white;
-            font-family: Arial, sans-serif;
-            font-size: 20px;
+        #gameContainer::before {
+            top: 0; left: 0;
+            border-width: 2px 0 0 2px;
+            border-radius: 4px 0 0 0;
         }
-        #gameOver {
+        #gameContainer::after {
+            bottom: 0; right: 0;
+            border-width: 0 2px 2px 0;
+            border-radius: 0 0 4px 0;
+        }
+
+        canvas {
+            display: block;
+            width: 800px;
+            height: 600px;
+        }
+
+        /* Controls hint bar at bottom */
+        #controls {
             position: absolute;
-            top: 50%;
+            bottom: 8px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            font-family: Arial, sans-serif;
-            display: none;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 14px;
+            z-index: 20;
+            opacity: 0.5;
+            transition: opacity 0.3s;
         }
-        #restartButton {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 10px 20px;
+        #controls:hover { opacity: 0.9; }
+        .ctrl {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #a080cc;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+        }
+        .key {
+            background: rgba(100,50,180,0.3);
+            border: 1px solid rgba(160,80,255,0.4);
+            border-radius: 3px;
+            padding: 1px 5px;
+            color: #c8a0ff;
+            font-size: 10px;
+        }
+
+        /* Game Over overlay */
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(8,4,24,0.96), rgba(20,8,44,0.96));
+            border: 1px solid rgba(160,80,255,0.5);
+            box-shadow: 0 0 40px rgba(120,40,200,0.4), inset 0 0 30px rgba(100,20,180,0.1);
+            padding: 36px 48px;
+            border-radius: 6px;
             text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 16px;
-            margin: 10px 2px;
+            color: #e0c8ff;
+            z-index: 30;
+            min-width: 260px;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%,-50%) scale(0.92); }
+            to   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+        }
+
+        #gameOver h2 {
+            font-size: 32px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #ff4466;
+            text-shadow: 0 0 20px rgba(255,50,80,0.8), 0 0 40px rgba(255,50,80,0.3);
+            margin-bottom: 16px;
+        }
+        #gameOver p {
+            font-size: 14px;
+            color: #a080cc;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+        }
+        #gameOver .score-val {
+            font-size: 28px;
+            color: #ffd700;
+            text-shadow: 0 0 16px rgba(255,200,0,0.7);
+            display: block;
+            margin-bottom: 24px;
+        }
+
+        #restartButton {
+            background: linear-gradient(135deg, #3a0a6a, #6020aa);
+            border: 1px solid rgba(180,100,255,0.6);
+            color: #e0c0ff;
+            padding: 10px 28px;
+            font-family: inherit;
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
             cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+            border-radius: 3px;
+            transition: all 0.2s;
+            box-shadow: 0 0 12px rgba(120,40,200,0.4);
         }
         #restartButton:hover {
-            background-color: #45a049;
+            background: linear-gradient(135deg, #5a1a8a, #8030cc);
+            box-shadow: 0 0 24px rgba(160,60,255,0.6);
+            color: #fff;
+            transform: translateY(-1px);
         }
+
+        /* Hide original score/health divs — drawn on canvas */
+        #score, #health { display: none; }
     </style>
 </head>
 <body>
@@ -73,11 +181,19 @@
         <div id="score">Score: 0</div>
         <div id="health">Health: 200</div>
         <div id="gameOver">
-            <h2>Game Over!</h2>
-            <p>Your score: <span id="finalScore">0</span></p>
-            <button id="restartButton">Restart Game</button>
+            <h2>Game Over</h2>
+            <p>FINAL SCORE</p>
+            <span class="score-val" id="finalScore">0</span>
+            <button id="restartButton">[ RESTART ]</button>
+        </div>
+        <div id="controls">
+            <span class="ctrl"><span class="key">←→</span> Move</span>
+            <span class="ctrl"><span class="key">SPACE</span> Jump</span>
+            <span class="ctrl"><span class="key">F</span> Attack</span>
+            <span class="ctrl"><span class="key">Q</span> Invisible</span>
+            <span class="ctrl"><span class="key">R</span> Restart</span>
         </div>
     </div>
     <script src="game.js"></script>
 </body>
-</html> 
+</html>
