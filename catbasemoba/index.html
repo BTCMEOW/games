@@ -7,1741 +7,1511 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @keyframes pulse {
-            0%, 100% { opacity: 0.7; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        :root {
+            --miner-color: #f59e0b;
+            --fighter-color: #ef4444;
+            --hacker-color: #a855f7;
+            --tank-color: #22c55e;
+            --enemy-color: #f97316;
         }
+
+        body { background: #0f0f1a; }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
         }
-
-        @keyframes glow {
-            0% { filter: drop-shadow(0 0 5px currentColor); }
-            50% { filter: drop-shadow(0 0 15px currentColor); }
-            100% { filter: drop-shadow(0 0 5px currentColor); }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2.0); opacity: 0; }
         }
-
-        @keyframes flash {
-            0%, 100% { opacity: 1; }
-            25%, 75% { opacity: 0.5; }
-            50% { opacity: 0.2; }
+        @keyframes dash-rotate {
+            to { stroke-dashoffset: -60; }
         }
-
+        @keyframes node-glow {
+            0%, 100% { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 20px #f59e0b88); }
+            50% { filter: drop-shadow(0 0 16px #fbbf24) drop-shadow(0 0 40px #f59e0baa); }
+        }
+        @keyframes base-pulse {
+            0%, 100% { filter: drop-shadow(0 0 6px #4ade80); }
+            50% { filter: drop-shadow(0 0 18px #4ade80); }
+        }
+        @keyframes enemy-base-pulse {
+            0%, 100% { filter: drop-shadow(0 0 6px #f87171); }
+            50% { filter: drop-shadow(0 0 18px #f87171); }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            20% { transform: rotate(-6deg) scale(1.05); }
+            40% { transform: rotate(6deg) scale(1.05); }
+            60% { transform: rotate(-4deg); }
+            80% { transform: rotate(4deg); }
+            100% { transform: rotate(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(110%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; pointer-events: none; }
+        }
+        @keyframes damagePopup {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            60% { transform: translateY(-30px) scale(1.4); opacity: 1; }
+            100% { transform: translateY(-55px) scale(0.8); opacity: 0; }
+        }
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes march {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -20; }
+        }
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: rotate(-5deg); }
-            50% { transform: rotate(5deg); }
-            75% { transform: rotate(-5deg); }
-            100% { transform: translateX(0); }
+        @keyframes health-flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
         }
-        
-        .animate-shake {
-            animation: shake 0.5s ease;
+        @keyframes victory-bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
-        
-        .unit {
-            transition: all 0.3s ease;
-            animation: float 3s ease-in-out infinite;
+        @keyframes particle-fly {
+            0% { opacity: 1; transform: translate(0,0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
         }
 
-        .effect-spin {
-            animation: spin 2s linear infinite;
+        .unit-svg {
+            transition: filter 0.15s ease;
+            animation: float 2.5s ease-in-out infinite;
+            cursor: pointer;
+            pointer-events: all;
+        }
+        .unit-svg:hover { filter: brightness(1.3); }
+
+        .node-svg { animation: node-glow 2s ease-in-out infinite; cursor: pointer; }
+        .player-base-svg { animation: base-pulse 3s ease-in-out infinite; }
+        .enemy-base-svg { animation: enemy-base-pulse 3s ease-in-out infinite; }
+
+        .notification {
+            animation: slideIn 0.4s ease forwards;
+        }
+        .notification.dying {
+            animation: fadeOut 0.4s ease forwards;
         }
 
-        .effect-glow {
-            animation: glow 2s ease-in-out infinite;
-        }
-
-        .effect-flash {
-            animation: flash 0.5s ease infinite;
-        }
-        
         .damage-popup {
-            animation: damagePopup 1.5s forwards;
+            animation: damagePopup 1.2s ease forwards;
             position: absolute;
-            font-weight: bold;
+            font-weight: 900;
             pointer-events: none;
-            font-size: 1.2rem;
-            text-shadow: 0 0 3px black;
+            font-size: 14px;
+            font-family: 'Press Start 2P', monospace;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 8px currentColor;
             z-index: 100;
+            white-space: nowrap;
         }
-
-        .particle {
-            position: absolute;
-            background-color: currentColor;
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        @keyframes damagePopup {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            50% { transform: translateY(-25px) scale(1.3); opacity: 1; }
-            100% { transform: translateY(-50px) scale(0.8); opacity: 0; }
-        }
-
-        @keyframes particleExplosion {
-            0% { transform: translate(0, 0) scale(1); opacity: 1; }
-            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
-        }
+        .shake { animation: shake 0.4s ease; }
 
         .ability-cooldown {
             position: absolute;
-            bottom: -15px;
+            bottom: -12px;
             left: 0;
             width: 100%;
-            height: 4px;
-            background-color: rgba(0,0,0,0.3);
+            height: 3px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 2px;
             overflow: hidden;
         }
-
         .ability-cooldown-bar {
             height: 100%;
-            background-color: #60a5fa;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            width: 0%;
             transition: width 0.1s linear;
+            border-radius: 2px;
         }
-        
-        .notification {
-            animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        
-        .progress-bar {
-            height: 10px;
-            border-radius: 5px;
+
+        .progress-bar { height: 8px; border-radius: 4px; overflow: hidden; background: #1e293b; }
+        .progress-fill { height: 100%; transition: width 0.3s ease; }
+
+        .unit-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
             overflow: hidden;
         }
-        
-        .progress-fill {
-            height: 100%;
-            transition: width 0.3s ease;
+        .unit-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
+            pointer-events: none;
         }
+        .unit-btn:hover { transform: translateY(-2px); border-color: #64748b; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .unit-btn:active { transform: translateY(0); }
+
+        .miner-btn:hover { border-color: #f59e0b; box-shadow: 0 8px 24px rgba(245,158,11,0.25); }
+        .fighter-btn:hover { border-color: #ef4444; box-shadow: 0 8px 24px rgba(239,68,68,0.25); }
+        .hacker-btn:hover { border-color: #a855f7; box-shadow: 0 8px 24px rgba(168,85,247,0.25); }
+        .tank-btn:hover { border-color: #22c55e; box-shadow: 0 8px 24px rgba(34,197,94,0.25); }
+
+        .game-arena {
+            background: #0a0a14;
+            border: 1px solid #1e293b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arena-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(30,41,59,0.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(30,41,59,0.4) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .arena-grid::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%);
+        }
+
+        .mid-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, rgba(99,102,241,0.4) 30%, rgba(99,102,241,0.4) 70%, transparent);
+            transform: translateX(-50%);
+        }
+        .mid-line::before {
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #818cf8;
+            box-shadow: 0 0 8px #818cf8;
+        }
+
+        .stat-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 14px 18px;
+        }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+        .panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px; }
+        .panel-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 8px; }
+
+        .upgrade-btn { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
+        .upgrade-btn:hover { background: #263347; border-color: #475569; transform: translateX(2px); }
+
+        .ability-btn { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .ability-btn:hover { background: #263347; }
+
+        #units-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-fly 0.6s ease-out forwards;
+        }
+
+        .health-bar-outer { position: absolute; top: -10px; left: -6px; width: calc(100% + 12px); height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+        .health-bar-inner { height: 100%; border-radius: 2px; transition: width 0.2s ease; }
+
+        .result-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .result-box { background: #0f172a; border: 1px solid #334155; border-radius: 20px; padding: 40px 48px; text-align: center; animation: victory-bounce 1s ease infinite; }
     </style>
 </head>
-<body class="bg-gray-900 text-white font-mono">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="mb-8 text-center">
-            <h1 class="text-5xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 relative">
-                <span class="effect-glow">Meow Wars</span>
-                <span class="absolute -top-2 -right-4 text-xl animate-bounce">🐾</span>
-            </h1>
-            <p class="text-lg text-gray-400">BTC RTS Battle: Base vs Base</p>
-        </header>
-        
-        <!-- Game Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
-                <div class="mr-4 text-yellow-400 text-2xl">
-                    <i class="fas fa-coins"></i>
-                </div>
-                <div>
-                    <div class="text-gray-400 text-sm">BTC Resources</div>
-                    <div id="btc-resources" class="text-2xl font-bold">100</div>
-                </div>
-            </div>
-            
-            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
-                <div class="mr-4 text-blue-400 text-2xl">
-                    <i class="fas fa-network-wired"></i>
-                </div>
-                <div>
-                    <div class="text-gray-400 text-sm">Network Power</div>
-                    <div id="network-power" class="text-2xl font-bold">10</div>
-                </div>
-            </div>
-            
-            <div class="bg-gray-800 rounded-lg p-4 flex items-center">
-                <div class="mr-4 text-red-400 text-2xl">
-                    <i class="fas fa-clock"></i>
-                </div>
-                <div>
-                    <div class="text-gray-400 text-sm">Game Time</div>
-                    <div id="game-time" class="text-2xl font-bold">00:00</div>
-                </div>
-            </div>
+<body class="text-white font-sans" style="font-family: system-ui, -apple-system, sans-serif;">
+<div style="max-width:1200px; margin:0 auto; padding:24px 16px;">
+
+    <!-- Header -->
+    <div style="text-align:center; margin-bottom:24px;">
+        <div style="font-size:36px; font-weight:900; background:linear-gradient(135deg,#fbbf24,#f87171,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-1px; margin-bottom:4px;">
+            🐾 Meow Wars
         </div>
-        
-        <!-- Game Arena -->
-        <div class="relative bg-gray-800 rounded-xl overflow-hidden mb-8" style="height: 400px;">
-            <!-- Background Grid -->
-            <div class="absolute inset-0 bg-gray-900">
-                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(55, 65, 81, 0.5)" stroke-width="0.5"/>
-                        </pattern>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#grid)" />
-                </svg>
-            </div>
-            
-            <!-- Middle Line -->
-            <div class="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-700 transform -translate-x-1/2"></div>
-            
-            <!-- Cat Gang Base -->
-            <div id="player-base" class="absolute left-16 top-1/2 transform -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center border-4 border-green-300 shadow-lg cursor-pointer hover:scale-105 transition-all">
-                <div class="text-center">
-                    <i class="fas fa-cat text-3xl mb-2 text-green-300"></i>
-                    <div class="font-bold">Cat Gang</div>
-                    <div id="base-health" class="text-sm">HP: 100/100</div>
-                </div>
-            </div>
-            
-            <!-- Rat Gang Base -->
-            <div id="enemy-base" class="absolute right-16 top-1/2 transform -translate-y-1/2 w-32 h-32 bg-gradient-to-br from-gray-800 to-gray-950 rounded-full flex items-center justify-center border-4 border-red-300 shadow-lg">
-                <div class="text-center">
-                    <i class="fas fa-rat text-3xl mb-2 text-red-400"></i>
-                    <div class="font-bold">Rat Mob</div>
-                    <div id="enemy-health" class="text-sm">HP: 100/100</div>
-                </div>
-            </div>
-            
-            <!-- Miner Node -->
-            <div id="miner-node" class="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center border-4 border-yellow-300 shadow-xl cursor-pointer hover:animate-pulse effect-glow">
-                <div class="relative">
-                    <i class="fas fa-coins text-3xl"></i>
-                    <div class="absolute -inset-2 rounded-full border-2 border-yellow-200 animate-spin opacity-0" id="node-spin"></div>
-                </div>
-                <div id="node-particles" class="absolute inset-0 pointer-events-none"></div>
-            </div>
-            
-            <!-- Units Container -->
-            <div id="units-container" class="absolute inset-0 pointer-events-none"></div>
-            
-            <!-- Win/Lose Banner -->
-            <div id="game-result" class="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center hidden">
-                <div class="text-center p-8 rounded-xl max-w-md">
-                    <h2 id="result-text" class="text-4xl font-bold mb-4"></h2>
-                    <button id="restart-btn" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition-colors">
-                        Play Again
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Controls -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Units Panel -->
-            <div class="bg-gray-800 rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
-                    <i class="fas fa-users mr-2"></i> Units
-                </h2>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- Miner -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('miner')">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-yellow-600 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-digging"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold">BTC Miner</div>
-                                <div class="text-xs text-gray-400">Gathers resources</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="miner-cost">10</span></div>
-                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>2</span>s</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Fighter -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('fighter')">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-fist-raised"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold">Crypto Fighter</div>
-                                <div class="text-xs text-gray-400">Attacks enemies</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="fighter-cost">15</span></div>
-                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>3</span>s</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Hacker -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('hacker')">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-code"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold">Blockchain Hacker</div>
-                                <div class="text-xs text-gray-400">Increases network power</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="hacker-cost">20</span></div>
-                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>5</span>s</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tank -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="createUnit('tank')">
-                        <div class="flex items-center mb-2">
-                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div>
-                                <div class="font-bold">Hash Tank</div>
-                                <div class="text-xs text-gray-400">Damages base directly</div>
-                            </div>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <div class="text-yellow-400"><i class="fas fa-coins mr-1"></i> <span id="tank-cost">30</span></div>
-                            <div class="text-blue-400"><i class="fas fa-bolt mr-1"></i> <span>8</span>s</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6">
-                    <h3 class="font-bold mb-2">Your Units: <span id="unit-count">0</span></h3>
-                    <div class="progress-bar bg-gray-700 w-full">
-                        <div id="unit-capacity-bar" class="progress-fill bg-blue-500" style="width: 0%"></div>
-                    </div>
-                    <div class="text-xs text-gray-400 mt-1">Unit capacity: <span id="unit-capacity">0</span>/10</div>
-                </div>
-            </div>
-            
-            <!-- Abilities Panel -->
-            <div class="bg-gray-800 rounded-xl p-6">
-                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
-                    <i class="fas fa-fire mr-2"></i> Special Abilities
-                </h2>
-                
-                <div class="space-y-3">
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer relative" onclick="useAbility('nuke')">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <div class="font-bold">Satoshi Bomb</div>
-                                <div class="text-sm text-gray-400">Destroy all enemies</div>
-                            </div>
-                            <div class="text-yellow-400">
-                                <i class="fas fa-bomb"></i>
-                            </div>
-                        </div>
-                        <div class="ability-cooldown">
-                            <div id="nuke-cooldown-bar" class="ability-cooldown-bar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer relative" onclick="useAbility('heal')">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <div class="font-bold">Halving Heal</div>
-                                <div class="text-sm text-gray-400">Restore base health</div>
-                            </div>
-                            <div class="text-green-400">
-                                <i class="fas fa-heart"></i>
-                            </div>
-                        </div>
-                        <div class="ability-cooldown">
-                            <div id="heal-cooldown-bar" class="ability-cooldown-bar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Upgrades Panel -->
-            <div class="bg-gray-800 rounded-xl p-6 lg:col-span-2">
-                <h2 class="text-xl font-bold mb-4 border-b border-gray-700 pb-2 flex items-center">
-                    <i class="fas fa-level-up-alt mr-2"></i> Upgrades
-                </h2>
-                
-                <!-- Difficulty Settings -->
-                <div class="mb-6 bg-gray-900 rounded-lg p-4">
-                    <h3 class="font-bold mb-4 flex items-center">
-                        <i class="fas fa-sliders-h mr-2"></i> Difficulty Settings
-                    </h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Enemy Spawn Rate</label>
-                            <input type="range" min="1" max="10" value="5" class="w-full" id="spawn-rate-slider"
-                                onchange="updateDifficulty('spawnRate', this.value)">
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>Slow</span>
-                                <span>Fast</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Enemy Health</label>
-                            <input type="range" min="1" max="10" value="5" class="w-full" id="enemy-health-slider"
-                                onchange="updateDifficulty('enemyHealth', this.value)">
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>Low</span>
-                                <span>High</span>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1">Enemy Damage</label>
-                            <input type="range" min="1" max="10" value="5" class="w-full" id="enemy-damage-slider"
-                                onchange="updateDifficulty('enemyDamage', this.value)">
-                            <div class="flex justify-between text-xs text-gray-500">
-                                <span>Low</span>
-                                <span>High</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="space-y-4">
-                    <!-- Mining Upgrade -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('mining')">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold">Advanced Mining</div>
-                                <div class="text-sm text-gray-400">Increases BTC yield by 50%</div>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="mining-upgrade-cost">50</span></div>
-                                <div id="mining-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Attack Upgrade -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('attack')">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold">Weapon Upgrade</div>
-                                <div class="text-sm text-gray-400">Increases unit damage by 25%</div>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="attack-upgrade-cost">75</span></div>
-                                <div id="attack-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Capacity Upgrade -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('capacity')">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold">Unit Capacity</div>
-                                <div class="text-sm text-gray-400">+5 unit slots</div>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="capacity-upgrade-cost">100</span></div>
-                                <div id="capacity-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Base Health -->
-                    <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer" onclick="buyUpgrade('base')">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <div class="font-bold">Base Fortification</div>
-                                <div class="text-sm text-gray-400">+50 base HP</div>
-                            </div>
-                            <div class="flex items-center">
-                                <div class="text-yellow-400 mr-3"><i class="fas fa-coins mr-1"></i> <span id="base-upgrade-cost">120</span></div>
-                                <div id="base-upgrade-level" class="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-xs">0</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-6 bg-gray-900 rounded-lg p-4">
-                    <h3 class="font-bold mb-2 flex items-center">
-                        <i class="fas fa-info-circle mr-2"></i> Game Guide
-                    </h3>
-                    <ul class="text-sm text-gray-400 space-y-2">
-                        <li>- <span class="text-yellow-400">BTC Miners</span> gather resources from the center node</li>
-                        <li>- <span class="text-red-400">Fighters</span> attack enemy units</li>
-                        <li>- <span class="text-purple-400">Hackers</span> increase your network power (unlock upgrades)</li>
-                        <li>- <span class="text-green-400">Tanks</span> damage enemy base directly</li>
-                        <li>- Destroy enemy base to win!</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Notifications -->
-        <div id="notifications" class="fixed bottom-4 right-4 w-72 space-y-2 z-50"></div>
+        <div style="color:#475569; font-size:13px; letter-spacing:0.1em; text-transform:uppercase;">BTC Real-Time Strategy</div>
     </div>
 
-    <script>
-        // Game State
-        const gameState = {
-            btc: 100,
-            networkPower: 10,
-            time: 0,
-            baseHealth: 100,
-            enemyHealth: 100,
-            maxEnemyHealth: 100,
-            unitCount: 0,
-            maxUnits: 10,
-            gameActive: true,
-            
-            units: [],
-            enemyUnits: [],
-            
-            difficulty: {
-                spawnRate: 5,    // 1-10
-                enemyHealth: 5,  // 1-10
-                enemyDamage: 5   // 1-10
-            },
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
+        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
+            <div class="stat-icon" style="background:#451a03; color:#fbbf24;">₿</div>
+            <div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">BTC</div>
+                <div id="btc-resources" style="font-size:22px; font-weight:700; color:#fbbf24;">100</div>
+            </div>
+        </div>
+        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
+            <div class="stat-icon" style="background:#0c1a3a; color:#60a5fa;">⚡</div>
+            <div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">Network</div>
+                <div id="network-power" style="font-size:22px; font-weight:700; color:#60a5fa;">10</div>
+            </div>
+        </div>
+        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
+            <div class="stat-icon" style="background:#1a0a2e; color:#c084fc;">⏱</div>
+            <div>
+                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">Time</div>
+                <div id="game-time" style="font-size:22px; font-weight:700; color:#c084fc;">00:00</div>
+            </div>
+        </div>
+    </div>
 
-            // Boss system
-            bossSystem: {
-                lastBossSpawn: 0,
-                bossSpawnInterval: 300, // 5 minutes
-                bossLevel: 1,
-                activeBoss: null
-            },
-            
-            upgrades: {
-                mining: { level: 0, cost: 50 },
-                attack: { level: 0, cost: 75 },
-                capacity: { level: 0, cost: 100 },
-                base: { level: 0, cost: 120 }
-            },
-            
-            abilities: {
-                nuke: { cooldown: 0, maxCooldown: 300 }, // 5 minutes
-                heal: { cooldown: 0, maxCooldown: 180 }  // 3 minutes
-            },
-            
-            unitCosts: {
-                miner: 10,
-                fighter: 15,
-                hacker: 20,
-                tank: 30
-            },
-            
-            unitProductionTimes: {
-                miner: 2,
-                fighter: 3,
-                hacker: 5,
-                tank: 8,
-                sniper: 4,
-                medic: 5,
-                summoner: 10
-            },
+    <!-- Arena -->
+    <div class="game-arena" style="height:420px; border-radius:16px; margin-bottom:20px;" id="arena">
+        <div class="arena-grid"></div>
+        <div class="mid-line"></div>
 
-            unitSpecialAbilities: {
-                miner: { cooldown: 0, maxCooldown: 30 },
-                fighter: { cooldown: 0, maxCooldown: 20 },
-                hacker: { cooldown: 0, maxCooldown: 40 },
-                tank: { cooldown: 0, maxCooldown: 60 },
-                sniper: { cooldown: 0, maxCooldown: 30 },
-                medic: { cooldown: 0, maxCooldown: 25 },
-                summoner: { cooldown: 0, maxCooldown: 90 }
-            },
-            
-            enemySpawnInterval: 8000,
-            lastEnemySpawn: 0
-        };
-        
-        // DOM Elements
-        const dom = {
-            btcResources: document.getElementById('btc-resources'),
-            networkPower: document.getElementById('network-power'),
-            gameTime: document.getElementById('game-time'),
-            baseHealth: document.getElementById('base-health'),
-            enemyHealth: document.getElementById('enemy-health'),
-            unitCount: document.getElementById('unit-count'),
-            unitCapacity: document.getElementById('unit-capacity'),
-            unitCapacityBar: document.getElementById('unit-capacity-bar'),
-            unitsContainer: document.getElementById('units-container'),
-            gameResult: document.getElementById('game-result'),
-            resultText: document.getElementById('result-text'),
-            restartBtn: document.getElementById('restart-btn'),
-            notifications: document.getElementById('notifications'),
-            
-            minerCost: document.getElementById('miner-cost'),
-            fighterCost: document.getElementById('fighter-cost'),
-            hackerCost: document.getElementById('hacker-cost'),
-            tankCost: document.getElementById('tank-cost'),
-            
-            miningUpgradeCost: document.getElementById('mining-upgrade-cost'),
-            miningUpgradeLevel: document.getElementById('mining-upgrade-level'),
-            attackUpgradeCost: document.getElementById('attack-upgrade-cost'),
-            attackUpgradeLevel: document.getElementById('attack-upgrade-level'),
-            capacityUpgradeCost: document.getElementById('capacity-upgrade-cost'),
-            capacityUpgradeLevel: document.getElementById('capacity-upgrade-level'),
-            baseUpgradeCost: document.getElementById('base-upgrade-cost'),
-            baseUpgradeLevel: document.getElementById('base-upgrade-level')
-        };
-        
-        // Helper Functions
-        function getUnitName(type) {
-            const names = {
-                miner: "BTC Miner",
-                fighter: "Crypto Fighter",
-                hacker: "Blockchain Hacker",
-                tank: "Hash Tank"
-            };
-            return names[type] || "Unit";
+        <!-- SVG layer for bases + node -->
+        <svg id="static-layer" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 800 420" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <radialGradient id="baseGradP" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" stop-color="#1e3a28"/>
+                    <stop offset="100%" stop-color="#0a1a0f"/>
+                </radialGradient>
+                <radialGradient id="baseGradE" cx="50%" cy="40%" r="60%">
+                    <stop offset="0%" stop-color="#3a1a1a"/>
+                    <stop offset="100%" stop-color="#1a0a0a"/>
+                </radialGradient>
+                <radialGradient id="nodeGrad" cx="50%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#fde68a"/>
+                    <stop offset="50%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#92400e"/>
+                </radialGradient>
+                <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+                <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+                <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="6" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+                <clipPath id="baseClipP"><circle cx="100" cy="210" r="52"/></clipPath>
+                <clipPath id="baseClipE"><circle cx="700" cy="210" r="52"/></clipPath>
+                <!-- Animated dash ring -->
+                <circle id="node-ring" cx="400" cy="210" r="38" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.5">
+                    <animateTransform attributeName="transform" type="rotate" from="0 400 210" to="360 400 210" dur="8s" repeatCount="indefinite"/>
+                </circle>
+            </defs>
+
+            <!-- === PLAYER BASE (Cat Gang) === -->
+            <g class="player-base-svg" id="player-base-g" style="cursor:default;">
+                <!-- Outer glow ring -->
+                <circle cx="100" cy="210" r="60" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.3"/>
+                <!-- Base body -->
+                <circle cx="100" cy="210" r="52" fill="url(#baseGradP)" stroke="#4ade80" stroke-width="2.5"/>
+                <!-- Inner detail ring -->
+                <circle cx="100" cy="210" r="44" fill="none" stroke="#22c55e" stroke-width="0.5" opacity="0.4"/>
+                <!-- Armor plates -->
+                <path d="M72 192 Q100 180 128 192 L128 228 Q100 240 72 228 Z" fill="#1a3a22" opacity="0.5"/>
+                <!-- Cat face -->
+                <!-- Head -->
+                <circle cx="100" cy="205" r="18" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
+                <!-- Ears -->
+                <polygon points="87,191 93,200 81,200" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
+                <polygon points="113,191 107,200 119,200" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
+                <!-- Inner ears -->
+                <polygon points="88,193 92,199 84,199" fill="#4ade80" opacity="0.5"/>
+                <polygon points="112,193 108,199 116,199" fill="#4ade80" opacity="0.5"/>
+                <!-- Eyes -->
+                <ellipse cx="93" cy="204" rx="4" ry="5" fill="#0f0f1a"/>
+                <ellipse cx="107" cy="204" rx="4" ry="5" fill="#0f0f1a"/>
+                <ellipse cx="93" cy="204" rx="1.5" ry="4" fill="#4ade80"/>
+                <ellipse cx="107" cy="204" rx="1.5" ry="4" fill="#4ade80"/>
+                <circle cx="94" cy="202" r="1" fill="white" opacity="0.8"/>
+                <circle cx="108" cy="202" r="1" fill="white" opacity="0.8"/>
+                <!-- Nose -->
+                <polygon points="100,210 97,213 103,213" fill="#f9a8d4"/>
+                <!-- Whiskers -->
+                <line x1="84" y1="211" x2="96" y2="213" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
+                <line x1="84" y1="214" x2="96" y2="214" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
+                <line x1="116" y1="211" x2="104" y2="213" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
+                <line x1="116" y1="214" x2="104" y2="214" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
+                <!-- BTC symbol -->
+                <text x="100" y="230" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700" opacity="0.8">₿ BASE</text>
+                <!-- HP bar area -->
+                <rect x="58" y="252" width="84" height="6" rx="3" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
+                <rect id="player-hp-bar" x="58" y="252" width="84" height="6" rx="3" fill="#4ade80"/>
+                <text id="base-health" x="100" y="272" text-anchor="middle" fill="#94a3b8" font-size="10">HP: 100/100</text>
+            </g>
+
+            <!-- === ENEMY BASE (Rat Mob) === -->
+            <g class="enemy-base-svg" id="enemy-base-g" style="cursor:default;">
+                <!-- Outer glow ring -->
+                <circle cx="700" cy="210" r="60" fill="none" stroke="#f87171" stroke-width="1" opacity="0.3"/>
+                <!-- Base body -->
+                <circle cx="700" cy="210" r="52" fill="url(#baseGradE)" stroke="#f87171" stroke-width="2.5"/>
+                <!-- Inner detail ring -->
+                <circle cx="700" cy="210" r="44" fill="none" stroke="#ef4444" stroke-width="0.5" opacity="0.4"/>
+                <!-- Armor plates -->
+                <path d="M672 192 Q700 180 728 192 L728 228 Q700 240 672 228 Z" fill="#3a1a1a" opacity="0.5"/>
+                <!-- Rat face -->
+                <!-- Head -->
+                <circle cx="700" cy="205" r="18" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
+                <!-- Ears (rat round ears) -->
+                <circle cx="686" cy="191" r="7" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
+                <circle cx="714" cy="191" r="7" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
+                <circle cx="686" cy="191" r="4" fill="#f9a8d4" opacity="0.4"/>
+                <circle cx="714" cy="191" r="4" fill="#f9a8d4" opacity="0.4"/>
+                <!-- Eyes (beady red) -->
+                <circle cx="693" cy="204" r="3.5" fill="#1a0a0a"/>
+                <circle cx="707" cy="204" r="3.5" fill="#1a0a0a"/>
+                <circle cx="693" cy="204" r="2" fill="#dc2626"/>
+                <circle cx="707" cy="204" r="2" fill="#dc2626"/>
+                <circle cx="694" cy="203" r="0.8" fill="white" opacity="0.7"/>
+                <circle cx="708" cy="203" r="0.8" fill="white" opacity="0.7"/>
+                <!-- Snout -->
+                <ellipse cx="700" cy="212" rx="5" ry="4" fill="#7c3535"/>
+                <circle cx="700" cy="212" r="1.5" fill="#1a0a0a"/>
+                <!-- Whiskers -->
+                <line x1="682" y1="211" x2="695" y2="213" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
+                <line x1="682" y1="214" x2="695" y2="214" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
+                <line x1="718" y1="211" x2="705" y2="213" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
+                <line x1="718" y1="214" x2="705" y2="214" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
+                <!-- Skull symbol -->
+                <text x="700" y="230" text-anchor="middle" fill="#f87171" font-size="10" font-weight="700" opacity="0.8">💀 BASE</text>
+                <!-- HP bar area -->
+                <rect x="658" y="252" width="84" height="6" rx="3" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
+                <rect id="enemy-hp-bar" x="658" y="252" width="84" height="6" rx="3" fill="#ef4444"/>
+                <text id="enemy-health" x="700" y="272" text-anchor="middle" fill="#94a3b8" font-size="10">HP: 100/100</text>
+            </g>
+
+            <!-- === MINER NODE === -->
+            <g id="miner-node-g" class="node-svg" style="pointer-events:all;" onclick="collectResources()">
+                <!-- Outer spinning ring -->
+                <circle cx="400" cy="210" r="38" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.5">
+                    <animateTransform attributeName="transform" type="rotate" from="0 400 210" to="360 400 210" dur="8s" repeatCount="indefinite"/>
+                </circle>
+                <!-- Second ring counter-rotating -->
+                <circle cx="400" cy="210" r="32" fill="none" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="6 8" opacity="0.4">
+                    <animateTransform attributeName="transform" type="rotate" from="360 400 210" to="0 400 210" dur="12s" repeatCount="indefinite"/>
+                </circle>
+                <!-- Node body -->
+                <circle cx="400" cy="210" r="26" fill="url(#nodeGrad)" stroke="#fbbf24" stroke-width="2"/>
+                <!-- Coin inner detail -->
+                <circle cx="400" cy="210" r="21" fill="none" stroke="#fde68a" stroke-width="0.8" opacity="0.5"/>
+                <!-- BTC symbol -->
+                <text x="400" y="207" text-anchor="middle" fill="#92400e" font-size="16" font-weight="900">₿</text>
+                <text x="400" y="224" text-anchor="middle" fill="#92400e" font-size="8" font-weight="700">MINE</text>
+                <!-- Sparkle particles -->
+                <circle cx="400" cy="183" r="2" fill="#fde68a" opacity="0.8">
+                    <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" begin="0s" repeatCount="indefinite"/>
+                    <animate attributeName="r" values="2;3;2" dur="2s" begin="0s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="420" cy="196" r="1.5" fill="#fde68a" opacity="0.6">
+                    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+                </circle>
+                <circle cx="380" cy="196" r="1.5" fill="#fde68a" opacity="0.6">
+                    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" begin="1s" repeatCount="indefinite"/>
+                </circle>
+            </g>
+        </svg>
+
+        <!-- Units layer (HTML divs with SVG inside) -->
+        <div id="units-layer"></div>
+
+        <!-- Game result overlay -->
+        <div id="game-result" class="result-overlay" style="display:none; border-radius:16px;">
+            <div class="result-box">
+                <div id="result-emoji" style="font-size:60px; margin-bottom:16px;">🎉</div>
+                <div id="result-text" style="font-size:28px; font-weight:900; margin-bottom:8px;"></div>
+                <div id="result-sub" style="color:#64748b; font-size:14px; margin-bottom:24px;"></div>
+                <button id="restart-btn" style="background:linear-gradient(135deg,#3b82f6,#6366f1); border:none; color:white; padding:12px 32px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                    ↺ Play Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Grid -->
+    <div style="display:grid; grid-template-columns:1fr 1fr 1.6fr; gap:16px;">
+
+        <!-- Units Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <span style="color:#818cf8;">⚔</span> Deploy Units
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+
+                <div class="unit-btn miner-btn" onclick="createUnit('miner')">
+                    <div style="margin-bottom:10px;">
+                        <svg viewBox="0 0 48 48" width="48" height="48">
+                            <!-- Miner cat mini icon -->
+                            <circle cx="24" cy="26" r="12" fill="#92400e" stroke="#f59e0b" stroke-width="1.5"/>
+                            <polygon points="18,16 22,24 14,24" fill="#92400e" stroke="#f59e0b" stroke-width="1.2"/>
+                            <polygon points="30,16 26,24 34,24" fill="#92400e" stroke="#f59e0b" stroke-width="1.2"/>
+                            <ellipse cx="20" cy="25" rx="2.5" ry="3" fill="#451a03"/>
+                            <ellipse cx="20" cy="25" rx="1" ry="2.5" fill="#fbbf24"/>
+                            <ellipse cx="28" cy="25" rx="2.5" ry="3" fill="#451a03"/>
+                            <ellipse cx="28" cy="25" rx="1" ry="2.5" fill="#fbbf24"/>
+                            <polygon points="24,30 22,33 26,33" fill="#f9a8d4"/>
+                            <!-- Pickaxe -->
+                            <line x1="30" y1="36" x2="40" y2="12" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+                            <ellipse cx="40" cy="12" rx="4" ry="2" fill="#64748b" transform="rotate(-45 40 12)"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:12px; font-weight:700; color:#fbbf24;">BTC Miner</div>
+                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Gathers BTC</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
+                        <span style="color:#fbbf24;">₿ <span id="miner-cost">10</span></span>
+                        <span style="color:#60a5fa;">2s</span>
+                    </div>
+                </div>
+
+                <div class="unit-btn fighter-btn" onclick="createUnit('fighter')">
+                    <div style="margin-bottom:10px;">
+                        <svg viewBox="0 0 48 48" width="48" height="48">
+                            <!-- Fighter cat -->
+                            <circle cx="24" cy="26" r="12" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.5"/>
+                            <polygon points="18,15 22,24 14,24" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.2"/>
+                            <polygon points="30,15 26,24 34,24" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.2"/>
+                            <ellipse cx="20" cy="25" rx="2.5" ry="3" fill="#450a0a"/>
+                            <ellipse cx="20" cy="25" rx="1" ry="2.5" fill="#f87171"/>
+                            <ellipse cx="28" cy="25" rx="2.5" ry="3" fill="#450a0a"/>
+                            <ellipse cx="28" cy="25" rx="1" ry="2.5" fill="#f87171"/>
+                            <polygon points="24,30 22,33 26,33" fill="#f9a8d4"/>
+                            <!-- Angry brows -->
+                            <line x1="17" y1="21" x2="22" y2="23" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
+                            <line x1="31" y1="21" x2="26" y2="23" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
+                            <!-- Sword -->
+                            <line x1="36" y1="10" x2="42" y2="38" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="33" y1="22" x2="45" y2="22" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="36" cy="10" r="2" fill="#fbbf24"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:12px; font-weight:700; color:#f87171;">Fighter</div>
+                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Attacks enemies</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
+                        <span style="color:#fbbf24;">₿ <span id="fighter-cost">15</span></span>
+                        <span style="color:#60a5fa;">3s</span>
+                    </div>
+                </div>
+
+                <div class="unit-btn hacker-btn" onclick="createUnit('hacker')">
+                    <div style="margin-bottom:10px;">
+                        <svg viewBox="0 0 48 48" width="48" height="48">
+                            <!-- Hacker cat with VR goggles -->
+                            <circle cx="24" cy="26" r="12" fill="#4a1d96" stroke="#a855f7" stroke-width="1.5"/>
+                            <polygon points="18,15 22,24 14,24" fill="#4a1d96" stroke="#a855f7" stroke-width="1.2"/>
+                            <polygon points="30,15 26,24 34,24" fill="#4a1d96" stroke="#a855f7" stroke-width="1.2"/>
+                            <!-- VR Goggles -->
+                            <rect x="14" y="22" width="20" height="9" rx="3" fill="#1e0a3a" stroke="#a855f7" stroke-width="1"/>
+                            <rect x="15" y="23" width="8" height="7" rx="2" fill="#7c3aed" opacity="0.7"/>
+                            <rect x="25" y="23" width="8" height="7" rx="2" fill="#7c3aed" opacity="0.7"/>
+                            <!-- Glow on goggles -->
+                            <rect x="16" y="24" width="6" height="5" rx="1.5" fill="#c084fc" opacity="0.5"/>
+                            <rect x="26" y="24" width="6" height="5" rx="1.5" fill="#c084fc" opacity="0.5"/>
+                            <polygon points="24,31 22,34 26,34" fill="#f9a8d4"/>
+                            <!-- Code symbols floating -->
+                            <text x="8" y="16" fill="#a855f7" font-size="8" opacity="0.7">&lt;/&gt;</text>
+                            <text x="36" y="18" fill="#7c3aed" font-size="7" opacity="0.6">01</text>
+                        </svg>
+                    </div>
+                    <div style="font-size:12px; font-weight:700; color:#c084fc;">Hacker</div>
+                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Boosts network</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
+                        <span style="color:#fbbf24;">₿ <span id="hacker-cost">20</span></span>
+                        <span style="color:#60a5fa;">5s</span>
+                    </div>
+                </div>
+
+                <div class="unit-btn tank-btn" onclick="createUnit('tank')">
+                    <div style="margin-bottom:10px;">
+                        <svg viewBox="0 0 48 48" width="48" height="48">
+                            <!-- Tank cat with armor helmet -->
+                            <circle cx="24" cy="28" r="12" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
+                            <!-- Helmet -->
+                            <path d="M13,24 Q24,10 35,24" fill="#15803d" stroke="#22c55e" stroke-width="1.5"/>
+                            <rect x="13" y="22" width="22" height="4" rx="1" fill="#15803d" stroke="#22c55e" stroke-width="0.8"/>
+                            <!-- Eyes under helmet -->
+                            <ellipse cx="20" cy="28" rx="2.5" ry="3" fill="#052e16"/>
+                            <ellipse cx="20" cy="28" rx="1" ry="2.5" fill="#4ade80"/>
+                            <ellipse cx="28" cy="28" rx="2.5" ry="3" fill="#052e16"/>
+                            <ellipse cx="28" cy="28" rx="1" ry="2.5" fill="#4ade80"/>
+                            <polygon points="24,33 22,36 26,36" fill="#f9a8d4"/>
+                            <!-- Armor chest plate -->
+                            <rect x="16" y="36" width="16" height="8" rx="2" fill="#15803d" stroke="#22c55e" stroke-width="0.8"/>
+                            <line x1="24" y1="36" x2="24" y2="44" stroke="#22c55e" stroke-width="0.6" opacity="0.5"/>
+                            <!-- Shield emblem -->
+                            <text x="24" y="43" text-anchor="middle" fill="#86efac" font-size="7" font-weight="700">🛡</text>
+                        </svg>
+                    </div>
+                    <div style="font-size:12px; font-weight:700; color:#4ade80;">Hash Tank</div>
+                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Destroys base</div>
+                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
+                        <span style="color:#fbbf24;">₿ <span id="tank-cost">30</span></span>
+                        <span style="color:#60a5fa;">8s</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e293b;">
+                <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:6px;">
+                    <span>Unit Capacity</span>
+                    <span id="unit-capacity" style="color:#94a3b8;">0/10</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="unit-capacity-bar" class="progress-fill" style="background:linear-gradient(90deg,#3b82f6,#6366f1); width:0%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abilities Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <span style="color:#f97316;">✦</span> Special Abilities
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div class="ability-btn" onclick="useAbility('nuke')">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+                        <div style="width:40px; height:40px; background:#450a0a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px;">💣</div>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#fca5a5;">Satoshi Bomb</div>
+                            <div style="font-size:11px; color:#64748b;">Destroy all enemies</div>
+                        </div>
+                    </div>
+                    <div class="ability-cooldown">
+                        <div id="nuke-cooldown-bar" class="ability-cooldown-bar"></div>
+                    </div>
+                </div>
+
+                <div class="ability-btn" onclick="useAbility('heal')">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+                        <div style="width:40px; height:40px; background:#052e16; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px;">💚</div>
+                        <div>
+                            <div style="font-size:13px; font-weight:700; color:#86efac;">Halving Heal</div>
+                            <div style="font-size:11px; color:#64748b;">Restore base health</div>
+                        </div>
+                    </div>
+                    <div class="ability-cooldown">
+                        <div id="heal-cooldown-bar" class="ability-cooldown-bar" style="background:linear-gradient(90deg,#22c55e,#4ade80);"></div>
+                    </div>
+                </div>
+
+                <!-- Guide -->
+                <div style="background:#0a0a14; border:1px solid #1e293b; border-radius:10px; padding:14px; margin-top:4px;">
+                    <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">Guide</div>
+                    <div style="display:flex; flex-direction:column; gap:7px; font-size:11px; color:#64748b; line-height:1.5;">
+                        <div>🟡 <span style="color:#fbbf24;">Miners</span> — collect BTC</div>
+                        <div>🔴 <span style="color:#f87171;">Fighters</span> — fight enemies</div>
+                        <div>🟣 <span style="color:#c084fc;">Hackers</span> — boost network</div>
+                        <div>🟢 <span style="color:#4ade80;">Tanks</span> — siege enemy base</div>
+                        <div style="margin-top:4px; color:#475569;">Destroy enemy base to win!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upgrades Panel -->
+        <div class="panel">
+            <div class="panel-title">
+                <span style="color:#fbbf24;">▲</span> Upgrades & Settings
+            </div>
+
+            <!-- Difficulty -->
+            <div style="background:#0a0a14; border:1px solid #1e293b; border-radius:10px; padding:14px; margin-bottom:16px;">
+                <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">Difficulty</div>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
+                            <span>Enemy Spawn</span><span id="spawn-val" style="color:#94a3b8;">5</span>
+                        </div>
+                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#6366f1;" id="spawn-rate-slider" oninput="document.getElementById('spawn-val').textContent=this.value" onchange="updateDifficulty('spawnRate', this.value)">
+                    </div>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
+                            <span>Enemy Health</span><span id="ehp-val" style="color:#94a3b8;">5</span>
+                        </div>
+                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#ef4444;" id="enemy-health-slider" oninput="document.getElementById('ehp-val').textContent=this.value" onchange="updateDifficulty('enemyHealth', this.value)">
+                    </div>
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
+                            <span>Enemy Damage</span><span id="edmg-val" style="color:#94a3b8;">5</span>
+                        </div>
+                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#f97316;" id="enemy-damage-slider" oninput="document.getElementById('edmg-val').textContent=this.value" onchange="updateDifficulty('enemyDamage', this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upgrades list -->
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div class="upgrade-btn" onclick="buyUpgrade('mining')">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; background:#451a03; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">⛏</div>
+                        <div>
+                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Advanced Mining</div>
+                            <div style="font-size:10px; color:#64748b;">+50% BTC yield</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="mining-upgrade-cost">50</span></span>
+                        <div id="mining-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
+                    </div>
+                </div>
+
+                <div class="upgrade-btn" onclick="buyUpgrade('attack')">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; background:#450a0a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">⚔</div>
+                        <div>
+                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Weapon Upgrade</div>
+                            <div style="font-size:10px; color:#64748b;">+25% unit damage</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="attack-upgrade-cost">75</span></span>
+                        <div id="attack-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
+                    </div>
+                </div>
+
+                <div class="upgrade-btn" onclick="buyUpgrade('capacity')">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; background:#0c1a3a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">👥</div>
+                        <div>
+                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Unit Capacity</div>
+                            <div style="font-size:10px; color:#64748b;">+5 unit slots</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="capacity-upgrade-cost">100</span></span>
+                        <div id="capacity-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
+                    </div>
+                </div>
+
+                <div class="upgrade-btn" onclick="buyUpgrade('base')">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; background:#052e16; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">🏰</div>
+                        <div>
+                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Base Fortification</div>
+                            <div style="font-size:10px; color:#64748b;">+50 base HP</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="base-upgrade-cost">120</span></span>
+                        <div id="base-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notifications -->
+<div id="notifications" style="position:fixed; bottom:20px; right:20px; width:280px; display:flex; flex-direction:column; gap:8px; z-index:1000;"></div>
+
+<script>
+// ==================== SVG UNIT TEMPLATES ====================
+function getMinerSVG() {
+    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
+        <defs>
+            <radialGradient id="mg" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#b45309"/>
+                <stop offset="100%" stop-color="#78350f"/>
+            </radialGradient>
+        </defs>
+        <!-- Body glow -->
+        <circle cx="22" cy="24" r="14" fill="#f59e0b" opacity="0.12"/>
+        <!-- Body -->
+        <circle cx="22" cy="24" r="12" fill="url(#mg)" stroke="#fbbf24" stroke-width="1.5"/>
+        <!-- Ears -->
+        <polygon points="15,14 19,22 11,22" fill="#92400e" stroke="#fbbf24" stroke-width="1"/>
+        <polygon points="29,14 25,22 33,22" fill="#92400e" stroke="#fbbf24" stroke-width="1"/>
+        <polygon points="16,16 18,21 13,21" fill="#fbbf24" opacity="0.4"/>
+        <polygon points="28,16 26,21 31,21" fill="#fbbf24" opacity="0.4"/>
+        <!-- Eyes - slit pupils -->
+        <ellipse cx="18" cy="23" rx="2.5" ry="3" fill="#1c0a00"/>
+        <ellipse cx="18" cy="23" rx="0.9" ry="2.6" fill="#fde68a"/>
+        <ellipse cx="26" cy="23" rx="2.5" ry="3" fill="#1c0a00"/>
+        <ellipse cx="26" cy="23" rx="0.9" ry="2.6" fill="#fde68a"/>
+        <circle cx="18.8" cy="21.5" r="0.8" fill="white" opacity="0.7"/>
+        <circle cx="26.8" cy="21.5" r="0.8" fill="white" opacity="0.7"/>
+        <!-- Nose -->
+        <polygon points="22,28 20,30 24,30" fill="#f9a8d4"/>
+        <!-- Whiskers -->
+        <line x1="9" y1="27" x2="19" y2="28.5" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+        <line x1="9" y1="30" x2="19" y2="30" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+        <line x1="35" y1="27" x2="25" y2="28.5" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+        <line x1="35" y1="30" x2="25" y2="30" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
+        <!-- Pickaxe tool -->
+        <line x1="30" y1="32" x2="40" y2="14" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="40" cy="14" rx="4" ry="2" fill="#64748b" transform="rotate(-45,40,14)" stroke="#94a3b8" stroke-width="0.5"/>
+        <!-- Hard hat -->
+        <path d="M11,18 Q22,8 33,18" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
+        <rect x="10" y="17" width="24" height="4" rx="1" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/>
+        <!-- BTC badge on hat -->
+        <text x="22" y="20" text-anchor="middle" fill="#92400e" font-size="7" font-weight="900">₿</text>
+    </svg>`;
+}
+
+function getFighterSVG() {
+    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
+        <defs>
+            <radialGradient id="fg" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#991b1b"/>
+                <stop offset="100%" stop-color="#7f1d1d"/>
+            </radialGradient>
+        </defs>
+        <!-- Body glow -->
+        <circle cx="22" cy="24" r="14" fill="#ef4444" opacity="0.12"/>
+        <!-- Body -->
+        <circle cx="22" cy="24" r="12" fill="url(#fg)" stroke="#f87171" stroke-width="1.5"/>
+        <!-- Ears -->
+        <polygon points="15,13 19,22 11,22" fill="#7f1d1d" stroke="#f87171" stroke-width="1"/>
+        <polygon points="29,13 25,22 33,22" fill="#7f1d1d" stroke="#f87171" stroke-width="1"/>
+        <polygon points="16,15 18,21 13,21" fill="#f87171" opacity="0.4"/>
+        <polygon points="28,15 26,21 31,21" fill="#f87171" opacity="0.4"/>
+        <!-- Eyes - angry slit -->
+        <ellipse cx="18" cy="23" rx="2.5" ry="3" fill="#1c0000"/>
+        <ellipse cx="18" cy="23" rx="0.9" ry="2.6" fill="#f87171"/>
+        <ellipse cx="26" cy="23" rx="2.5" ry="3" fill="#1c0000"/>
+        <ellipse cx="26" cy="23" rx="0.9" ry="2.6" fill="#f87171"/>
+        <circle cx="18.8" cy="21.5" r="0.8" fill="white" opacity="0.6"/>
+        <circle cx="26.8" cy="21.5" r="0.8" fill="white" opacity="0.6"/>
+        <!-- Angry brows -->
+        <line x1="14" y1="19" x2="20" y2="21" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="30" y1="19" x2="24" y2="21" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Nose -->
+        <polygon points="22,28 20,30 24,30" fill="#f9a8d4"/>
+        <!-- Scar -->
+        <line x1="15" y1="23" x2="17" y2="27" stroke="#fca5a5" stroke-width="0.8" opacity="0.8"/>
+        <!-- Whiskers -->
+        <line x1="9" y1="27" x2="19" y2="28.5" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
+        <line x1="9" y1="30" x2="19" y2="30" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
+        <line x1="35" y1="27" x2="25" y2="28.5" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
+        <line x1="35" y1="30" x2="25" y2="30" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
+        <!-- Sword -->
+        <rect x="34" y="6" width="3" height="26" rx="1" fill="#94a3b8" stroke="#cbd5e1" stroke-width="0.5" transform="rotate(-15,35,20)"/>
+        <rect x="30" y="19" width="14" height="3" rx="1" fill="#64748b" transform="rotate(-15,37,20)"/>
+        <circle cx="37" cy="7" r="2.5" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.5"/>
+        <!-- Chest armor -->
+        <rect x="16" y="32" width="12" height="6" rx="2" fill="#7f1d1d" stroke="#f87171" stroke-width="0.8"/>
+        <line x1="22" y1="32" x2="22" y2="38" stroke="#f87171" stroke-width="0.6" opacity="0.4"/>
+    </svg>`;
+}
+
+function getHackerSVG() {
+    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
+        <defs>
+            <radialGradient id="hg" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#5b21b6"/>
+                <stop offset="100%" stop-color="#4c1d95"/>
+            </radialGradient>
+        </defs>
+        <!-- Body glow -->
+        <circle cx="22" cy="24" r="14" fill="#a855f7" opacity="0.12"/>
+        <!-- Body -->
+        <circle cx="22" cy="24" r="12" fill="url(#hg)" stroke="#a855f7" stroke-width="1.5"/>
+        <!-- Ears -->
+        <polygon points="15,13 19,22 11,22" fill="#4c1d95" stroke="#a855f7" stroke-width="1"/>
+        <polygon points="29,13 25,22 33,22" fill="#4c1d95" stroke="#a855f7" stroke-width="1"/>
+        <polygon points="16,15 18,21 13,21" fill="#c084fc" opacity="0.4"/>
+        <polygon points="28,15 26,21 31,21" fill="#c084fc" opacity="0.4"/>
+        <!-- VR Goggles frame -->
+        <rect x="11" y="21" width="22" height="9" rx="3.5" fill="#1e1035" stroke="#7c3aed" stroke-width="1.2"/>
+        <!-- Left lens -->
+        <rect x="12" y="22" width="9" height="7" rx="2.5" fill="#5b21b6"/>
+        <rect x="12.5" y="22.5" width="8" height="6" rx="2" fill="#7c3aed" opacity="0.8"/>
+        <!-- Lens glow -->
+        <rect x="13" y="23" width="6" height="4" rx="1.5" fill="#c084fc" opacity="0.5"/>
+        <rect x="14" y="23.5" width="3" height="2.5" rx="1" fill="white" opacity="0.25"/>
+        <!-- Right lens -->
+        <rect x="23" y="22" width="9" height="7" rx="2.5" fill="#5b21b6"/>
+        <rect x="23.5" y="22.5" width="8" height="6" rx="2" fill="#7c3aed" opacity="0.8"/>
+        <rect x="24" y="23" width="6" height="4" rx="1.5" fill="#c084fc" opacity="0.5"/>
+        <rect x="25" y="23.5" width="3" height="2.5" rx="1" fill="white" opacity="0.25"/>
+        <!-- Bridge -->
+        <line x1="21" y1="25" x2="23" y2="25" stroke="#7c3aed" stroke-width="1.5"/>
+        <!-- Nose -->
+        <polygon points="22,31 20,33 24,33" fill="#f9a8d4"/>
+        <!-- Floating code -->
+        <text x="3" y="14" fill="#a855f7" font-size="7" font-weight="700" opacity="0.7">&lt;/&gt;</text>
+        <text x="35" y="16" fill="#7c3aed" font-size="6" opacity="0.6">01</text>
+        <text x="2" y="30" fill="#6d28d9" font-size="6" opacity="0.5">10</text>
+        <!-- Laptop badge -->
+        <rect x="10" y="34" width="24" height="7" rx="2" fill="#1e1035" stroke="#7c3aed" stroke-width="0.8"/>
+        <rect x="11" y="35" width="22" height="5" rx="1" fill="#2d1a5e" opacity="0.8"/>
+        <text x="22" y="39" text-anchor="middle" fill="#a855f7" font-size="5.5" font-weight="700">&#9608;&#9608; HACK &#9608;&#9608;</text>
+    </svg>`;
+}
+
+function getTankSVG() {
+    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
+        <defs>
+            <radialGradient id="tg" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#15803d"/>
+                <stop offset="100%" stop-color="#14532d"/>
+            </radialGradient>
+        </defs>
+        <!-- Body glow -->
+        <circle cx="22" cy="26" r="14" fill="#22c55e" opacity="0.12"/>
+        <!-- Body -->
+        <circle cx="22" cy="26" r="12" fill="url(#tg)" stroke="#4ade80" stroke-width="1.5"/>
+        <!-- Armor helmet -->
+        <path d="M10,21 Q22,8 34,21" fill="#15803d" stroke="#4ade80" stroke-width="1.5"/>
+        <rect x="9" y="19" width="26" height="5" rx="2" fill="#166534" stroke="#4ade80" stroke-width="1"/>
+        <!-- Visor slit -->
+        <rect x="12" y="21" width="20" height="2.5" rx="1" fill="#052e16" stroke="#4ade80" stroke-width="0.5"/>
+        <!-- Visor glow -->
+        <rect x="13" y="21.5" width="18" height="1.5" rx="0.5" fill="#4ade80" opacity="0.3"/>
+        <!-- Eyes under visor -->
+        <ellipse cx="18" cy="27" rx="2.5" ry="3" fill="#052e16"/>
+        <ellipse cx="18" cy="27" rx="1" ry="2.6" fill="#4ade80"/>
+        <ellipse cx="26" cy="27" rx="2.5" ry="3" fill="#052e16"/>
+        <ellipse cx="26" cy="27" rx="1" ry="2.6" fill="#4ade80"/>
+        <circle cx="18.8" cy="25.5" r="0.8" fill="white" opacity="0.7"/>
+        <circle cx="26.8" cy="25.5" r="0.8" fill="white" opacity="0.7"/>
+        <!-- Nose -->
+        <polygon points="22,31 20,33 24,33" fill="#f9a8d4"/>
+        <!-- Shoulder armor -->
+        <rect x="7" y="30" width="10" height="8" rx="3" fill="#166534" stroke="#4ade80" stroke-width="1"/>
+        <rect x="27" y="30" width="10" height="8" rx="3" fill="#166534" stroke="#4ade80" stroke-width="1"/>
+        <!-- Body armor plate -->
+        <rect x="14" y="35" width="16" height="7" rx="2" fill="#15803d" stroke="#4ade80" stroke-width="1"/>
+        <!-- Armor hexagon detail -->
+        <line x1="14" y1="38" x2="30" y2="38" stroke="#4ade80" stroke-width="0.6" opacity="0.4"/>
+        <line x1="22" y1="35" x2="22" y2="42" stroke="#4ade80" stroke-width="0.6" opacity="0.4"/>
+        <!-- Shield emblem -->
+        <polygon points="22,36 20,38 20,40 22,41 24,40 24,38" fill="#22c55e" opacity="0.7"/>
+    </svg>`;
+}
+
+function getEnemySVG(type) {
+    const configs = {
+        fighter: { bodyColor: '#7f1d1d', strokeColor: '#f87171', grad1: '#991b1b', grad2: '#7f1d1d', eyeColor: '#fca5a5', earColor: '#7f1d1d', earStroke: '#f87171' },
+        tank: { bodyColor: '#14532d', strokeColor: '#86efac', grad1: '#15803d', grad2: '#14532d', eyeColor: '#86efac', earColor: '#14532d', earStroke: '#86efac' },
+        hacker: { bodyColor: '#4c1d95', strokeColor: '#c084fc', grad1: '#5b21b6', grad2: '#4c1d95', eyeColor: '#c084fc', earColor: '#4c1d95', earStroke: '#c084fc' },
+        sniper: { bodyColor: '#1e3a5f', strokeColor: '#7dd3fc', grad1: '#1d4ed8', grad2: '#1e3a5f', eyeColor: '#7dd3fc', earColor: '#1e3a5f', earStroke: '#7dd3fc' },
+        medic: { bodyColor: '#4a1d2e', strokeColor: '#f9a8d4', grad1: '#9d174d', grad2: '#4a1d2e', eyeColor: '#f9a8d4', earColor: '#4a1d2e', earStroke: '#f9a8d4' },
+    };
+    const c = configs[type] || configs.fighter;
+    const uid = 'eg' + Math.random().toString(36).substr(2,6);
+    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
+        <defs>
+            <radialGradient id="${uid}" cx="50%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="${c.grad1}"/>
+                <stop offset="100%" stop-color="${c.grad2}"/>
+            </radialGradient>
+        </defs>
+        <circle cx="22" cy="24" r="14" fill="${c.strokeColor}" opacity="0.1"/>
+        <circle cx="22" cy="24" r="12" fill="url(#${uid})" stroke="${c.strokeColor}" stroke-width="1.5"/>
+        <!-- Rat round ears -->
+        <circle cx="15" cy="14" r="7" fill="${c.earColor}" stroke="${c.earStroke}" stroke-width="1"/>
+        <circle cx="29" cy="14" r="7" fill="${c.earColor}" stroke="${c.earStroke}" stroke-width="1"/>
+        <circle cx="15" cy="14" r="4" fill="${c.strokeColor}" opacity="0.2"/>
+        <circle cx="29" cy="14" r="4" fill="${c.strokeColor}" opacity="0.2"/>
+        <!-- Angry/menacing eyes -->
+        <circle cx="18" cy="23" r="3" fill="#0f0000"/>
+        <circle cx="18" cy="23" r="2" fill="#dc2626"/>
+        <circle cx="26" cy="23" r="3" fill="#0f0000"/>
+        <circle cx="26" cy="23" r="2" fill="#dc2626"/>
+        <circle cx="18.8" cy="22" r="0.8" fill="white" opacity="0.6"/>
+        <circle cx="26.8" cy="22" r="0.8" fill="white" opacity="0.6"/>
+        <!-- Snout -->
+        <ellipse cx="22" cy="29" rx="5" ry="4" fill="${c.earColor}"/>
+        <circle cx="22" cy="29" r="2" fill="#0f0000"/>
+        <!-- Whiskers -->
+        <line x1="8" y1="28" x2="17" y2="29" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="8" y1="30.5" x2="17" y2="30" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="36" y1="28" x2="27" y2="29" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
+        <line x1="36" y1="30.5" x2="27" y2="30" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
+        <!-- Enemy X marking -->
+        <text x="22" y="43" text-anchor="middle" fill="${c.strokeColor}" font-size="8" font-weight="900" opacity="0.8">☠</text>
+    </svg>`;
+}
+
+// ==================== GAME STATE ====================
+const gameState = {
+    btc: 100, networkPower: 10, time: 0,
+    baseHealth: 100, baseMaxHealth: 100,
+    enemyHealth: 100, maxEnemyHealth: 100,
+    unitCount: 0, maxUnits: 10,
+    gameActive: true,
+    units: [], enemyUnits: [],
+    difficulty: { spawnRate: 5, enemyHealth: 5, enemyDamage: 5 },
+    bossSystem: { lastBossSpawn: 0, bossSpawnInterval: 300, bossLevel: 1, activeBoss: null },
+    upgrades: {
+        mining: { level: 0, cost: 50 },
+        attack: { level: 0, cost: 75 },
+        capacity: { level: 0, cost: 100 },
+        base: { level: 0, cost: 120 }
+    },
+    abilities: {
+        nuke: { cooldown: 0, maxCooldown: 300 },
+        heal: { cooldown: 0, maxCooldown: 180 }
+    },
+    unitCosts: { miner: 10, fighter: 15, hacker: 20, tank: 30 },
+    enemySpawnInterval: 8000,
+    spawnTimer: null
+};
+
+// Arena pixel dimensions (internal coordinate system)
+const ARENA_W = 800;
+const ARENA_H = 420;
+const PLAYER_BASE_X = 100;
+const PLAYER_BASE_Y = 210;
+const ENEMY_BASE_X = 700;
+const ENEMY_BASE_Y = 210;
+const NODE_X = 400;
+const NODE_Y = 210;
+
+function getArenaScale() {
+    const arena = document.getElementById('arena');
+    return { sx: arena.clientWidth / ARENA_W, sy: arena.clientHeight / ARENA_H };
+}
+
+// ==================== UNIT DATA ====================
+function getUnitAttack(type) {
+    const base = { miner: 0, fighter: 15, hacker: 0, tank: 20 };
+    return Math.floor((base[type] || 0) * (1 + gameState.upgrades.attack.level * 0.25));
+}
+function getUnitSpeed(type) { return { miner: 0.8, fighter: 1.2, hacker: 0.5, tank: 0.6 }[type] || 1; }
+function getUnitCooldown(type) { return { miner: 80, fighter: 25, hacker: 160, tank: 70 }[type] || 30; }
+
+function getUnitSVG(type) {
+    return { miner: getMinerSVG, fighter: getFighterSVG, hacker: getHackerSVG, tank: getTankSVG }[type]?.() || getMinerSVG();
+}
+function getUnitHPColor(type) {
+    return { miner: '#fbbf24', fighter: '#ef4444', hacker: '#a855f7', tank: '#22c55e' }[type] || '#60a5fa';
+}
+
+// ==================== NOTIFICATIONS ====================
+function showNotification(text, type = 'info') {
+    const colors = { info: '#1e40af,#3b82f6', success: '#14532d,#22c55e', warning: '#78350f,#f59e0b', error: '#7f1d1d,#ef4444' };
+    const [bg, border] = colors[type].split(',');
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.style.cssText = `background:${bg}22; border:1px solid ${border}44; border-radius:8px; padding:10px 14px; font-size:12px; color:#e2e8f0; display:flex; align-items:center; gap:8px;`;
+    const icons = { info: '💬', success: '✅', warning: '⚠️', error: '❌' };
+    notif.innerHTML = `<span style="font-size:14px;">${icons[type]}</span><span>${text}</span>`;
+    document.getElementById('notifications').appendChild(notif);
+    setTimeout(() => { notif.classList.add('dying'); setTimeout(() => notif.remove(), 400); }, 2600);
+}
+
+// ==================== FLOATING TEXT ====================
+function showFloatingText(text, x, y, color = 'white') {
+    const arena = document.getElementById('arena');
+    const { sx, sy } = getArenaScale();
+    const el = document.createElement('div');
+    el.className = 'damage-popup';
+    el.style.left = (x * sx - 20) + 'px';
+    el.style.top = (y * sy - 10) + 'px';
+    el.style.color = color;
+    el.textContent = text;
+    arena.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+}
+
+// ==================== PARTICLES ====================
+function spawnParticles(x, y, color, count = 6) {
+    const arena = document.getElementById('arena');
+    const { sx, sy } = getArenaScale();
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        const angle = (i / count) * Math.PI * 2;
+        const dist = 20 + Math.random() * 30;
+        p.className = 'particle';
+        p.style.cssText = `width:${3+Math.random()*4}px; height:${3+Math.random()*4}px; background:${color}; left:${x*sx}px; top:${y*sy}px; --px:${Math.cos(angle)*dist}px; --py:${Math.sin(angle)*dist}px;`;
+        arena.appendChild(p);
+        setTimeout(() => p.remove(), 600);
+    }
+}
+
+// ==================== UI UPDATE ====================
+function updateUI() {
+    document.getElementById('btc-resources').textContent = Math.floor(gameState.btc);
+    document.getElementById('network-power').textContent = Math.floor(gameState.networkPower);
+    document.getElementById('unit-capacity').textContent = `${gameState.unitCount}/${gameState.maxUnits}`;
+    document.getElementById('unit-capacity-bar').style.width = `${(gameState.unitCount / gameState.maxUnits) * 100}%`;
+
+    // Player HP bar
+    const pHPW = Math.max(0, (gameState.baseHealth / gameState.baseMaxHealth) * 84);
+    document.getElementById('player-hp-bar').setAttribute('width', pHPW);
+    document.getElementById('base-health').textContent = `HP: ${Math.max(0, Math.floor(gameState.baseHealth))}/${gameState.baseMaxHealth}`;
+
+    // Enemy HP bar
+    const eHPW = Math.max(0, (gameState.enemyHealth / gameState.maxEnemyHealth) * 84);
+    document.getElementById('enemy-hp-bar').setAttribute('width', eHPW);
+    document.getElementById('enemy-health').textContent = `HP: ${Math.max(0, Math.floor(gameState.enemyHealth))}/${gameState.maxEnemyHealth}`;
+}
+
+function shakeBase(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('shake');
+    setTimeout(() => el.classList.remove('shake'), 450);
+}
+
+// ==================== CREATE UNIT ====================
+function createUnit(type) {
+    if (!gameState.gameActive) return;
+    if (gameState.btc < gameState.unitCosts[type]) { showNotification('Not enough BTC!', 'error'); return; }
+    if (gameState.unitCount >= gameState.maxUnits) { showNotification('Unit capacity reached!', 'warning'); return; }
+
+    gameState.btc -= gameState.unitCosts[type];
+    gameState.unitCount++;
+
+    const unit = {
+        id: Date.now() + Math.random(),
+        type, isEnemy: false,
+        x: PLAYER_BASE_X + 30 + Math.random() * 20,
+        y: PLAYER_BASE_Y + (Math.random() - 0.5) * 60,
+        targetX: null, targetY: null, target: null,
+        health: 100, maxHealth: 100,
+        attack: getUnitAttack(type),
+        speed: getUnitSpeed(type),
+        cooldown: 0,
+        cooldownMax: getUnitCooldown(type)
+    };
+
+    if (type === 'miner') { unit.targetX = NODE_X; unit.targetY = NODE_Y; }
+    else if (type === 'hacker') { unit.targetX = PLAYER_BASE_X + 50 + Math.random()*80; unit.targetY = PLAYER_BASE_Y + (Math.random()-0.5)*100; }
+    else { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
+
+    gameState.units.push(unit);
+    spawnUnitElement(unit);
+    updateUI();
+    showNotification(`${type.charAt(0).toUpperCase()+type.slice(1)} deployed!`, 'success');
+}
+
+function spawnUnitElement(unit) {
+    const layer = document.getElementById('units-layer');
+    const { sx, sy } = getArenaScale();
+
+    const wrapper = document.createElement('div');
+    wrapper.id = `unit-${unit.id}`;
+    wrapper.className = 'unit-svg';
+    wrapper.style.cssText = `position:absolute; left:${unit.x*sx-22}px; top:${unit.y*sy-22}px; width:44px; height:44px; pointer-events:all; animation-delay:${Math.random()*2}s;`;
+    wrapper.innerHTML = unit.isEnemy ? getEnemySVG(unit.type) : getUnitSVG(unit.type);
+
+    // HP bar
+    const hpWrap = document.createElement('div');
+    hpWrap.className = 'health-bar-outer';
+    const hpFill = document.createElement('div');
+    hpFill.className = 'health-bar-inner';
+    hpFill.style.cssText = `width:100%; background:${unit.isEnemy ? '#ef4444' : getUnitHPColor(unit.type)};`;
+    hpWrap.appendChild(hpFill);
+    wrapper.appendChild(hpWrap);
+
+    if (!unit.isEnemy) wrapper.addEventListener('click', () => unitClicked(unit.id));
+    layer.appendChild(wrapper);
+}
+
+function updateUnitElement(unit) {
+    const { sx, sy } = getArenaScale();
+    const el = document.getElementById(`unit-${unit.id}`);
+    if (!el) return;
+    el.style.left = (unit.x * sx - 22) + 'px';
+    el.style.top = (unit.y * sy - 22) + 'px';
+    const hpBar = el.querySelector('.health-bar-inner');
+    if (hpBar) hpBar.style.width = `${Math.max(0, (unit.health / unit.maxHealth) * 100)}%`;
+}
+
+function removeUnitElement(unit) {
+    const el = document.getElementById(`unit-${unit.id}`);
+    if (!el) return;
+    spawnParticles(unit.x, unit.y, unit.isEnemy ? '#ef4444' : '#fbbf24', 8);
+    el.style.transition = 'all 0.25s ease';
+    el.style.transform = 'scale(0) rotate(90deg)';
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 260);
+}
+
+// ==================== UNIT CLICKED ====================
+function unitClicked(unitId) {
+    const unit = gameState.units.find(u => u.id === unitId);
+    if (!unit) return;
+    unit.target = null;
+    if (unit.type === 'miner') { unit.targetX = NODE_X; unit.targetY = NODE_Y; showNotification('Miner sent to mine!', 'info'); }
+    else if (unit.type === 'fighter') {
+        if (gameState.enemyUnits.length > 0) { unit.target = gameState.enemyUnits[0]; showNotification('Fighter attacking!', 'info'); }
+        else { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
+    } else if (unit.type === 'tank') { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
+    else if (unit.type === 'hacker') showNotification('Hacker boosting network!', 'info');
+}
+
+// ==================== DESTROY UNITS ====================
+function destroyUnit(unitId) {
+    const idx = gameState.units.findIndex(u => u.id === unitId);
+    if (idx === -1) return;
+    const unit = gameState.units[idx];
+    gameState.units.splice(idx, 1);
+    gameState.unitCount = Math.max(0, gameState.unitCount - 1);
+    removeUnitElement(unit);
+    updateUI();
+}
+
+function destroyEnemyUnit(unitId) {
+    const idx = gameState.enemyUnits.findIndex(e => e.id === unitId);
+    if (idx === -1) return;
+    const enemy = gameState.enemyUnits[idx];
+    gameState.enemyUnits.splice(idx, 1);
+    const btcDrop = enemy.type === 'tank' ? 15 : 8;
+    gameState.btc += btcDrop;
+    showFloatingText(`+${btcDrop}₿`, enemy.x, enemy.y, '#fbbf24');
+    removeUnitElement(enemy);
+    updateUI();
+}
+
+// ==================== ENEMY SPAWN ====================
+function spawnEnemyUnit() {
+    if (!gameState.gameActive) return;
+    const types = ['fighter', 'tank', 'hacker', 'sniper', 'medic'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const hm = 0.5 + ((gameState.difficulty.enemyHealth - 1) * 1.5 / 9);
+    const dm = 0.5 + ((gameState.difficulty.enemyDamage - 1) * 1.5 / 9);
+    const enemy = {
+        id: Date.now() + Math.random(),
+        type, isEnemy: true,
+        x: ENEMY_BASE_X - 30 - Math.random() * 20,
+        y: ENEMY_BASE_Y + (Math.random() - 0.5) * 60,
+        targetX: PLAYER_BASE_X, targetY: PLAYER_BASE_Y,
+        target: null,
+        health: Math.floor(80 * hm), maxHealth: Math.floor(80 * hm),
+        attack: Math.floor(10 * dm),
+        speed: 0.9 + Math.random() * 0.4,
+        cooldown: 0, cooldownMax: 30,
+        abilities: {}
+    };
+    gameState.enemyUnits.push(enemy);
+    spawnUnitElement(enemy);
+    if (Math.random() < 0.3) showNotification('Enemy unit approaching!', 'warning');
+}
+
+// ==================== GAME LOOP ====================
+function gameLoop() {
+    if (!gameState.gameActive) return;
+    gameState.time++;
+
+    const m = String(Math.floor(gameState.time / 60)).padStart(2, '0');
+    const s = String(gameState.time % 60).padStart(2, '0');
+    document.getElementById('game-time').textContent = `${m}:${s}`;
+
+    // Passive income
+    const passive = Math.min(1 + Math.floor(gameState.time / 60), 10);
+    gameState.btc += passive;
+
+    if (gameState.baseHealth <= 0) { endGame(false); return; }
+    if (gameState.enemyHealth <= 0) { endGame(true); return; }
+    updateUI();
+}
+
+function moveLoop() {
+    if (!gameState.gameActive) return;
+
+    // Player units
+    for (const unit of [...gameState.units]) {
+        const el = document.getElementById(`unit-${unit.id}`);
+        if (!el) continue;
+
+        if (unit.cooldown > 0) unit.cooldown--;
+
+        // Auto-detect enemies for fighters
+        if (unit.type === 'fighter' && !unit.target) {
+            let closest = null, closestDist = 120;
+            for (const e of gameState.enemyUnits) {
+                const d = Math.hypot(e.x - unit.x, e.y - unit.y);
+                if (d < closestDist) { closestDist = d; closest = e; }
+            }
+            if (closest) unit.target = closest;
         }
 
-        function getUnitClass(type) {
-            return {
-                miner: "bg-yellow-600 border-yellow-400 shadow-yellow-500/50",
-                fighter: "bg-red-600 border-red-400 shadow-red-500/50",
-                hacker: "bg-purple-600 border-purple-400 shadow-purple-500/50",
-                tank: "bg-green-600 border-green-400 shadow-green-500/50"
-            }[type];
-        }
-
-        function getUnitHealthBarClass(type) {
-            return {
-                miner: "bg-yellow-500",
-                fighter: "bg-red-500",
-                hacker: "bg-purple-500",
-                tank: "bg-green-500"
-            }[type];
-        }
-
-        function getUnitIcon(type) {
-            const icons = {
-                miner: '<i class="fas fa-digging text-white"></i>',
-                fighter: '<i class="fas fa-fist-raised text-white"></i>',
-                hacker: '<i class="fas fa-code text-white"></i>',
-                tank: '<i class="fas fa-shield-alt text-white"></i>'
-            };
-            return icons[type];
-        }
-
-        function getUnitAttack(type) {
-            if (!type || !gameState.unitCosts[type]) return 0;
-            const baseAttack = {
-                miner: 0,
-                fighter: 15,
-                hacker: 0,
-                tank: 20
-            };
-            return Math.floor(baseAttack[type] * (1 + (gameState.upgrades.attack.level * 0.25)));
-        }
-
-        function getUnitSpeed(type) {
-            return {
-                miner: 0.5,
-                fighter: 1,
-                hacker: 0.3,
-                tank: 0.4
-            }[type];
-        }
-
-        function getUnitCooldown(type) {
-            return {
-                miner: 5,
-                fighter: 1.5,
-                hacker: 10,
-                tank: 5
-            }[type];
-        }
-
-        function showNotification(text, type = 'info') {
-            const colors = {
-                info: 'bg-blue-600',
-                success: 'bg-green-600',
-                warning: 'bg-yellow-600',
-                error: 'bg-red-600'
-            };
-            
-            const notif = document.createElement('div');
-            notif.className = `notification ${colors[type]} rounded-lg p-3 shadow-lg flex items-start`;
-            
-            const icons = {
-                info: 'info-circle',
-                success: 'check-circle',
-                warning: 'exclamation-triangle',
-                error: 'times-circle'
-            };
-            
-            notif.innerHTML = `
-                <i class="fas fa-${icons[type]} mr-2"></i>
-                <span>${text}</span>
-            `;
-            
-            dom.notifications.appendChild(notif);
-            
-            setTimeout(() => {
-                notif.remove();
-            }, 3000);
-        }
-
-        function updateUI() {
-            dom.btcResources.textContent = gameState.btc;
-            dom.networkPower.textContent = gameState.networkPower;
-            dom.baseHealth.textContent = `HP: ${gameState.baseHealth}/${100 + (gameState.upgrades.base.level * 50)}`;
-            dom.enemyHealth.textContent = `HP: ${gameState.enemyHealth}/${gameState.maxEnemyHealth}`;
-            dom.unitCount.textContent = gameState.unitCount;
-            dom.unitCapacity.textContent = `${gameState.unitCount}/${gameState.maxUnits}`;
-            
-            const capacityPercent = (gameState.unitCount / gameState.maxUnits) * 100;
-            dom.unitCapacityBar.style.width = `${capacityPercent}%`;
-        }
-
-        function playSound(type) {
-            console.log(`Playing sound: ${type}`);
-        }
-
-        function unitClicked(unitId) {
-            const unit = gameState.units.find(u => u.id === unitId);
-            if (!unit) return;
-            
+        // If target died, clear it
+        if (unit.target && !gameState.enemyUnits.find(e => e.id === unit.target.id)) {
             unit.target = null;
-            
-            if (unit.type === 'miner') {
-                unit.targetX = 290;
-                unit.targetY = 200;
-                showNotification("Miner sent to mine BTC", "info");
-            } else if (unit.type === 'fighter') {
-                if (gameState.enemyUnits.length > 0) {
-                    const closestEnemy = gameState.enemyUnits[0];
-                    unit.target = closestEnemy;
-                    showNotification("Fighter attacking enemy", "info");
-                } else {
-                    showNotification("No enemies to attack", "warning");
+        }
+
+        if (unit.target) {
+            const enemy = unit.target;
+            const dx = enemy.x - unit.x;
+            const dy = enemy.y - unit.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < 35) {
+                // Attack!
+                if (unit.cooldown <= 0) {
+                    enemy.health -= unit.attack;
+                    showFloatingText('-' + unit.attack, enemy.x, enemy.y - 10, '#f87171');
+                    updateUnitElement(enemy);
+                    if (enemy.health <= 0) destroyEnemyUnit(enemy.id);
+                    unit.cooldown = unit.cooldownMax;
                 }
-            } else if (unit.type === 'tank') {
-                unit.targetX = 630;
-                unit.targetY = 200;
-                showNotification("Tank moving to attack enemy base", "info");
-            } else if (unit.type === 'hacker') {
-                showNotification("Hacker is boosting your network power", "info");
+            } else {
+                unit.x += (dx / dist) * unit.speed;
+                unit.y += (dy / dist) * unit.speed;
             }
+            updateUnitElement(unit);
+            continue;
         }
 
-        // Unit creation
-        function createUnit(type) {
-            if (!gameState.gameActive) return;
-            
-            if (gameState.btc < gameState.unitCosts[type]) {
-                showNotification("Not enough BTC!", "error");
-                return;
-            }
-            
-            if (gameState.unitCount >= gameState.maxUnits) {
-                showNotification("Unit capacity reached!", "warning");
-                return;
-            }
-            
-            gameState.btc -= gameState.unitCosts[type];
-            gameState.unitCount++;
-            
-            const unit = {
-                id: Date.now(),
-                type: type,
-                x: 100,
-                y: 200,
-                targetX: null,
-                targetY: null,
-                target: null,
-                health: 100,
-                attack: getUnitAttack(type),
-                speed: getUnitSpeed(type),
-                cooldown: 0,
-                cooldownMax: getUnitCooldown(type)
-            };
-            
-            gameState.units.push(unit);
-            
-            const unitElement = document.createElement('div');
-            unitElement.className = `unit absolute w-8 h-8 rounded-full flex items-center justify-center cursor-pointer ${getUnitClass(type)}`;
-            unitElement.id = `unit-${unit.id}`;
-            unitElement.style.left = `${unit.x}px`;
-            unitElement.style.top = `${unit.y}px`;
-            unitElement.innerHTML = getUnitIcon(type);
-            
-            const healthBar = document.createElement('div');
-            healthBar.className = `health-bar absolute -top-2 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden`;
-            
-            const healthFill = document.createElement('div');
-            healthFill.className = `h-full ${getUnitHealthBarClass(type)}`;
-            healthFill.style.width = '100%';
-            
-            healthBar.appendChild(healthFill);
-            unitElement.appendChild(healthBar);
-            
-            unitElement.addEventListener('click', () => unitClicked(unit.id));
-            
-            dom.unitsContainer.appendChild(unitElement);
-            
-            if (type === 'miner') {
-                unit.targetX = 290;
-                unit.targetY = 200;
-            } else if (type === 'hacker') {
-                unit.targetX = 100 + Math.random() * 100;
-                unit.targetY = 150 + Math.random() * 100;
-            }
-            
-            showNotification(`${getUnitName(type)} created!`, "success");
-            
-            updateUI();
-            playSound('create');
-        }
+        const tx = unit.targetX, ty = unit.targetY;
+        if (tx === null) { updateUnitElement(unit); continue; }
 
-        // Buy upgrade
-        function buyUpgrade(type) {
-            if (!gameState.gameActive) return;
-            
-            const upgrade = gameState.upgrades[type];
-            
-            if (gameState.btc < upgrade.cost) {
-                showNotification("Not enough BTC for this upgrade!", "error");
-                return;
-            }
-            
-            if (gameState.networkPower < upgrade.level * 5) {
-                showNotification("Not enough network power!", "error");
-                return;
-            }
-            
-            gameState.btc -= upgrade.cost;
-            upgrade.level++;
-            upgrade.cost = Math.floor(upgrade.cost * 1.75);
-            
-            if (type === 'capacity') {
-                gameState.maxUnits += 5;
-                showNotification("Unit capacity increased by 5!", "success");
-            } else if (type === 'base') {
-                const healthIncrease = 50;
-                gameState.baseHealth += healthIncrease;
-                showNotification(`Base health increased by ${healthIncrease}!`, "success");
-            } else if (type === 'mining') {
-                showNotification("Mining efficiency increased by 50%!", "success");
-            } else if (type === 'attack') {
-                showNotification("Unit attack power increased by 25%!", "success");
-                
-                for (const unit of gameState.units) {
-                    if (unit.attack > 0) {
-                        unit.attack = getUnitAttack(unit.type);
-                    }
+        const dx = tx - unit.x, dy = ty - unit.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (unit.type === 'miner') {
+            if (dist < 20) {
+                if (unit.cooldown <= 0) {
+                    const yieldMult = 1 + gameState.upgrades.mining.level * 0.5;
+                    const btcYield = Math.floor(5 * yieldMult);
+                    gameState.btc += btcYield;
+                    showFloatingText('+' + btcYield + '₿', unit.x, unit.y - 10, '#fbbf24');
+                    unit.cooldown = unit.cooldownMax;
+                    unit.targetX = PLAYER_BASE_X + 40;
+                    unit.targetY = PLAYER_BASE_Y;
                 }
+            } else {
+                unit.x += (dx / dist) * unit.speed;
+                unit.y += (dy / dist) * unit.speed;
             }
-            
-            playSound('upgrade');
-            updateUI();
+            // Loop back
+            if (tx === PLAYER_BASE_X + 40 && dist < 20) { unit.targetX = NODE_X; unit.targetY = NODE_Y; }
+            updateUnitElement(unit);
+            continue;
         }
 
-        // Use special ability
-        function useAbility(type) {
-            if (!gameState.gameActive) return;
-            
-            const ability = gameState.abilities[type];
-            if (!ability) return;
-            
-            if (ability.cooldown > 0) {
-                showNotification("Ability is on cooldown!", "error");
-                return;
-            }
-            
-            switch (type) {
-                case 'nuke':
-                    // Destroy all enemy units
-                    for (const enemy of [...gameState.enemyUnits]) {
-                        destroyEnemyUnit(enemy.id);
-                    }
-                    showNotification("All enemies destroyed!", "success");
-                    playSound('explosion');
-                    break;
-                    
-                case 'heal':
-                    // Heal base
-                    const healAmount = 50;
-                    gameState.baseHealth = Math.min(gameState.baseHealth + healAmount, 100);
-                    showNotification(`Base healed for ${healAmount} HP!`, "success");
-                    playSound('heal');
-                    updateUI();
-                    break;
-            }
-            
-            // Set cooldown
-            ability.cooldown = ability.maxCooldown;
-            
-            // Start cooldown timer
-            const cooldownBar = document.getElementById(`${type}-cooldown-bar`);
-            if (cooldownBar) {
-                const startTime = Date.now();
-                const updateCooldown = () => {
-                    const elapsed = Date.now() - startTime;
-                    const remaining = Math.max(0, ability.maxCooldown - elapsed / 1000);
-                    const percent = (remaining / ability.maxCooldown) * 100;
-                    
-                    cooldownBar.style.width = `${percent}%`;
-                    ability.cooldown = remaining;
-                    
-                    if (remaining > 0) {
-                        requestAnimationFrame(updateCooldown);
-                    } else {
-                        cooldownBar.style.width = '0%';
-                    }
-                };
-                requestAnimationFrame(updateCooldown);
-            }
-        }
-
-        // Initialize game
-        function init() {
-            updateUI();
-            setInterval(gameLoop, 1000);
-            setInterval(moveUnits, 50);
-            document.getElementById('restart-btn').addEventListener('click', restartGame);
-            document.getElementById('miner-node').addEventListener('click', collectResources);
-            setInterval(spawnRandomEnemyUnit, gameState.enemySpawnInterval);
-        }
-
-        // Start the game when the page loads
-        window.addEventListener('load', init);
-
-        // Game loop
-        function gameLoop() {
-            if (!gameState.gameActive) return;
-            
-            gameState.time++;
-            
-            // Update clock
-            const minutes = Math.floor(gameState.time / 60).toString().padStart(2, '0');
-            const seconds = (gameState.time % 60).toString().padStart(2, '0');
-            dom.gameTime.textContent = `${minutes}:${seconds}`;
-            
-            // Passive BTC income
-            const passiveIncome = Math.min(1 + Math.floor(gameState.time / 60), 10);
-            addBTC(passiveIncome);
-            
-            // Check win/lose conditions
-            if (gameState.baseHealth <= 0) {
-                endGame(false);
-            } else if (gameState.enemyHealth <= 0) {
-                endGame(true);
-            }
-            
-            // Увеличивать сложность со временем
-            gameState.enemySpawnInterval = Math.max(8000 - gameState.time * 100, 2000);
-            
-            updateUI();
-        }
-        
-        // Check for nearby enemies
-        function checkForEnemies(unit) {
-            const detectionRange = 100; // Range at which units can detect enemies
-            
-            for (const enemy of gameState.enemyUnits) {
-                const dx = enemy.x - unit.x;
-                const dy = enemy.y - unit.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                
-                if (distance < detectionRange) {
-                    unit.target = enemy;
-                    return;
+        if (unit.type === 'hacker') {
+            if (dist < 15) {
+                if (unit.cooldown <= 0) {
+                    gameState.networkPower += 2;
+                    showFloatingText('+2 NET', unit.x, unit.y - 10, '#c084fc');
+                    unit.cooldown = unit.cooldownMax;
+                    unit.targetX = PLAYER_BASE_X + 40 + Math.random() * 120;
+                    unit.targetY = PLAYER_BASE_Y + (Math.random() - 0.5) * 140;
                 }
+            } else {
+                unit.x += (dx / dist) * unit.speed;
+                unit.y += (dy / dist) * unit.speed;
             }
+            updateUnitElement(unit);
+            continue;
         }
 
-        // Move units
-        function moveUnits() {
-            if (!gameState.gameActive) return;
-            
-            // Move player units
-            for (const unit of [...gameState.units]) {
-                const unitElement = document.getElementById(`unit-${unit.id}`);
-                if (!unitElement) continue;
-                
-                let targetX = unit.targetX;
-                let targetY = unit.targetY;
-                
-                if (unit.target) {
-                    targetX = unit.target.x;
-                    targetY = unit.target.y;
+        // Fighter or tank heading to enemy base
+        if (dist < 55) {
+            if (unit.cooldown <= 0) {
+                gameState.enemyHealth -= unit.attack;
+                showFloatingText('-' + unit.attack, ENEMY_BASE_X, ENEMY_BASE_Y - 30, '#f87171');
+                shakeBase('enemy-base-g');
+                unit.cooldown = unit.cooldownMax;
+            }
+        } else {
+            // Slight Y drift to avoid stacking
+            unit.x += (dx / dist) * unit.speed;
+            unit.y += (dy / dist) * unit.speed * 0.95;
+        }
+        updateUnitElement(unit);
+    }
+
+    // Enemy units
+    for (const enemy of [...gameState.enemyUnits]) {
+        if (enemy.cooldown > 0) enemy.cooldown--;
+
+        // Find player units to attack
+        let playerTarget = null, ptDist = 80;
+        for (const u of gameState.units) {
+            const d = Math.hypot(u.x - enemy.x, u.y - enemy.y);
+            if (d < ptDist) { ptDist = d; playerTarget = u; }
+        }
+
+        if (playerTarget) {
+            const dx = playerTarget.x - enemy.x;
+            const dy = playerTarget.y - enemy.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 35) {
+                if (enemy.cooldown <= 0) {
+                    playerTarget.health -= enemy.attack;
+                    showFloatingText('-' + enemy.attack, playerTarget.x, playerTarget.y - 10, '#f87171');
+                    updateUnitElement(playerTarget);
+                    if (playerTarget.health <= 0) destroyUnit(playerTarget.id);
+                    enemy.cooldown = enemy.cooldownMax;
                 }
-                
-                // Check for nearby enemies automatically
-                if (!unit.target && unit.type === 'fighter') {
-                    checkForEnemies(unit);
-                }
-
-                // If no target and no enemies nearby, move to enemy base
-                if (!unit.target && (unit.type === 'fighter' || unit.type === 'tank')) {
-                    unit.targetX = 630;
-                    unit.targetY = 200;
-                }
-
-                // If has target position
-                if (targetX !== null && targetY !== null && !unit.target) {
-                    const dx = targetX - unit.x;
-                    const dy = targetY - unit.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-
-                    // Check if we ran into enemies along the way
-                    if (unit.type === 'fighter' && !unit.target) {
-                        checkForEnemies(unit);
-                    }
-                    
-                    // Attack enemy base if in range
-                    if ((unit.type === 'fighter' || unit.type === 'tank') && 
-                        targetX === 630 && targetY === 200 && distance < 50) {
-                        if (unit.cooldown <= 0) {
-                            gameState.enemyHealth -= unit.attack;
-                            showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
-                            
-                            document.getElementById('enemy-base').classList.add('animate-shake');
-                            setTimeout(() => {
-                                document.getElementById('enemy-base').classList.remove('animate-shake');
-                            }, 300);
-                            
-                            unit.cooldown = unit.cooldownMax;
-                            playSound('attack');
-                        } else {
-                            unit.cooldown--;
-                        }
-                        continue;
-                    }
-                    
-                    // Miner unit logic
-                    if (unit.type === 'miner') {
-                        // Mining at node
-                        if (targetX === 290 && targetY === 200 && distance < 20) {
-                            if (unit.cooldown <= 0) {
-                                // Mine BTC
-                                const yieldMultiplier = 1 + (gameState.upgrades.mining.level * 0.5);
-                                const btcYield = Math.floor(5 * yieldMultiplier);
-                                
-                                addBTC(btcYield);
-                                showFloatingText("+" + btcYield + " BTC", unit.x, unit.y, 'yellow');
-                                
-                                unit.cooldown = unit.cooldownMax;
-                                playSound('mine');
-                                
-                                // Return to base after mining
-                                unit.targetX = 100;
-                                unit.targetY = 200;
-                            } else {
-                                unit.cooldown--;
-                            }
-                            
-                            // Prevent getting stuck
-                            if (Math.random() < 0.05 && unit.cooldown < 3) {
-                                unit.x += Math.random() * 4 - 2;
-                                unit.y += Math.random() * 4 - 2;
-                            }
-                            
-                            continue;
-                        }
-                        
-                        // Depositing at base
-                        if (targetX === 100 && targetY === 200 && distance < 20) {
-                            // Immediately go back to mining
-                            unit.targetX = 290;
-                            unit.targetY = 200;
-                            continue;
-                        }
-                        
-                        // Animate mining
-                        unitElement.classList.toggle('scale-90');
-                        continue;
-                    }
-                    
-                    // Tank unit logic
-                    if (unit.type === 'tank') {
-                        // Prioritize attacking targeted enemy units
-                        if (unit.target) {
-                            const enemy = unit.target;
-                            const dx = enemy.x - unit.x;
-                            const dy = enemy.y - unit.y;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            if (distance < 40) { // Tank has longer range
-                                if (unit.cooldown <= 0) {
-                                    enemy.health -= unit.attack;
-                                    showFloatingText("-" + unit.attack, enemy.x, enemy.y, 'red');
-                                    
-                                    const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
-                                    if (enemyElement) {
-                                        const healthBar = enemyElement.querySelector('.health-bar > div');
-                                        const healthPercent = (enemy.health / 100) * 100;
-                                        healthBar.style.width = `${healthPercent}%`;
-                                        
-                                        if (enemy.health <= 0) {
-                                            destroyEnemyUnit(enemy.id);
-                                            unit.target = null;
-                                            // Return to base attack if no more targets
-                                            unit.targetX = 630;
-                                            unit.targetY = 200;
-                                        }
-                                    }
-                                    
-                                    unit.cooldown = unit.cooldownMax;
-                                    playSound('attack');
-                                } else {
-                                    unit.cooldown--;
-                                }
-                                continue;
-                            }
-                        }
-                        
-                        // Attack enemy base if no target and in range
-                        if (!unit.target && targetX === 630 && targetY === 200 && distance < 50) {
-                            if (unit.cooldown <= 0) {
-                                gameState.enemyHealth -= unit.attack;
-                                showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
-                                
-                                document.getElementById('enemy-base').classList.add('animate-shake');
-                                setTimeout(() => {
-                                    document.getElementById('enemy-base').classList.remove('animate-shake');
-                                }, 300);
-                                
-                                unit.cooldown = unit.cooldownMax;
-                                playSound('attack');
-                            } else {
-                                unit.cooldown--;
-                            }
-                            continue;
-                        }
-                    }
-                    if (unit.type === 'tank' && distance < 50 && !unit.target) {
-                        if (unit.cooldown <= 0) {
-                            // Attack base
-                            gameState.enemyHealth -= unit.attack;
-                            showFloatingText("-" + unit.attack, unit.x, unit.y, 'red');
-                            
-                            // Shake base
-                            document.getElementById('enemy-base').classList.add('animate-shake');
-                            setTimeout(() => {
-                                document.getElementById('enemy-base').classList.remove('animate-shake');
-                            }, 300);
-                            
-                            unit.cooldown = unit.cooldownMax;
-                            playSound('attack');
-                        } else {
-                            unit.cooldown--;
-                        }
-                        continue;
-                    }
-                    
-                    // For hackers - random movement
-                    if (unit.type === 'hacker' && distance < 10) {
-                        if (unit.cooldown <= 0) {
-                            // Increase network power
-                            gameState.networkPower += 2;
-                            showFloatingText("+2 Network", unit.x, unit.y, 'purple');
-                            
-                            // Get new random position
-                            unit.targetX = 50 + Math.random() * 200;
-                            unit.targetY = 100 + Math.random() * 200;
-                            
-                            unit.cooldown = unit.cooldownMax;
-                            playSound('hack');
-                        } else {
-                            unit.cooldown--;
-                        }
-                        continue;
-                    }
-                    
-                    // Move towards target if not close enough
-                    if (distance > 5) {
-                        unit.x += (dx / distance) * unit.speed;
-                        unit.y += (dy / distance) * unit.speed;
-                    }
-                    
-                    // Update DOM position
-                    unitElement.style.left = `${unit.x}px`;
-                    unitElement.style.top = `${unit.y}px`;
-                }
-                
-                // Attack logic
-                if (unit.target && unit.type === 'fighter') {
-                    const enemyId = unit.target.id;
-                    const enemy = gameState.enemyUnits.find(e => e.id === enemyId);
-                    
-                    if (!enemy) {
-                        unit.target = null;
-                        continue;
-                    }
-                    
-                    const dx = enemy.x - unit.x;
-                    const dy = enemy.y - unit.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // If in range
-                    if (distance < 30) {
-                        if (unit.cooldown <= 0) {
-                            // Attack enemy
-                            enemy.health -= unit.attack;
-                            showFloatingText("-" + unit.attack, enemy.x, enemy.y, 'red');
-                            
-                            // Update enemy health bar
-                            const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
-                            if (enemyElement) {
-                                const healthBar = enemyElement.querySelector('.health-bar > div');
-                                const healthPercent = (enemy.health / 100) * 100;
-                                healthBar.style.width = `${healthPercent}%`;
-                            }
-                            
-                            // Check if enemy is dead
-                            if (enemy.health <= 0) {
-                                destroyEnemyUnit(enemy.id);
-                            }
-                            
-                            unit.cooldown = unit.cooldownMax;
-                            playSound('attack');
-                        } else {
-                            unit.cooldown--;
-                        }
-                    } else {
-                        // Move towards enemy
-                        unit.x += (dx / distance) * unit.speed;
-                        unit.y += (dy / distance) * unit.speed;
-                        
-                        // Update DOM position
-                        unitElement.style.left = `${unit.x}px`;
-                        unitElement.style.top = `${unit.y}px`;
-                    }
-                }
+            } else {
+                enemy.x += (dx / dist) * enemy.speed;
+                enemy.y += (dy / dist) * enemy.speed;
             }
-            
-            // Move and update enemy units
-            for (const enemy of [...gameState.enemyUnits]) {
-                updateEnemyAI(enemy);
-                const enemyElement = document.getElementById(`enemy-unit-${enemy.id}`);
-                if (!enemyElement) continue;
-                
-                // Move towards player base
-                if (enemy.x < 150) {
-                    enemy.x += enemy.speed;
-                    
-                    // Update DOM position
-                    enemyElement.style.left = `${enemy.x}px`;
-                    enemyElement.style.top = `${enemy.y}px`;
-                } else {
-                    // Attack player base
-                    if (enemy.cooldown <= 0) {
-                        gameState.baseHealth -= enemy.attack;
-                        showFloatingText("-" + enemy.attack, 100, 200, 'red');
-                        
-                        // Shake base
-                        document.getElementById('player-base').classList.add('animate-shake');
-                        setTimeout(() => {
-                            document.getElementById('player-base').classList.remove('animate-shake');
-                        }, 300);
-                        
-                        enemy.cooldown = enemy.cooldownMax;
-                        playSound('attack');
-                    } else {
-                        enemy.cooldown--;
-                    }
-                }
+            updateUnitElement(enemy);
+            continue;
+        }
+
+        // Move toward player base
+        const dx = PLAYER_BASE_X - enemy.x;
+        const dy = PLAYER_BASE_Y - enemy.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < 65) {
+            if (enemy.cooldown <= 0) {
+                gameState.baseHealth -= enemy.attack;
+                showFloatingText('-' + enemy.attack, PLAYER_BASE_X, PLAYER_BASE_Y - 30, '#f87171');
+                shakeBase('player-base-g');
+                enemy.cooldown = enemy.cooldownMax;
             }
+        } else {
+            enemy.x += (dx / dist) * enemy.speed;
+            enemy.y += (dy / dist) * enemy.speed * 0.95;
         }
-        
-        // Spawn random enemy units
-        function spawnRandomEnemyUnit() {
-            if (!gameState.gameActive) return;
-            
-            // Check for boss spawn
-            if (gameState.time - gameState.bossSystem.lastBossSpawn >= gameState.bossSystem.bossSpawnInterval) {
-                spawnBoss();
-                return;
-            }
-            
-            const types = ['fighter', 'tank', 'hacker', 'sniper', 'medic'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            
-            const healthMultiplier = 0.5 + ((gameState.difficulty.enemyHealth - 1) * 1.5 / 9);
-            const damageMultiplier = 0.5 + ((gameState.difficulty.enemyDamage - 1) * 1.5 / 9);
-            
-            const enemy = {
-                id: Date.now(),
-                type: type,
-                x: 630,
-                y: 200,
-                health: Math.floor(100 * healthMultiplier),
-                maxHealth: Math.floor(100 * healthMultiplier),
-                attack: Math.floor(10 * damageMultiplier),
-                speed: 1,
-                target: null,
-                abilities: getEnemyAbilities(type)
-            };
-            
-            gameState.enemyUnits.push(enemy);
-            createEnemyUnitElement(enemy);
-        }
+        updateUnitElement(enemy);
+    }
+}
 
-        // Spawn boss
-        function spawnBoss() {
-            const bossTypes = ['cyberlord', 'dataking', 'networkmaster'];
-            const type = bossTypes[Math.floor(Math.random() * bossTypes.length)];
-            
-            const healthMultiplier = 2 + (gameState.bossSystem.bossLevel * 0.5);
-            const damageMultiplier = 1.5 + (gameState.bossSystem.bossLevel * 0.3);
-            
-            const boss = {
-                id: Date.now(),
-                type: type,
-                x: 630,
-                y: 200,
-                health: Math.floor(500 * healthMultiplier),
-                maxHealth: Math.floor(500 * healthMultiplier),
-                attack: Math.floor(30 * damageMultiplier),
-                speed: 0.8,
-                target: null,
-                abilities: getBossAbilities(type),
-                phase: 1,
-                lastAbilityUse: 0
-            };
-            
-            gameState.bossSystem.activeBoss = boss;
-            gameState.bossSystem.lastBossSpawn = gameState.time;
-            gameState.enemyUnits.push(boss);
-            createEnemyUnitElement(boss);
-            
-            showNotification(`Boss ${type} has appeared!`, "warning");
-            playSound('boss');
-        }
+// ==================== ABILITIES ====================
+function useAbility(type) {
+    if (!gameState.gameActive) return;
+    const ability = gameState.abilities[type];
+    if (ability.cooldown > 0) { showNotification('Ability on cooldown!', 'error'); return; }
 
-        // Get enemy abilities based on type
-        function getEnemyAbilities(type) {
-            switch (type) {
-                case 'sniper':
-                    return {
-                        longRange: {
-                            cooldown: 0,
-                            maxCooldown: 15,
-                            range: 150,
-                            damage: 25
-                        }
-                    };
-                case 'medic':
-                    return {
-                        heal: {
-                            cooldown: 0,
-                            maxCooldown: 20,
-                            healAmount: 30,
-                            range: 50
-                        }
-                    };
-                default:
-                    return {};
-            }
-        }
+    if (type === 'nuke') {
+        for (const e of [...gameState.enemyUnits]) destroyEnemyUnit(e.id);
+        showNotification('Satoshi Bomb launched! All enemies destroyed!', 'success');
+        spawnParticles(NODE_X, NODE_Y, '#ef4444', 20);
+    } else if (type === 'heal') {
+        const healAmt = 50;
+        gameState.baseHealth = Math.min(gameState.baseHealth + healAmt, gameState.baseMaxHealth);
+        showFloatingText('+' + healAmt + ' HP', PLAYER_BASE_X, PLAYER_BASE_Y - 40, '#4ade80');
+        showNotification('Base healed for ' + healAmt + ' HP!', 'success');
+        spawnParticles(PLAYER_BASE_X, PLAYER_BASE_Y, '#4ade80', 12);
+    }
 
-        // Get boss abilities based on type
-        function getBossAbilities(type) {
-            switch (type) {
-                case 'cyberlord':
-                    return {
-                        summonMinions: {
-                            cooldown: 0,
-                            maxCooldown: 30,
-                            minionCount: 3
-                        },
-                        cyberStorm: {
-                            cooldown: 0,
-                            maxCooldown: 45,
-                            damage: 20,
-                            range: 100
-                        }
-                    };
-                case 'dataking':
-                    return {
-                        dataCorruption: {
-                            cooldown: 0,
-                            maxCooldown: 25,
-                            damage: 15,
-                            duration: 5
-                        },
-                        systemCrash: {
-                            cooldown: 0,
-                            maxCooldown: 60,
-                            stunDuration: 3
-                        }
-                    };
-                case 'networkmaster':
-                    return {
-                        networkOverload: {
-                            cooldown: 0,
-                            maxCooldown: 40,
-                            damage: 25,
-                            range: 80
-                        },
-                        firewall: {
-                            cooldown: 0,
-                            maxCooldown: 20,
-                            shieldAmount: 100
-                        }
-                    };
-            }
-        }
+    ability.cooldown = ability.maxCooldown;
+    const bar = document.getElementById(`${type}-cooldown-bar`);
+    if (bar) {
+        const start = Date.now();
+        const tick = () => {
+            const elapsed = (Date.now() - start) / 1000;
+            const rem = Math.max(0, ability.maxCooldown - elapsed);
+            bar.style.width = `${(rem / ability.maxCooldown) * 100}%`;
+            ability.cooldown = rem;
+            if (rem > 0) requestAnimationFrame(tick);
+            else bar.style.width = '0%';
+        };
+        requestAnimationFrame(tick);
+    }
+    updateUI();
+}
 
-        // Update enemy AI
-        function updateEnemyAI(enemy) {
-            if (!enemy || !gameState.gameActive) return;
+// ==================== UPGRADES ====================
+function buyUpgrade(type) {
+    if (!gameState.gameActive) return;
+    const up = gameState.upgrades[type];
+    if (gameState.btc < up.cost) { showNotification('Not enough BTC!', 'error'); return; }
+    gameState.btc -= up.cost;
+    up.level++;
+    up.cost = Math.floor(up.cost * 1.75);
 
-            // Boss AI
-            if (gameState.bossSystem.activeBoss && enemy.id === gameState.bossSystem.activeBoss.id) {
-                updateBossAI(enemy);
-                return;
-            }
+    document.getElementById(`${type}-upgrade-cost`).textContent = up.cost;
+    document.getElementById(`${type}-upgrade-level`).textContent = up.level;
 
-            // Regular enemy AI
-            if (enemy.type === 'sniper') {
-                // Find furthest target
-                let maxDistance = 0;
-                let target = null;
-                
-                for (const unit of gameState.units) {
-                    const dx = unit.x - enemy.x;
-                    const dy = unit.y - enemy.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance > maxDistance) {
-                        maxDistance = distance;
-                        target = unit;
-                    }
-                }
-                
-                if (target && maxDistance <= enemy.abilities.longRange.range) {
-                    if (enemy.abilities.longRange.cooldown <= 0) {
-                        target.health -= enemy.abilities.longRange.damage;
-                        showFloatingText("-" + enemy.abilities.longRange.damage, target.x, target.y, 'red');
-                        enemy.abilities.longRange.cooldown = enemy.abilities.longRange.maxCooldown;
-                        playSound('snipe');
-                    } else {
-                        enemy.abilities.longRange.cooldown--;
-                    }
-                }
-            } else if (enemy.type === 'medic') {
-                // Find lowest health ally
-                let lowestHealth = Infinity;
-                let target = null;
-                
-                for (const ally of gameState.enemyUnits) {
-                    if (ally.id === enemy.id) continue;
-                    
-                    const healthPercent = ally.health / ally.maxHealth;
-                    if (healthPercent < lowestHealth) {
-                        const dx = ally.x - enemy.x;
-                        const dy = ally.y - enemy.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        if (distance <= enemy.abilities.heal.range) {
-                            lowestHealth = healthPercent;
-                            target = ally;
-                        }
-                    }
-                }
-                
-                if (target && enemy.abilities.heal.cooldown <= 0) {
-                    target.health = Math.min(target.health + enemy.abilities.heal.healAmount, target.maxHealth);
-                    showFloatingText("+" + enemy.abilities.heal.healAmount, target.x, target.y, 'green');
-                    enemy.abilities.heal.cooldown = enemy.abilities.heal.maxCooldown;
-                    playSound('heal');
-                } else if (enemy.abilities.heal.cooldown > 0) {
-                    enemy.abilities.heal.cooldown--;
-                }
-            }
-        }
+    if (type === 'capacity') { gameState.maxUnits += 5; showNotification('+5 unit slots unlocked!', 'success'); }
+    else if (type === 'base') { gameState.baseMaxHealth += 50; gameState.baseHealth += 50; showNotification('+50 base HP!', 'success'); }
+    else if (type === 'mining') { showNotification('Mining efficiency +50%!', 'success'); }
+    else if (type === 'attack') {
+        for (const u of gameState.units) u.attack = getUnitAttack(u.type);
+        showNotification('Unit damage +25%!', 'success');
+    }
+    updateUI();
+}
 
-        // Update boss AI
-        function updateBossAI(boss) {
-            if (!boss || !gameState.gameActive) return;
+// ==================== COLLECT RESOURCES ====================
+function collectResources() {
+    if (!gameState.gameActive) return;
+    const miners = gameState.units.filter(u => u.type === 'miner');
+    if (miners.length === 0) { showNotification('You need Miners to collect BTC!', 'error'); return; }
+    const bonus = 1 + Math.floor(miners.length / 2);
+    gameState.btc += bonus;
+    showFloatingText('+' + bonus + '₿', NODE_X, NODE_Y - 30, '#fbbf24');
+    spawnParticles(NODE_X, NODE_Y, '#fbbf24', 10);
+    updateUI();
+}
 
-            const now = Date.now();
-            if (now - boss.lastAbilityUse < 1000) return; // Prevent spam
+// ==================== DIFFICULTY ====================
+function updateDifficulty(type, value) {
+    value = parseInt(value);
+    gameState.difficulty[type] = value;
+    if (type === 'spawnRate') {
+        gameState.enemySpawnInterval = 8000 - ((value - 1) * 6000 / 9);
+        restartSpawnTimer();
+    }
+    showNotification('Difficulty updated!', 'info');
+}
 
-            // Phase transitions
-            if (boss.health <= boss.maxHealth * 0.5 && boss.phase === 1) {
-                boss.phase = 2;
-                boss.speed *= 1.2;
-                boss.attack *= 1.3;
-                showNotification("Boss is enraged!", "warning");
-            }
+function restartSpawnTimer() {
+    if (gameState.spawnTimer) clearInterval(gameState.spawnTimer);
+    gameState.spawnTimer = setInterval(spawnEnemyUnit, gameState.enemySpawnInterval);
+}
 
-            // Use abilities based on type and phase
-            switch (boss.type) {
-                case 'cyberlord':
-                    if (boss.abilities.summonMinions.cooldown <= 0) {
-                        for (let i = 0; i < boss.abilities.summonMinions.minionCount; i++) {
-                            const minion = {
-                                id: Date.now() + i,
-                                type: 'fighter',
-                                x: boss.x + (Math.random() * 100 - 50),
-                                y: boss.y + (Math.random() * 100 - 50),
-                                health: 50,
-                                maxHealth: 50,
-                                attack: 5,
-                                speed: 1.2,
-                                target: null
-                            };
-                            gameState.enemyUnits.push(minion);
-                            createEnemyUnitElement(minion);
-                        }
-                        boss.abilities.summonMinions.cooldown = boss.abilities.summonMinions.maxCooldown;
-                        showNotification("Boss summoned minions!", "warning");
-                    } else {
-                        boss.abilities.summonMinions.cooldown--;
-                    }
+// ==================== END GAME ====================
+function endGame(win) {
+    gameState.gameActive = false;
+    if (gameState.spawnTimer) clearInterval(gameState.spawnTimer);
 
-                    if (boss.abilities.cyberStorm.cooldown <= 0) {
-                        for (const unit of gameState.units) {
-                            const dx = unit.x - boss.x;
-                            const dy = unit.y - boss.y;
-                            const distance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            if (distance <= boss.abilities.cyberStorm.range) {
-                                unit.health -= boss.abilities.cyberStorm.damage;
-                                showFloatingText("-" + boss.abilities.cyberStorm.damage, unit.x, unit.y, 'red');
-                            }
-                        }
-                        boss.abilities.cyberStorm.cooldown = boss.abilities.cyberStorm.maxCooldown;
-                        showNotification("Cyber Storm!", "warning");
-                    } else {
-                        boss.abilities.cyberStorm.cooldown--;
-                    }
-                    break;
+    document.getElementById('result-emoji').textContent = win ? '🏆' : '💀';
+    document.getElementById('result-text').textContent = win ? 'VICTORY!' : 'DEFEATED';
+    document.getElementById('result-text').style.color = win ? '#4ade80' : '#f87171';
+    document.getElementById('result-sub').textContent = win
+        ? `You destroyed the Rat Mob in ${Math.floor(gameState.time/60)}m ${gameState.time%60}s!`
+        : 'The Rat Mob has overrun your base!';
+    document.getElementById('game-result').style.display = 'flex';
 
-                // Add other boss types here...
-            }
+    // Clear units
+    document.getElementById('units-layer').innerHTML = '';
+    gameState.units = [];
+    gameState.enemyUnits = [];
+    gameState.unitCount = 0;
+}
 
-            boss.lastAbilityUse = now;
-        }
+function restartGame() {
+    gameState.btc = 100;
+    gameState.networkPower = 10;
+    gameState.time = 0;
+    gameState.baseHealth = gameState.baseMaxHealth = 100 + gameState.upgrades.base.level * 50;
+    gameState.enemyHealth = gameState.maxEnemyHealth = 100;
+    gameState.unitCount = 0;
+    gameState.maxUnits = 10 + gameState.upgrades.capacity.level * 5;
+    gameState.units = [];
+    gameState.enemyUnits = [];
+    gameState.gameActive = true;
+    document.getElementById('units-layer').innerHTML = '';
+    document.getElementById('notifications').innerHTML = '';
+    document.getElementById('game-result').style.display = 'none';
+    restartSpawnTimer();
+    updateUI();
+}
 
-        // Create enemy unit element
-        function createEnemyUnitElement(enemy) {
-            // Add enemy to DOM
-            const enemyElement = document.createElement('div');
-            enemyElement.className = `unit absolute w-8 h-8 rounded-full flex items-center justify-center border-2 ${getEnemyUnitClass(enemy.type)}`;
-            enemyElement.id = `enemy-unit-${enemy.id}`;
-            enemyElement.style.left = `${enemy.x}px`;
-            enemyElement.style.top = `${enemy.y}px`;
-            enemyElement.innerHTML = getUnitIcon(enemy.type);
-            
-            // Add health bar
-            const healthBar = document.createElement('div');
-            healthBar.className = `health-bar absolute -top-2 left-0 w-full h-1 bg-gray-700 rounded-full overflow-hidden`;
-            
-            const healthFill = document.createElement('div');
-            healthFill.className = `h-full ${getEnemyHealthBarClass(enemy.type)}`;
-            healthFill.style.width = '100%';
-            
-            healthBar.appendChild(healthFill);
-            enemyElement.appendChild(healthBar);
-            
-            dom.unitsContainer.appendChild(enemyElement);
-            
-            // Show notification periodically
-            if (Math.random() < 0.3) {
-                showNotification("Enemy unit spawned!", "warning");
-            }
-            
-            playSound('spawn');
-        }
+// ==================== INIT ====================
+function init() {
+    updateUI();
+    setInterval(gameLoop, 1000);
+    setInterval(moveLoop, 50);
+    document.getElementById('restart-btn').addEventListener('click', restartGame);
+    restartSpawnTimer();
+}
 
-        // Get enemy unit class based on type
-        function getEnemyUnitClass(type) {
-            switch (type) {
-                case 'fighter': return 'border-red-500 bg-red-900';
-                case 'tank': return 'border-green-500 bg-green-900';
-                case 'hacker': return 'border-purple-500 bg-purple-900';
-                default: return 'border-gray-500 bg-gray-900';
-            }
-        }
-
-        // Get enemy health bar class based on type
-        function getEnemyHealthBarClass(type) {
-            switch (type) {
-                case 'fighter': return 'bg-red-500';
-                case 'tank': return 'bg-green-500';
-                case 'hacker': return 'bg-purple-500';
-                default: return 'bg-gray-500';
-            }
-        }
-
-        // Destroy unit
-        function destroyUnit(unitId) {
-            const unitIndex = gameState.units.findIndex(u => u.id === unitId);
-            if (unitIndex === -1) return;
-            
-            gameState.units.splice(unitIndex, 1);
-            gameState.unitCount--;
-            
-            const unitElement = document.getElementById(`unit-${unitId}`);
-            if (unitElement) {
-                // Explosion effect
-                unitElement.classList.add('scale-0', 'opacity-0', 'transition-all', 'duration-300');
-                setTimeout(() => {
-                    unitElement.remove();
-                }, 300);
-            }
-            
-            playSound('destroy');
-        }
-        
-        // Destroy enemy unit
-        function destroyEnemyUnit(unitId) {
-            const enemyIndex = gameState.enemyUnits.findIndex(e => e.id === unitId);
-            if (enemyIndex === -1) return;
-            
-            const enemy = gameState.enemyUnits[enemyIndex];
-            gameState.enemyUnits.splice(enemyIndex, 1);
-            
-            // Drop BTC
-            const btcDrop = enemy.type === 'fighter' ? 5 : 10;
-            addBTC(btcDrop);
-            showFloatingText(`+${btcDrop} BTC`, enemy.x, enemy.y, 'yellow');
-            
-            const enemyElement = document.getElementById(`enemy-unit-${unitId}`);
-            if (enemyElement) {
-                // Explosion effect
-                enemyElement.classList.add('scale-0', 'opacity-0', 'transition-all', 'duration-300');
-                setTimeout(() => {
-                    enemyElement.remove();
-                }, 300);
-            }
-            
-            playSound('destroy');
-        }
-        
-        // Collect resources from miner node
-        function collectResources() {
-            if (!gameState.gameActive) return;
-            
-            // Check if player has miners
-            const miners = gameState.units.filter(u => u.type === 'miner');
-            if (miners.length === 0) {
-                showNotification("You need miners to collect BTC!", "error");
-                return;
-            }
-            
-            // Get bonus from clicking
-            const bonusBTC = 1 + Math.floor(miners.length / 2);
-            addBTC(bonusBTC);
-            
-            // Show effect
-            document.getElementById('miner-node').classList.add('animate-ping');
-            setTimeout(() => {
-                document.getElementById('miner-node').classList.remove('animate-ping');
-            }, 500);
-            
-            showFloatingText(`+${bonusBTC} BTC`, 290, 200, 'yellow');
-            playSound('click');
-        }
-        
-        // Add BTC
-        function addBTC(amount) {
-            gameState.btc += amount;
-            updateUI();
-        }
-        
-        // End game
-        function endGame(win) {
-            gameState.gameActive = false;
-            
-            dom.resultText.textContent = win ? "Victory! 🎉" : "Defeat! 💀";
-            dom.resultText.className = win ? 
-                "text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500" : 
-                "text-4xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-pink-500";
-            
-            dom.gameResult.classList.remove('hidden');
-            
-            // Remove all units
-            dom.unitsContainer.innerHTML = '';
-            gameState.units = [];
-            gameState.enemyUnits = [];
-            gameState.unitCount = 0;
-            
-            playSound(win ? 'win' : 'lose');
-        }
-        
-        // Restart game
-        function restartGame() {
-            // Reset game state
-            gameState.btc = 100;
-            gameState.networkPower = 10;
-            gameState.time = 0;
-            gameState.baseHealth = 100 + (gameState.upgrades.base.level * 50);
-            gameState.enemyHealth = gameState.maxEnemyHealth = 100;
-            gameState.unitCount = 0;
-            gameState.maxUnits = 10 + (gameState.upgrades.capacity.level * 5);
-            gameState.units = [];
-            gameState.enemyUnits = [];
-            gameState.gameActive = true;
-            
-            // Reset UI
-            dom.gameResult.classList.add('hidden');
-            dom.unitsContainer.innerHTML = '';
-            
-            updateUI();
-            
-            // Clear notifications
-            dom.notifications.innerHTML = '';
-        }
-        
-        // Show floating text
-        function showFloatingText(text, x, y, color = 'white') {
-            const textElement = document.createElement('div');
-            textElement.className = `damage-popup text-${color}-400 font-bold`;
-            textElement.style.left = `${x}px`;
-            textElement.style.top = `${y}px`;
-            textElement.textContent = text;
-            
-            dom.unitsContainer.appendChild(textElement);
-            
-            setTimeout(() => {
-                textElement.remove();
-            }, 1000);
-        }
-
-        // Update difficulty settings
-        function updateDifficulty(type, value) {
-            if (!gameState.gameActive) return;
-            
-            value = parseInt(value);
-            gameState.difficulty[type] = value;
-            
-            // Apply difficulty changes
-            switch (type) {
-                case 'spawnRate':
-                    // Adjust enemy spawn interval (8000ms to 2000ms)
-                    const baseInterval = 8000;
-                    const minInterval = 2000;
-                    gameState.enemySpawnInterval = baseInterval - ((value - 1) * (baseInterval - minInterval) / 9);
-                    break;
-                    
-                case 'enemyHealth':
-                    // Adjust enemy health multiplier (0.5x to 2x)
-                    const healthMultiplier = 0.5 + ((value - 1) * 1.5 / 9);
-                    for (const enemy of gameState.enemyUnits) {
-                        enemy.maxHealth = Math.floor(100 * healthMultiplier);
-                        enemy.health = Math.floor(enemy.health * healthMultiplier);
-                    }
-                    break;
-                    
-                case 'enemyDamage':
-                    // Adjust enemy damage multiplier (0.5x to 2x)
-                    const damageMultiplier = 0.5 + ((value - 1) * 1.5 / 9);
-                    for (const enemy of gameState.enemyUnits) {
-                        enemy.attack = Math.floor(enemy.attack * damageMultiplier);
-                    }
-                    break;
-            }
-            
-            showNotification("Difficulty updated!", "success");
-            updateUI();
-        }
-    </script>
+window.addEventListener('load', init);
+</script>
 </body>
 </html>
