@@ -1,1517 +1,1499 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meow Wars - BTC RTS Game</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+:root {
+  --ng:#39FF14;--nr:#FF2E4C;--nc:#00F5FF;--np:#BF5FFF;--ny:#FFD700;--no:#FF6B00;
+  --dv:#04060F;--dp:#080C1A;--dc:#0C1228;--db:#1A2340;--dm:#0F1830;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--dv);color:#C8D8F0;font-family:'Rajdhani',sans-serif;font-size:15px;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,245,255,0.02) 2px,rgba(0,245,255,0.02) 4px),repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(0,245,255,0.04) 40px,rgba(0,245,255,0.04) 41px),repeating-linear-gradient(0deg,transparent,transparent 40px,rgba(0,245,255,0.04) 40px,rgba(0,245,255,0.04) 41px);pointer-events:none;z-index:0;}
+.w{max-width:1220px;margin:0 auto;padding:16px;position:relative;z-index:1;}
 
-        :root {
-            --miner-color: #f59e0b;
-            --fighter-color: #ef4444;
-            --hacker-color: #a855f7;
-            --tank-color: #22c55e;
-            --enemy-color: #f97316;
-        }
+/* HEADER */
+.hdr{text-align:center;padding:18px 0 12px;position:relative;}
+.hdr::after{content:'';display:block;width:200px;height:1px;background:linear-gradient(90deg,transparent,var(--nc),transparent);margin:10px auto 0;}
+.gtitle{font-family:'Orbitron',monospace;font-size:38px;font-weight:900;letter-spacing:6px;background:linear-gradient(90deg,var(--ny),#fff,var(--nc),var(--np),var(--nr),var(--ny));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;background-size:300%;animation:ts 5s ease infinite;}
+@keyframes ts{0%,100%{background-position:0%}50%{background-position:100%}}
+.gsub{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:8px;color:var(--nc);opacity:0.55;text-transform:uppercase;margin-top:4px;}
 
-        body { background: #0f0f1a; }
+/* STAT BAR */
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.sc{background:var(--dp);border:1px solid var(--db);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:var(--ac);box-shadow:0 0 8px var(--ac);}
+.sc-icon{font-size:18px;}
+.sc-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2px;opacity:0.4;font-family:'Share Tech Mono',monospace;}
+.sc-val{font-family:'Orbitron',monospace;font-size:22px;font-weight:700;line-height:1;text-shadow:0 0 12px currentColor;}
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
-        }
-        @keyframes pulse-ring {
-            0% { transform: scale(0.8); opacity: 1; }
-            100% { transform: scale(2.0); opacity: 0; }
-        }
-        @keyframes dash-rotate {
-            to { stroke-dashoffset: -60; }
-        }
-        @keyframes node-glow {
-            0%, 100% { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 20px #f59e0b88); }
-            50% { filter: drop-shadow(0 0 16px #fbbf24) drop-shadow(0 0 40px #f59e0baa); }
-        }
-        @keyframes base-pulse {
-            0%, 100% { filter: drop-shadow(0 0 6px #4ade80); }
-            50% { filter: drop-shadow(0 0 18px #4ade80); }
-        }
-        @keyframes enemy-base-pulse {
-            0%, 100% { filter: drop-shadow(0 0 6px #f87171); }
-            50% { filter: drop-shadow(0 0 18px #f87171); }
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            20% { transform: rotate(-6deg) scale(1.05); }
-            40% { transform: rotate(6deg) scale(1.05); }
-            60% { transform: rotate(-4deg); }
-            80% { transform: rotate(4deg); }
-            100% { transform: rotate(0); }
-        }
-        @keyframes slideIn {
-            from { transform: translateX(110%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; pointer-events: none; }
-        }
-        @keyframes damagePopup {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            60% { transform: translateY(-30px) scale(1.4); opacity: 1; }
-            100% { transform: translateY(-55px) scale(0.8); opacity: 0; }
-        }
-        @keyframes sparkle {
-            0%, 100% { opacity: 0; transform: scale(0); }
-            50% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes march {
-            0% { stroke-dashoffset: 0; }
-            100% { stroke-dashoffset: -20; }
-        }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        @keyframes health-flash {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        @keyframes victory-bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        @keyframes particle-fly {
-            0% { opacity: 1; transform: translate(0,0) scale(1); }
-            100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(0); }
-        }
+/* PANEL */
+.panel{background:var(--dp);border:1px solid var(--db);border-radius:8px;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,245,255,0.025) 0%,transparent 50%);pointer-events:none;}
+.pc{position:absolute;width:10px;height:10px;}
+.pc.tl{top:0;left:0;border-top:2px solid var(--nc);border-left:2px solid var(--nc);}
+.pc.tr{top:0;right:0;border-top:2px solid var(--nc);border-right:2px solid var(--nc);}
+.pc.bl{bottom:0;left:0;border-bottom:2px solid var(--nc);border-left:2px solid var(--nc);}
+.pc.br{bottom:0;right:0;border-bottom:2px solid var(--nc);border-right:2px solid var(--nc);}
+.stitle{font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--nc);opacity:0.55;padding-bottom:10px;border-bottom:1px solid var(--db);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.stitle::before{content:'';display:block;width:3px;height:10px;background:var(--nc);box-shadow:0 0 8px var(--nc);border-radius:2px;}
 
-        .unit-svg {
-            transition: filter 0.15s ease;
-            animation: float 2.5s ease-in-out infinite;
-            cursor: pointer;
-            pointer-events: all;
-        }
-        .unit-svg:hover { filter: brightness(1.3); }
+/* ARENA */
+.arena{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--db);box-shadow:0 0 60px rgba(0,245,255,0.04),0 0 120px rgba(0,0,0,0.8),inset 0 0 100px rgba(0,0,0,0.6);height:440px;margin-bottom:16px;}
+.a-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,245,255,0.012) 3px,rgba(0,245,255,0.012) 4px);pointer-events:none;z-index:5;}
+.flabel{position:absolute;font-family:'Orbitron',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;padding:3px 8px;border-radius:3px;z-index:6;}
+.mdiv{position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,rgba(0,245,255,0.2) 20%,rgba(0,245,255,0.4) 50%,rgba(0,245,255,0.2) 80%,transparent);transform:translateX(-50%);z-index:4;}
+.mdiv::after{content:'VS';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Orbitron',monospace;font-size:9px;color:var(--nc);background:var(--dv);padding:4px 5px;border:1px solid rgba(0,245,255,0.25);border-radius:3px;letter-spacing:2px;}
 
-        .node-svg { animation: node-glow 2s ease-in-out infinite; cursor: pointer; }
-        .player-base-svg { animation: base-pulse 3s ease-in-out infinite; }
-        .enemy-base-svg { animation: enemy-base-pulse 3s ease-in-out infinite; }
+/* UNIT CARDS */
+.ubtn{background:var(--dc);border:1px solid var(--db);border-radius:8px;padding:12px 10px;cursor:pointer;transition:all 0.2s;position:relative;overflow:hidden;text-align:left;}
+.ubtn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,transparent 60%);}
+.ubtn:hover{transform:translateY(-3px);}
+.ubtn.mi:hover{border-color:var(--ny);box-shadow:0 0 20px rgba(255,215,0,0.15),0 8px 32px rgba(0,0,0,0.5);}
+.ubtn.fi:hover{border-color:var(--nr);box-shadow:0 0 20px rgba(255,46,76,0.15),0 8px 32px rgba(0,0,0,0.5);}
+.ubtn.ha:hover{border-color:var(--np);box-shadow:0 0 20px rgba(191,95,255,0.15),0 8px 32px rgba(0,0,0,0.5);}
+.ubtn.ta:hover{border-color:var(--ng);box-shadow:0 0 20px rgba(57,255,20,0.15),0 8px 32px rgba(0,0,0,0.5);}
 
-        .notification {
-            animation: slideIn 0.4s ease forwards;
-        }
-        .notification.dying {
-            animation: fadeOut 0.4s ease forwards;
-        }
+/* PORTRAIT */
+.pring{width:68px;height:68px;border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;margin:0 auto 8px;}
+.pring::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:2px solid var(--rc);box-shadow:0 0 16px var(--rc),0 0 40px rgba(0,0,0,0.5),inset 0 0 16px rgba(0,0,0,0.6);animation:rp 2.5s ease-in-out infinite;}
+.pring::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--rc);opacity:0.2;animation:rp2 2.5s ease-in-out infinite;}
+@keyframes rp{0%,100%{opacity:0.6;box-shadow:0 0 12px var(--rc),0 0 30px rgba(0,0,0,0.5)}50%{opacity:1;box-shadow:0 0 24px var(--rc),0 0 60px rgba(0,0,0,0.5)}}
+@keyframes rp2{0%,100%{opacity:0.1;transform:scale(1)}50%{opacity:0.3;transform:scale(1.05)}}
 
-        .damage-popup {
-            animation: damagePopup 1.2s ease forwards;
-            position: absolute;
-            font-weight: 900;
-            pointer-events: none;
-            font-size: 14px;
-            font-family: 'Press Start 2P', monospace;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 8px currentColor;
-            z-index: 100;
-            white-space: nowrap;
-        }
-        .shake { animation: shake 0.4s ease; }
+/* ABILITY BTN */
+.abtn{background:var(--dc);border:1px solid var(--db);border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden;}
+.abtn:hover{background:var(--dm);border-color:rgba(0,245,255,0.2);}
+.cdstrip{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:6px;}
+.cdfill{height:100%;border-radius:2px;width:0%;}
 
-        .ability-cooldown {
-            position: absolute;
-            bottom: -12px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-        .ability-cooldown-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #60a5fa, #a78bfa);
-            width: 0%;
-            transition: width 0.1s linear;
-            border-radius: 2px;
-        }
+/* UPGRADE BTN */
+.upbtn{background:var(--dc);border:1px solid var(--db);border-radius:6px;padding:9px 10px;cursor:pointer;transition:all 0.18s;display:flex;justify-content:space-between;align-items:center;}
+.upbtn:hover{background:var(--dm);border-color:rgba(0,245,255,0.25);transform:translateX(2px);}
+.lvlb{width:20px;height:20px;background:var(--dv);border:1px solid rgba(0,245,255,0.25);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:9px;color:var(--nc);}
 
-        .progress-bar { height: 8px; border-radius: 4px; overflow: hidden; background: #1e293b; }
-        .progress-fill { height: 100%; transition: width 0.3s ease; }
+/* PROGRESS */
+.pt{height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;}
+.pf{height:100%;border-radius:3px;transition:width 0.3s;}
 
-        .unit-btn {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .unit-btn::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 60%);
-            pointer-events: none;
-        }
-        .unit-btn:hover { transform: translateY(-2px); border-color: #64748b; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
-        .unit-btn:active { transform: translateY(0); }
+/* UNIT FLOATER */
+.uf{position:absolute;width:56px;height:56px;cursor:pointer;pointer-events:all;z-index:10;transition:filter 0.15s;}
+.uf:hover{filter:brightness(1.5);z-index:20;}
+.uf.af{animation:uf1 3s ease-in-out infinite;}
+@keyframes uf1{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.uhp{position:absolute;top:-6px;left:-2px;width:calc(100% + 4px);height:3px;background:rgba(0,0,0,0.8);border-radius:2px;overflow:hidden;}
+.uhpf{height:100%;border-radius:2px;transition:width 0.15s;}
 
-        .miner-btn:hover { border-color: #f59e0b; box-shadow: 0 8px 24px rgba(245,158,11,0.25); }
-        .fighter-btn:hover { border-color: #ef4444; box-shadow: 0 8px 24px rgba(239,68,68,0.25); }
-        .hacker-btn:hover { border-color: #a855f7; box-shadow: 0 8px 24px rgba(168,85,247,0.25); }
-        .tank-btn:hover { border-color: #22c55e; box-shadow: 0 8px 24px rgba(34,197,94,0.25); }
+/* PARTICLES */
+.ptcl{position:absolute;border-radius:50%;pointer-events:none;animation:pf 0.7s ease-out forwards;}
+@keyframes pf{to{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0);}}
 
-        .game-arena {
-            background: #0a0a14;
-            border: 1px solid #1e293b;
-            position: relative;
-            overflow: hidden;
-        }
+/* DMG POP */
+.dpop{position:absolute;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;pointer-events:none;z-index:200;animation:dpf 0.9s ease forwards;text-shadow:0 0 8px currentColor;}
+@keyframes dpf{0%{transform:translateY(0) scale(1);opacity:1}60%{transform:translateY(-24px) scale(1.25);opacity:1}100%{transform:translateY(-44px) scale(0.8);opacity:0}}
 
-        .arena-grid {
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(30,41,59,0.4) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(30,41,59,0.4) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-        .arena-grid::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.04) 0%, transparent 70%);
-        }
+/* SHAKE */
+@keyframes sh{0%{transform:rotate(0)}20%{transform:rotate(-4deg) scale(1.03)}40%{transform:rotate(4deg) scale(1.03)}60%{transform:rotate(-2deg)}80%{transform:rotate(2deg)}100%{transform:rotate(0)}}
+.shk{animation:sh 0.4s ease;}
 
-        .mid-line {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            background: linear-gradient(180deg, transparent, rgba(99,102,241,0.4) 30%, rgba(99,102,241,0.4) 70%, transparent);
-            transform: translateX(-50%);
-        }
-        .mid-line::before {
-            content: '';
-            position: absolute;
-            left: -2px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #818cf8;
-            box-shadow: 0 0 8px #818cf8;
-        }
+/* RESULT */
+.roverlay{position:absolute;inset:0;background:rgba(4,6,15,0.92);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);border-radius:8px;z-index:100;}
+.rbox{background:var(--dp);border:1px solid var(--db);border-radius:12px;padding:40px 50px;text-align:center;}
+.rbtn{background:linear-gradient(135deg,rgba(0,245,255,0.12),rgba(191,95,255,0.12));border:1px solid rgba(0,245,255,0.4);color:var(--nc);padding:12px 36px;border-radius:6px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;box-shadow:0 0 20px rgba(0,245,255,0.1);}
+.rbtn:hover{background:linear-gradient(135deg,rgba(0,245,255,0.22),rgba(191,95,255,0.22));transform:scale(1.04);}
 
-        .stat-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 14px 18px;
-        }
-        .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+/* NOTIF */
+.notif{background:var(--dp);border:1px solid var(--db);border-radius:6px;padding:9px 12px;font-size:12px;display:flex;align-items:center;gap:8px;animation:nin 0.3s ease forwards;}
+.notif.dy{animation:nout 0.3s ease forwards;}
+@keyframes nin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes nout{to{opacity:0;transform:translateX(110%)}}
 
-        .panel { background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px; }
-        .panel-title { font-size: 14px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; gap: 8px; }
+/* GUIDE PILL */
+.gpill{display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:5px;font-size:11px;}
+.gdot{width:7px;height:7px;border-radius:50%;}
 
-        .upgrade-btn { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center; }
-        .upgrade-btn:hover { background: #263347; border-color: #475569; transform: translateX(2px); }
+/* BASE ANIMATIONS */
+@keyframes bgp{0%,100%{filter:drop-shadow(0 0 10px #39FF14) drop-shadow(0 0 30px rgba(57,255,20,0.3))}50%{filter:drop-shadow(0 0 22px #39FF14) drop-shadow(0 0 60px rgba(57,255,20,0.5))}}
+@keyframes bge{0%,100%{filter:drop-shadow(0 0 10px #FF2E4C) drop-shadow(0 0 30px rgba(255,46,76,0.3))}50%{filter:drop-shadow(0 0 22px #FF2E4C) drop-shadow(0 0 60px rgba(255,46,76,0.5))}}
+@keyframes ng{0%,100%{filter:drop-shadow(0 0 10px #FFD700) drop-shadow(0 0 25px rgba(255,215,0,0.4))}50%{filter:drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 50px rgba(255,215,0,0.6))}}
+.bpg{animation:bgp 2.5s ease-in-out infinite;}
+.beg{animation:bge 2.5s ease-in-out infinite;}
+.mng{animation:ng 2s ease-in-out infinite;cursor:pointer;}
 
-        .ability-btn { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s; position: relative; }
-        .ability-btn:hover { background: #263347; }
-
-        #units-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-
-        .particle {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            animation: particle-fly 0.6s ease-out forwards;
-        }
-
-        .health-bar-outer { position: absolute; top: -10px; left: -6px; width: calc(100% + 12px); height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; }
-        .health-bar-inner { height: 100%; border-radius: 2px; transition: width 0.2s ease; }
-
-        .result-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .result-box { background: #0f172a; border: 1px solid #334155; border-radius: 20px; padding: 40px 48px; text-align: center; animation: victory-bounce 1s ease infinite; }
-    </style>
+input[type=range]{width:100%;height:4px;appearance:none;background:var(--db);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--nc);box-shadow:0 0 8px var(--nc);cursor:pointer;border:2px solid var(--dv);}
+</style>
 </head>
-<body class="text-white font-sans" style="font-family: system-ui, -apple-system, sans-serif;">
-<div style="max-width:1200px; margin:0 auto; padding:24px 16px;">
-
-    <!-- Header -->
-    <div style="text-align:center; margin-bottom:24px;">
-        <div style="font-size:36px; font-weight:900; background:linear-gradient(135deg,#fbbf24,#f87171,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:-1px; margin-bottom:4px;">
-            🐾 Meow Wars
-        </div>
-        <div style="color:#475569; font-size:13px; letter-spacing:0.1em; text-transform:uppercase;">BTC Real-Time Strategy</div>
-    </div>
-
-    <!-- Stats -->
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px;">
-        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
-            <div class="stat-icon" style="background:#451a03; color:#fbbf24;">₿</div>
-            <div>
-                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">BTC</div>
-                <div id="btc-resources" style="font-size:22px; font-weight:700; color:#fbbf24;">100</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
-            <div class="stat-icon" style="background:#0c1a3a; color:#60a5fa;">⚡</div>
-            <div>
-                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">Network</div>
-                <div id="network-power" style="font-size:22px; font-weight:700; color:#60a5fa;">10</div>
-            </div>
-        </div>
-        <div class="stat-card" style="display:flex; align-items:center; gap:12px;">
-            <div class="stat-icon" style="background:#1a0a2e; color:#c084fc;">⏱</div>
-            <div>
-                <div style="font-size:11px; color:#64748b; text-transform:uppercase; letter-spacing:0.06em;">Time</div>
-                <div id="game-time" style="font-size:22px; font-weight:700; color:#c084fc;">00:00</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Arena -->
-    <div class="game-arena" style="height:420px; border-radius:16px; margin-bottom:20px;" id="arena">
-        <div class="arena-grid"></div>
-        <div class="mid-line"></div>
-
-        <!-- SVG layer for bases + node -->
-        <svg id="static-layer" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 800 420" preserveAspectRatio="xMidYMid meet">
-            <defs>
-                <radialGradient id="baseGradP" cx="50%" cy="40%" r="60%">
-                    <stop offset="0%" stop-color="#1e3a28"/>
-                    <stop offset="100%" stop-color="#0a1a0f"/>
-                </radialGradient>
-                <radialGradient id="baseGradE" cx="50%" cy="40%" r="60%">
-                    <stop offset="0%" stop-color="#3a1a1a"/>
-                    <stop offset="100%" stop-color="#1a0a0a"/>
-                </radialGradient>
-                <radialGradient id="nodeGrad" cx="50%" cy="35%" r="65%">
-                    <stop offset="0%" stop-color="#fde68a"/>
-                    <stop offset="50%" stop-color="#f59e0b"/>
-                    <stop offset="100%" stop-color="#92400e"/>
-                </radialGradient>
-                <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="4" result="blur"/>
-                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-                </filter>
-                <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="4" result="blur"/>
-                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-                </filter>
-                <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="6" result="blur"/>
-                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-                </filter>
-                <clipPath id="baseClipP"><circle cx="100" cy="210" r="52"/></clipPath>
-                <clipPath id="baseClipE"><circle cx="700" cy="210" r="52"/></clipPath>
-                <!-- Animated dash ring -->
-                <circle id="node-ring" cx="400" cy="210" r="38" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.5">
-                    <animateTransform attributeName="transform" type="rotate" from="0 400 210" to="360 400 210" dur="8s" repeatCount="indefinite"/>
-                </circle>
-            </defs>
-
-            <!-- === PLAYER BASE (Cat Gang) === -->
-            <g class="player-base-svg" id="player-base-g" style="cursor:default;">
-                <!-- Outer glow ring -->
-                <circle cx="100" cy="210" r="60" fill="none" stroke="#4ade80" stroke-width="1" opacity="0.3"/>
-                <!-- Base body -->
-                <circle cx="100" cy="210" r="52" fill="url(#baseGradP)" stroke="#4ade80" stroke-width="2.5"/>
-                <!-- Inner detail ring -->
-                <circle cx="100" cy="210" r="44" fill="none" stroke="#22c55e" stroke-width="0.5" opacity="0.4"/>
-                <!-- Armor plates -->
-                <path d="M72 192 Q100 180 128 192 L128 228 Q100 240 72 228 Z" fill="#1a3a22" opacity="0.5"/>
-                <!-- Cat face -->
-                <!-- Head -->
-                <circle cx="100" cy="205" r="18" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
-                <!-- Ears -->
-                <polygon points="87,191 93,200 81,200" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
-                <polygon points="113,191 107,200 119,200" fill="#2d5a3d" stroke="#4ade80" stroke-width="1"/>
-                <!-- Inner ears -->
-                <polygon points="88,193 92,199 84,199" fill="#4ade80" opacity="0.5"/>
-                <polygon points="112,193 108,199 116,199" fill="#4ade80" opacity="0.5"/>
-                <!-- Eyes -->
-                <ellipse cx="93" cy="204" rx="4" ry="5" fill="#0f0f1a"/>
-                <ellipse cx="107" cy="204" rx="4" ry="5" fill="#0f0f1a"/>
-                <ellipse cx="93" cy="204" rx="1.5" ry="4" fill="#4ade80"/>
-                <ellipse cx="107" cy="204" rx="1.5" ry="4" fill="#4ade80"/>
-                <circle cx="94" cy="202" r="1" fill="white" opacity="0.8"/>
-                <circle cx="108" cy="202" r="1" fill="white" opacity="0.8"/>
-                <!-- Nose -->
-                <polygon points="100,210 97,213 103,213" fill="#f9a8d4"/>
-                <!-- Whiskers -->
-                <line x1="84" y1="211" x2="96" y2="213" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
-                <line x1="84" y1="214" x2="96" y2="214" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
-                <line x1="116" y1="211" x2="104" y2="213" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
-                <line x1="116" y1="214" x2="104" y2="214" stroke="#4ade80" stroke-width="0.7" opacity="0.7"/>
-                <!-- BTC symbol -->
-                <text x="100" y="230" text-anchor="middle" fill="#4ade80" font-size="10" font-weight="700" opacity="0.8">₿ BASE</text>
-                <!-- HP bar area -->
-                <rect x="58" y="252" width="84" height="6" rx="3" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
-                <rect id="player-hp-bar" x="58" y="252" width="84" height="6" rx="3" fill="#4ade80"/>
-                <text id="base-health" x="100" y="272" text-anchor="middle" fill="#94a3b8" font-size="10">HP: 100/100</text>
-            </g>
-
-            <!-- === ENEMY BASE (Rat Mob) === -->
-            <g class="enemy-base-svg" id="enemy-base-g" style="cursor:default;">
-                <!-- Outer glow ring -->
-                <circle cx="700" cy="210" r="60" fill="none" stroke="#f87171" stroke-width="1" opacity="0.3"/>
-                <!-- Base body -->
-                <circle cx="700" cy="210" r="52" fill="url(#baseGradE)" stroke="#f87171" stroke-width="2.5"/>
-                <!-- Inner detail ring -->
-                <circle cx="700" cy="210" r="44" fill="none" stroke="#ef4444" stroke-width="0.5" opacity="0.4"/>
-                <!-- Armor plates -->
-                <path d="M672 192 Q700 180 728 192 L728 228 Q700 240 672 228 Z" fill="#3a1a1a" opacity="0.5"/>
-                <!-- Rat face -->
-                <!-- Head -->
-                <circle cx="700" cy="205" r="18" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
-                <!-- Ears (rat round ears) -->
-                <circle cx="686" cy="191" r="7" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
-                <circle cx="714" cy="191" r="7" fill="#5a2d2d" stroke="#f87171" stroke-width="1"/>
-                <circle cx="686" cy="191" r="4" fill="#f9a8d4" opacity="0.4"/>
-                <circle cx="714" cy="191" r="4" fill="#f9a8d4" opacity="0.4"/>
-                <!-- Eyes (beady red) -->
-                <circle cx="693" cy="204" r="3.5" fill="#1a0a0a"/>
-                <circle cx="707" cy="204" r="3.5" fill="#1a0a0a"/>
-                <circle cx="693" cy="204" r="2" fill="#dc2626"/>
-                <circle cx="707" cy="204" r="2" fill="#dc2626"/>
-                <circle cx="694" cy="203" r="0.8" fill="white" opacity="0.7"/>
-                <circle cx="708" cy="203" r="0.8" fill="white" opacity="0.7"/>
-                <!-- Snout -->
-                <ellipse cx="700" cy="212" rx="5" ry="4" fill="#7c3535"/>
-                <circle cx="700" cy="212" r="1.5" fill="#1a0a0a"/>
-                <!-- Whiskers -->
-                <line x1="682" y1="211" x2="695" y2="213" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
-                <line x1="682" y1="214" x2="695" y2="214" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
-                <line x1="718" y1="211" x2="705" y2="213" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
-                <line x1="718" y1="214" x2="705" y2="214" stroke="#f87171" stroke-width="0.7" opacity="0.6"/>
-                <!-- Skull symbol -->
-                <text x="700" y="230" text-anchor="middle" fill="#f87171" font-size="10" font-weight="700" opacity="0.8">💀 BASE</text>
-                <!-- HP bar area -->
-                <rect x="658" y="252" width="84" height="6" rx="3" fill="#0f172a" stroke="#1e293b" stroke-width="0.5"/>
-                <rect id="enemy-hp-bar" x="658" y="252" width="84" height="6" rx="3" fill="#ef4444"/>
-                <text id="enemy-health" x="700" y="272" text-anchor="middle" fill="#94a3b8" font-size="10">HP: 100/100</text>
-            </g>
-
-            <!-- === MINER NODE === -->
-            <g id="miner-node-g" class="node-svg" style="pointer-events:all;" onclick="collectResources()">
-                <!-- Outer spinning ring -->
-                <circle cx="400" cy="210" r="38" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.5">
-                    <animateTransform attributeName="transform" type="rotate" from="0 400 210" to="360 400 210" dur="8s" repeatCount="indefinite"/>
-                </circle>
-                <!-- Second ring counter-rotating -->
-                <circle cx="400" cy="210" r="32" fill="none" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="6 8" opacity="0.4">
-                    <animateTransform attributeName="transform" type="rotate" from="360 400 210" to="0 400 210" dur="12s" repeatCount="indefinite"/>
-                </circle>
-                <!-- Node body -->
-                <circle cx="400" cy="210" r="26" fill="url(#nodeGrad)" stroke="#fbbf24" stroke-width="2"/>
-                <!-- Coin inner detail -->
-                <circle cx="400" cy="210" r="21" fill="none" stroke="#fde68a" stroke-width="0.8" opacity="0.5"/>
-                <!-- BTC symbol -->
-                <text x="400" y="207" text-anchor="middle" fill="#92400e" font-size="16" font-weight="900">₿</text>
-                <text x="400" y="224" text-anchor="middle" fill="#92400e" font-size="8" font-weight="700">MINE</text>
-                <!-- Sparkle particles -->
-                <circle cx="400" cy="183" r="2" fill="#fde68a" opacity="0.8">
-                    <animate attributeName="opacity" values="0.8;0;0.8" dur="2s" begin="0s" repeatCount="indefinite"/>
-                    <animate attributeName="r" values="2;3;2" dur="2s" begin="0s" repeatCount="indefinite"/>
-                </circle>
-                <circle cx="420" cy="196" r="1.5" fill="#fde68a" opacity="0.6">
-                    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
-                </circle>
-                <circle cx="380" cy="196" r="1.5" fill="#fde68a" opacity="0.6">
-                    <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" begin="1s" repeatCount="indefinite"/>
-                </circle>
-            </g>
-        </svg>
-
-        <!-- Units layer (HTML divs with SVG inside) -->
-        <div id="units-layer"></div>
-
-        <!-- Game result overlay -->
-        <div id="game-result" class="result-overlay" style="display:none; border-radius:16px;">
-            <div class="result-box">
-                <div id="result-emoji" style="font-size:60px; margin-bottom:16px;">🎉</div>
-                <div id="result-text" style="font-size:28px; font-weight:900; margin-bottom:8px;"></div>
-                <div id="result-sub" style="color:#64748b; font-size:14px; margin-bottom:24px;"></div>
-                <button id="restart-btn" style="background:linear-gradient(135deg,#3b82f6,#6366f1); border:none; color:white; padding:12px 32px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                    ↺ Play Again
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Controls Grid -->
-    <div style="display:grid; grid-template-columns:1fr 1fr 1.6fr; gap:16px;">
-
-        <!-- Units Panel -->
-        <div class="panel">
-            <div class="panel-title">
-                <span style="color:#818cf8;">⚔</span> Deploy Units
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-
-                <div class="unit-btn miner-btn" onclick="createUnit('miner')">
-                    <div style="margin-bottom:10px;">
-                        <svg viewBox="0 0 48 48" width="48" height="48">
-                            <!-- Miner cat mini icon -->
-                            <circle cx="24" cy="26" r="12" fill="#92400e" stroke="#f59e0b" stroke-width="1.5"/>
-                            <polygon points="18,16 22,24 14,24" fill="#92400e" stroke="#f59e0b" stroke-width="1.2"/>
-                            <polygon points="30,16 26,24 34,24" fill="#92400e" stroke="#f59e0b" stroke-width="1.2"/>
-                            <ellipse cx="20" cy="25" rx="2.5" ry="3" fill="#451a03"/>
-                            <ellipse cx="20" cy="25" rx="1" ry="2.5" fill="#fbbf24"/>
-                            <ellipse cx="28" cy="25" rx="2.5" ry="3" fill="#451a03"/>
-                            <ellipse cx="28" cy="25" rx="1" ry="2.5" fill="#fbbf24"/>
-                            <polygon points="24,30 22,33 26,33" fill="#f9a8d4"/>
-                            <!-- Pickaxe -->
-                            <line x1="30" y1="36" x2="40" y2="12" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-                            <ellipse cx="40" cy="12" rx="4" ry="2" fill="#64748b" transform="rotate(-45 40 12)"/>
-                        </svg>
-                    </div>
-                    <div style="font-size:12px; font-weight:700; color:#fbbf24;">BTC Miner</div>
-                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Gathers BTC</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
-                        <span style="color:#fbbf24;">₿ <span id="miner-cost">10</span></span>
-                        <span style="color:#60a5fa;">2s</span>
-                    </div>
-                </div>
-
-                <div class="unit-btn fighter-btn" onclick="createUnit('fighter')">
-                    <div style="margin-bottom:10px;">
-                        <svg viewBox="0 0 48 48" width="48" height="48">
-                            <!-- Fighter cat -->
-                            <circle cx="24" cy="26" r="12" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.5"/>
-                            <polygon points="18,15 22,24 14,24" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.2"/>
-                            <polygon points="30,15 26,24 34,24" fill="#7f1d1d" stroke="#ef4444" stroke-width="1.2"/>
-                            <ellipse cx="20" cy="25" rx="2.5" ry="3" fill="#450a0a"/>
-                            <ellipse cx="20" cy="25" rx="1" ry="2.5" fill="#f87171"/>
-                            <ellipse cx="28" cy="25" rx="2.5" ry="3" fill="#450a0a"/>
-                            <ellipse cx="28" cy="25" rx="1" ry="2.5" fill="#f87171"/>
-                            <polygon points="24,30 22,33 26,33" fill="#f9a8d4"/>
-                            <!-- Angry brows -->
-                            <line x1="17" y1="21" x2="22" y2="23" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
-                            <line x1="31" y1="21" x2="26" y2="23" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round"/>
-                            <!-- Sword -->
-                            <line x1="36" y1="10" x2="42" y2="38" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-                            <line x1="33" y1="22" x2="45" y2="22" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
-                            <circle cx="36" cy="10" r="2" fill="#fbbf24"/>
-                        </svg>
-                    </div>
-                    <div style="font-size:12px; font-weight:700; color:#f87171;">Fighter</div>
-                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Attacks enemies</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
-                        <span style="color:#fbbf24;">₿ <span id="fighter-cost">15</span></span>
-                        <span style="color:#60a5fa;">3s</span>
-                    </div>
-                </div>
-
-                <div class="unit-btn hacker-btn" onclick="createUnit('hacker')">
-                    <div style="margin-bottom:10px;">
-                        <svg viewBox="0 0 48 48" width="48" height="48">
-                            <!-- Hacker cat with VR goggles -->
-                            <circle cx="24" cy="26" r="12" fill="#4a1d96" stroke="#a855f7" stroke-width="1.5"/>
-                            <polygon points="18,15 22,24 14,24" fill="#4a1d96" stroke="#a855f7" stroke-width="1.2"/>
-                            <polygon points="30,15 26,24 34,24" fill="#4a1d96" stroke="#a855f7" stroke-width="1.2"/>
-                            <!-- VR Goggles -->
-                            <rect x="14" y="22" width="20" height="9" rx="3" fill="#1e0a3a" stroke="#a855f7" stroke-width="1"/>
-                            <rect x="15" y="23" width="8" height="7" rx="2" fill="#7c3aed" opacity="0.7"/>
-                            <rect x="25" y="23" width="8" height="7" rx="2" fill="#7c3aed" opacity="0.7"/>
-                            <!-- Glow on goggles -->
-                            <rect x="16" y="24" width="6" height="5" rx="1.5" fill="#c084fc" opacity="0.5"/>
-                            <rect x="26" y="24" width="6" height="5" rx="1.5" fill="#c084fc" opacity="0.5"/>
-                            <polygon points="24,31 22,34 26,34" fill="#f9a8d4"/>
-                            <!-- Code symbols floating -->
-                            <text x="8" y="16" fill="#a855f7" font-size="8" opacity="0.7">&lt;/&gt;</text>
-                            <text x="36" y="18" fill="#7c3aed" font-size="7" opacity="0.6">01</text>
-                        </svg>
-                    </div>
-                    <div style="font-size:12px; font-weight:700; color:#c084fc;">Hacker</div>
-                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Boosts network</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
-                        <span style="color:#fbbf24;">₿ <span id="hacker-cost">20</span></span>
-                        <span style="color:#60a5fa;">5s</span>
-                    </div>
-                </div>
-
-                <div class="unit-btn tank-btn" onclick="createUnit('tank')">
-                    <div style="margin-bottom:10px;">
-                        <svg viewBox="0 0 48 48" width="48" height="48">
-                            <!-- Tank cat with armor helmet -->
-                            <circle cx="24" cy="28" r="12" fill="#14532d" stroke="#22c55e" stroke-width="1.5"/>
-                            <!-- Helmet -->
-                            <path d="M13,24 Q24,10 35,24" fill="#15803d" stroke="#22c55e" stroke-width="1.5"/>
-                            <rect x="13" y="22" width="22" height="4" rx="1" fill="#15803d" stroke="#22c55e" stroke-width="0.8"/>
-                            <!-- Eyes under helmet -->
-                            <ellipse cx="20" cy="28" rx="2.5" ry="3" fill="#052e16"/>
-                            <ellipse cx="20" cy="28" rx="1" ry="2.5" fill="#4ade80"/>
-                            <ellipse cx="28" cy="28" rx="2.5" ry="3" fill="#052e16"/>
-                            <ellipse cx="28" cy="28" rx="1" ry="2.5" fill="#4ade80"/>
-                            <polygon points="24,33 22,36 26,36" fill="#f9a8d4"/>
-                            <!-- Armor chest plate -->
-                            <rect x="16" y="36" width="16" height="8" rx="2" fill="#15803d" stroke="#22c55e" stroke-width="0.8"/>
-                            <line x1="24" y1="36" x2="24" y2="44" stroke="#22c55e" stroke-width="0.6" opacity="0.5"/>
-                            <!-- Shield emblem -->
-                            <text x="24" y="43" text-anchor="middle" fill="#86efac" font-size="7" font-weight="700">🛡</text>
-                        </svg>
-                    </div>
-                    <div style="font-size:12px; font-weight:700; color:#4ade80;">Hash Tank</div>
-                    <div style="font-size:10px; color:#64748b; margin-top:2px;">Destroys base</div>
-                    <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px;">
-                        <span style="color:#fbbf24;">₿ <span id="tank-cost">30</span></span>
-                        <span style="color:#60a5fa;">8s</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top:16px; padding-top:14px; border-top:1px solid #1e293b;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b; margin-bottom:6px;">
-                    <span>Unit Capacity</span>
-                    <span id="unit-capacity" style="color:#94a3b8;">0/10</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="unit-capacity-bar" class="progress-fill" style="background:linear-gradient(90deg,#3b82f6,#6366f1); width:0%;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Abilities Panel -->
-        <div class="panel">
-            <div class="panel-title">
-                <span style="color:#f97316;">✦</span> Special Abilities
-            </div>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <div class="ability-btn" onclick="useAbility('nuke')">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
-                        <div style="width:40px; height:40px; background:#450a0a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px;">💣</div>
-                        <div>
-                            <div style="font-size:13px; font-weight:700; color:#fca5a5;">Satoshi Bomb</div>
-                            <div style="font-size:11px; color:#64748b;">Destroy all enemies</div>
-                        </div>
-                    </div>
-                    <div class="ability-cooldown">
-                        <div id="nuke-cooldown-bar" class="ability-cooldown-bar"></div>
-                    </div>
-                </div>
-
-                <div class="ability-btn" onclick="useAbility('heal')">
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
-                        <div style="width:40px; height:40px; background:#052e16; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:20px;">💚</div>
-                        <div>
-                            <div style="font-size:13px; font-weight:700; color:#86efac;">Halving Heal</div>
-                            <div style="font-size:11px; color:#64748b;">Restore base health</div>
-                        </div>
-                    </div>
-                    <div class="ability-cooldown">
-                        <div id="heal-cooldown-bar" class="ability-cooldown-bar" style="background:linear-gradient(90deg,#22c55e,#4ade80);"></div>
-                    </div>
-                </div>
-
-                <!-- Guide -->
-                <div style="background:#0a0a14; border:1px solid #1e293b; border-radius:10px; padding:14px; margin-top:4px;">
-                    <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:10px;">Guide</div>
-                    <div style="display:flex; flex-direction:column; gap:7px; font-size:11px; color:#64748b; line-height:1.5;">
-                        <div>🟡 <span style="color:#fbbf24;">Miners</span> — collect BTC</div>
-                        <div>🔴 <span style="color:#f87171;">Fighters</span> — fight enemies</div>
-                        <div>🟣 <span style="color:#c084fc;">Hackers</span> — boost network</div>
-                        <div>🟢 <span style="color:#4ade80;">Tanks</span> — siege enemy base</div>
-                        <div style="margin-top:4px; color:#475569;">Destroy enemy base to win!</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Upgrades Panel -->
-        <div class="panel">
-            <div class="panel-title">
-                <span style="color:#fbbf24;">▲</span> Upgrades & Settings
-            </div>
-
-            <!-- Difficulty -->
-            <div style="background:#0a0a14; border:1px solid #1e293b; border-radius:10px; padding:14px; margin-bottom:16px;">
-                <div style="font-size:11px; font-weight:600; color:#64748b; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;">Difficulty</div>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
-                            <span>Enemy Spawn</span><span id="spawn-val" style="color:#94a3b8;">5</span>
-                        </div>
-                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#6366f1;" id="spawn-rate-slider" oninput="document.getElementById('spawn-val').textContent=this.value" onchange="updateDifficulty('spawnRate', this.value)">
-                    </div>
-                    <div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
-                            <span>Enemy Health</span><span id="ehp-val" style="color:#94a3b8;">5</span>
-                        </div>
-                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#ef4444;" id="enemy-health-slider" oninput="document.getElementById('ehp-val').textContent=this.value" onchange="updateDifficulty('enemyHealth', this.value)">
-                    </div>
-                    <div>
-                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; margin-bottom:4px;">
-                            <span>Enemy Damage</span><span id="edmg-val" style="color:#94a3b8;">5</span>
-                        </div>
-                        <input type="range" min="1" max="10" value="5" style="width:100%; accent-color:#f97316;" id="enemy-damage-slider" oninput="document.getElementById('edmg-val').textContent=this.value" onchange="updateDifficulty('enemyDamage', this.value)">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Upgrades list -->
-            <div style="display:flex; flex-direction:column; gap:8px;">
-                <div class="upgrade-btn" onclick="buyUpgrade('mining')">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; background:#451a03; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">⛏</div>
-                        <div>
-                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Advanced Mining</div>
-                            <div style="font-size:10px; color:#64748b;">+50% BTC yield</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="mining-upgrade-cost">50</span></span>
-                        <div id="mining-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
-                    </div>
-                </div>
-
-                <div class="upgrade-btn" onclick="buyUpgrade('attack')">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; background:#450a0a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">⚔</div>
-                        <div>
-                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Weapon Upgrade</div>
-                            <div style="font-size:10px; color:#64748b;">+25% unit damage</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="attack-upgrade-cost">75</span></span>
-                        <div id="attack-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
-                    </div>
-                </div>
-
-                <div class="upgrade-btn" onclick="buyUpgrade('capacity')">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; background:#0c1a3a; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">👥</div>
-                        <div>
-                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Unit Capacity</div>
-                            <div style="font-size:10px; color:#64748b;">+5 unit slots</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="capacity-upgrade-cost">100</span></span>
-                        <div id="capacity-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
-                    </div>
-                </div>
-
-                <div class="upgrade-btn" onclick="buyUpgrade('base')">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; background:#052e16; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px;">🏰</div>
-                        <div>
-                            <div style="font-size:12px; font-weight:600; color:#e2e8f0;">Base Fortification</div>
-                            <div style="font-size:10px; color:#64748b;">+50 base HP</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <span style="font-size:12px; color:#fbbf24;">₿ <span id="base-upgrade-cost">120</span></span>
-                        <div id="base-upgrade-level" style="width:20px; height:20px; background:#1e293b; border:1px solid #334155; border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#60a5fa; font-weight:700;">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<body>
+<div class="w">
+<div class="hdr">
+  <div class="gtitle">⚡ MEOW WARS ⚡</div>
+  <div class="gsub">Neon Protocol v3.0 · BTC Real-Time Strategy</div>
 </div>
 
-<!-- Notifications -->
-<div id="notifications" style="position:fixed; bottom:20px; right:20px; width:280px; display:flex; flex-direction:column; gap:8px; z-index:1000;"></div>
+<div class="sbar">
+  <div class="sc" style="--ac:var(--ny)"><div class="sc-icon" style="color:var(--ny)">₿</div><div><div class="sc-lbl">BTC Credits</div><div class="sc-val" style="color:var(--ny)" id="btc">100</div></div></div>
+  <div class="sc" style="--ac:var(--nc)"><div class="sc-icon" style="color:var(--nc)">⚡</div><div><div class="sc-lbl">Network Power</div><div class="sc-val" style="color:var(--nc)" id="net">10</div></div></div>
+  <div class="sc" style="--ac:var(--np)"><div class="sc-icon" style="color:var(--np)">⏱</div><div><div class="sc-lbl">Uptime</div><div class="sc-val" style="color:var(--np)" id="gtime">00:00</div></div></div>
+</div>
+
+<!-- ARENA -->
+<div class="arena" id="arena">
+  <div class="a-scan"></div>
+  <div class="flabel" style="top:10px;left:12px;color:var(--ng);background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.2);">🐾 CAT GANG</div>
+  <div class="flabel" style="top:10px;right:12px;color:var(--nr);background:rgba(255,46,76,0.07);border:1px solid rgba(255,46,76,0.2);">💀 RAT MOB</div>
+  <div class="mdiv"></div>
+
+  <svg id="static" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;" viewBox="0 0 800 440" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <radialGradient id="arenaBg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#060B18"/>
+      <stop offset="100%" stop-color="#02040A"/>
+    </radialGradient>
+    <radialGradient id="pgBase" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#0d2a14"/>
+      <stop offset="100%" stop-color="#040d07"/>
+    </radialGradient>
+    <radialGradient id="egBase" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#2a0a10"/>
+      <stop offset="100%" stop-color="#0d0305"/>
+    </radialGradient>
+    <radialGradient id="nodeG" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFF9C4"/>
+      <stop offset="40%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#5a3800"/>
+    </radialGradient>
+    <radialGradient id="catHead" cx="45%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#1a4a22"/>
+      <stop offset="100%" stop-color="#0a1f0d"/>
+    </radialGradient>
+    <radialGradient id="ratHead" cx="45%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#3a0a12"/>
+      <stop offset="100%" stop-color="#150308"/>
+    </radialGradient>
+    <pattern id="hex" x="0" y="0" width="24" height="28" patternUnits="userSpaceOnUse">
+      <polygon points="12,2 22,8 22,20 12,26 2,20 2,8" fill="none" stroke="rgba(0,245,255,0.05)" stroke-width="0.5"/>
+    </pattern>
+    <filter id="glG"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glR"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glY"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="glG2"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="groundLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="25%" stop-color="rgba(0,245,255,0.08)"/>
+      <stop offset="50%" stop-color="rgba(0,245,255,0.12)"/>
+      <stop offset="75%" stop-color="rgba(0,245,255,0.08)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+    <linearGradient id="platGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(0,245,255,0.08)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+    <linearGradient id="platGradE" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,46,76,0.08)"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ARENA BG -->
+  <rect width="800" height="440" fill="url(#arenaBg)"/>
+  <rect width="800" height="440" fill="url(#hex)" opacity="0.6"/>
+  <!-- Ground grid lines -->
+  <line x1="0" y1="370" x2="800" y2="370" stroke="url(#groundLine)" stroke-width="0.5"/>
+  <line x1="0" y1="390" x2="800" y2="390" stroke="url(#groundLine)" stroke-width="0.5" opacity="0.6"/>
+  <line x1="0" y1="410" x2="800" y2="410" stroke="url(#groundLine)" stroke-width="0.5" opacity="0.35"/>
+
+  <!-- ===== PLAYER BASE — CAT HQ ===== -->
+  <g class="bpg" id="player-base-g">
+    <!-- Outer glow aura -->
+    <circle cx="100" cy="220" r="85" fill="rgba(57,255,20,0.025)"/>
+    <circle cx="100" cy="220" r="70" fill="rgba(57,255,20,0.04)" stroke="rgba(57,255,20,0.12)" stroke-width="1"/>
+
+    <!-- Platform base — hexagonal compound -->
+    <polygon points="100,158 156,190 156,254 100,286 44,254 44,190" fill="url(#pgBase)" stroke="#39FF14" stroke-width="1.5"/>
+    <!-- Inner hex outline -->
+    <polygon points="100,165 149,194 149,248 100,279 51,248 51,194" fill="none" stroke="rgba(57,255,20,0.25)" stroke-width="0.5"/>
+    <!-- Circuit pattern inside hex -->
+    <line x1="100" y1="165" x2="100" y2="186" stroke="#39FF14" stroke-width="0.5" opacity="0.3"/>
+    <line x1="100" y1="247" x2="100" y2="279" stroke="#39FF14" stroke-width="0.5" opacity="0.3"/>
+    <line x1="60" y1="188" x2="80" y2="220" stroke="#39FF14" stroke-width="0.4" opacity="0.2"/>
+    <line x1="140" y1="188" x2="120" y2="220" stroke="#39FF14" stroke-width="0.4" opacity="0.2"/>
+    <!-- Corner accent glows -->
+    <circle cx="100" cy="158" r="2.5" fill="#39FF14" opacity="0.8"/>
+    <circle cx="156" cy="190" r="2" fill="#39FF14" opacity="0.6"/>
+    <circle cx="156" cy="254" r="2" fill="#39FF14" opacity="0.6"/>
+    <circle cx="100" cy="286" r="2.5" fill="#39FF14" opacity="0.8"/>
+    <circle cx="44" cy="254" r="2" fill="#39FF14" opacity="0.6"/>
+    <circle cx="44" cy="190" r="2" fill="#39FF14" opacity="0.6"/>
+
+    <!-- Inner platform glow overlay -->
+    <polygon points="100,158 156,190 156,254 100,286 44,254 44,190" fill="url(#platGrad)" opacity="0.8"/>
+
+    <!-- === CYBERPUNK CAT COMMANDER === -->
+    <!-- BODY — Armored Torso -->
+    <rect x="82" y="236" width="36" height="28" rx="5" fill="#06180a" stroke="#39FF14" stroke-width="1.2"/>
+    <!-- Chest armor panels with detail -->
+    <rect x="84" y="238" width="15" height="12" rx="2" fill="#0a2a10" stroke="#39FF14" stroke-width="0.6"/>
+    <rect x="101" y="238" width="15" height="12" rx="2" fill="#0a2a10" stroke="#39FF14" stroke-width="0.6"/>
+    <!-- Chest glow strips -->
+    <rect x="86" y="240" width="11" height="2" rx="1" fill="#39FF14" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="103" y="240" width="11" height="2" rx="1" fill="#39FF14" opacity="0.5">
+      <animate attributeName="opacity" values="1;0.5;1" dur="1.8s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="84" y="251" width="32" height="10" rx="2" fill="#0a2a10" stroke="#39FF14" stroke-width="0.5"/>
+    <!-- BTC badge center -->
+    <circle cx="100" cy="256" r="5" fill="#0d3a14" stroke="#39FF14" stroke-width="0.6"/>
+    <text x="100" y="259" text-anchor="middle" fill="#39FF14" font-size="7" font-weight="900" font-family="monospace" opacity="0.9">₿</text>
+
+    <!-- ARMS — Heavy Gauntlets -->
+    <rect x="68" y="238" width="14" height="20" rx="5" fill="#061808" stroke="#39FF14" stroke-width="0.9"/>
+    <rect x="118" y="238" width="14" height="20" rx="5" fill="#061808" stroke="#39FF14" stroke-width="0.9"/>
+    <!-- Shoulder pauldrons -->
+    <ellipse cx="75" cy="238" rx="9" ry="5.5" fill="#0a2a10" stroke="#39FF14" stroke-width="1"/>
+    <ellipse cx="125" cy="238" rx="9" ry="5.5" fill="#0a2a10" stroke="#39FF14" stroke-width="1"/>
+    <!-- Shoulder detail lines -->
+    <line x1="68" y1="241" x2="82" y2="241" stroke="#39FF14" stroke-width="0.4" opacity="0.5"/>
+    <line x1="118" y1="241" x2="132" y2="241" stroke="#39FF14" stroke-width="0.4" opacity="0.5"/>
+    <!-- Energy gauntlets -->
+    <rect x="68" y="255" width="14" height="7" rx="2.5" fill="#0d3a14" stroke="#39FF14" stroke-width="0.8"/>
+    <rect x="118" y="255" width="14" height="7" rx="2.5" fill="#0d3a14" stroke="#39FF14" stroke-width="0.8"/>
+    <rect x="70" y="257" width="10" height="3" rx="1" fill="#39FF14" opacity="0.35"/>
+    <rect x="120" y="257" width="10" height="3" rx="1" fill="#39FF14" opacity="0.35"/>
+
+    <!-- NECK connector -->
+    <rect x="95" y="229" width="10" height="7" rx="2" fill="#0a2a10" stroke="#39FF14" stroke-width="0.5"/>
+
+    <!-- HEAD — Cat skull -->
+    <ellipse cx="100" cy="218" rx="22" ry="18" fill="url(#catHead)" stroke="#39FF14" stroke-width="1.5" filter="url(#glG)"/>
+    <!-- Fur texture layers -->
+    <ellipse cx="100" cy="216" rx="17" ry="14" fill="#133019"/>
+    <ellipse cx="98" cy="215" rx="8" ry="7" fill="#1a4020" opacity="0.7"/>
+
+    <!-- CAT EARS — with cybernetic implants -->
+    <!-- Left ear -->
+    <polygon points="81,206 88,218 74,218" fill="#0a2010" stroke="#39FF14" stroke-width="1.2"/>
+    <polygon points="82.5,208 88,217 77,217" fill="#061208" opacity="0.9"/>
+    <!-- Ear implant LED -->
+    <circle cx="82" cy="210" r="2.5" fill="#39FF14">
+      <animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2.5;3.5;2.5" dur="1.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="82" cy="210" r="1" fill="white" opacity="0.8"/>
+    <!-- Right ear -->
+    <polygon points="119,206 112,218 126,218" fill="#0a2010" stroke="#39FF14" stroke-width="1.2"/>
+    <polygon points="117.5,208 112,217 123,217" fill="#061208" opacity="0.9"/>
+    <circle cx="118" cy="210" r="2.5" fill="#39FF14">
+      <animate attributeName="opacity" values="0.2;1;0.2" dur="1.4s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="3.5;2.5;3.5" dur="1.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="118" cy="210" r="1" fill="white" opacity="0.8"/>
+
+    <!-- TACTICAL VISOR + headset -->
+    <rect x="78" y="207" width="44" height="6" rx="2.5" fill="#06180a" stroke="#39FF14" stroke-width="0.7" opacity="0.9"/>
+    <!-- Visor HUD lines -->
+    <line x1="80" y1="210" x2="120" y2="210" stroke="#39FF14" stroke-width="0.5" opacity="0.2"/>
+    <rect x="80" y="208" width="6" height="3" rx="1" fill="#0d4a1a" stroke="#39FF14" stroke-width="0.4"/>
+    <rect x="114" y="208" width="6" height="3" rx="1" fill="#0d4a1a" stroke="#39FF14" stroke-width="0.4"/>
+    <!-- Comms antenna -->
+    <line x1="122" y1="207" x2="126" y2="200" stroke="#39FF14" stroke-width="0.9" opacity="0.7"/>
+    <circle cx="126" cy="199" r="1.5" fill="#39FF14" opacity="0.9">
+      <animate attributeName="opacity" values="0.9;0.1;0.9" dur="0.9s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- EYES — Glowing cybernetic -->
+    <!-- Left eye socket -->
+    <ellipse cx="92" cy="217" rx="5.5" ry="6" fill="#020a03"/>
+    <ellipse cx="92" cy="217" rx="4" ry="5.5" fill="#0d3a16"/>
+    <!-- Iris glow -->
+    <ellipse cx="92" cy="217" rx="1.8" ry="5" fill="#39FF14" opacity="0.95">
+      <animate attributeName="opacity" values="0.95;0.5;0.95" dur="3s" repeatCount="indefinite"/>
+    </ellipse>
+    <!-- Pupil slit -->
+    <ellipse cx="92" cy="217" rx="0.6" ry="4.5" fill="#000"/>
+    <circle cx="93.5" cy="214" r="1.2" fill="white" opacity="0.45"/>
+    <!-- Scan line across eye -->
+    <line x1="87" y1="217" x2="97" y2="217" stroke="#39FF14" stroke-width="0.4" opacity="0.3"/>
+
+    <!-- Right eye socket -->
+    <ellipse cx="108" cy="217" rx="5.5" ry="6" fill="#020a03"/>
+    <ellipse cx="108" cy="217" rx="4" ry="5.5" fill="#0d3a16"/>
+    <ellipse cx="108" cy="217" rx="1.8" ry="5" fill="#39FF14" opacity="0.95">
+      <animate attributeName="opacity" values="0.5;0.95;0.5" dur="3s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="108" cy="217" rx="0.6" ry="4.5" fill="#000"/>
+    <circle cx="109.5" cy="214" r="1.2" fill="white" opacity="0.45"/>
+    <line x1="103" y1="217" x2="113" y2="217" stroke="#39FF14" stroke-width="0.4" opacity="0.3"/>
+
+    <!-- NOSE -->
+    <polygon points="100,224 97,227 103,227" fill="#5be080" opacity="0.8"/>
+    <!-- Subtle philtrum line -->
+    <line x1="100" y1="227" x2="100" y2="230" stroke="#3da05c" stroke-width="0.5" opacity="0.6"/>
+
+    <!-- WHISKERS — neon data streams -->
+    <line x1="76" y1="223" x2="91" y2="226" stroke="#39FF14" stroke-width="0.7" opacity="0.55" stroke-dasharray="2,1.5"/>
+    <line x1="76" y1="226.5" x2="91" y2="227.5" stroke="#39FF14" stroke-width="0.5" opacity="0.4" stroke-dasharray="1.5,2"/>
+    <line x1="76" y1="230" x2="91" y2="229" stroke="#39FF14" stroke-width="0.4" opacity="0.3" stroke-dasharray="1,2"/>
+    <line x1="124" y1="223" x2="109" y2="226" stroke="#39FF14" stroke-width="0.7" opacity="0.55" stroke-dasharray="2,1.5"/>
+    <line x1="124" y1="226.5" x2="109" y2="227.5" stroke="#39FF14" stroke-width="0.5" opacity="0.4" stroke-dasharray="1.5,2"/>
+    <line x1="124" y1="230" x2="109" y2="229" stroke="#39FF14" stroke-width="0.4" opacity="0.3" stroke-dasharray="1,2"/>
+
+    <!-- HP BAR -->
+    <rect x="57" y="294" width="86" height="7" rx="3.5" fill="rgba(0,0,0,0.75)" stroke="rgba(57,255,20,0.3)" stroke-width="0.5"/>
+    <rect id="player-hp-bar" x="57" y="294" width="86" height="7" rx="3.5" fill="#39FF14"/>
+    <!-- HP bar glow -->
+    <rect id="player-hp-glow" x="57" y="294" width="86" height="7" rx="3.5" fill="#39FF14" opacity="0.3" filter="url(#glG)"/>
+    <text id="base-health" x="100" y="310" text-anchor="middle" fill="rgba(57,255,20,0.6)" font-size="9" font-family="'Share Tech Mono',monospace">HP 100/100</text>
+  </g>
+
+  <!-- ===== ENEMY BASE — RAT SYNDICATE HQ ===== -->
+  <g class="beg" id="enemy-base-g">
+    <!-- Outer glow aura -->
+    <circle cx="700" cy="220" r="85" fill="rgba(255,46,76,0.025)"/>
+    <circle cx="700" cy="220" r="70" fill="rgba(255,46,76,0.04)" stroke="rgba(255,46,76,0.12)" stroke-width="1"/>
+
+    <!-- Hex base -->
+    <polygon points="700,158 756,190 756,254 700,286 644,254 644,190" fill="url(#egBase)" stroke="#FF2E4C" stroke-width="1.5"/>
+    <polygon points="700,165 749,194 749,248 700,279 651,248 651,194" fill="none" stroke="rgba(255,46,76,0.25)" stroke-width="0.5"/>
+    <!-- Circuit pattern -->
+    <line x1="700" y1="165" x2="700" y2="186" stroke="#FF2E4C" stroke-width="0.5" opacity="0.3"/>
+    <line x1="700" y1="247" x2="700" y2="279" stroke="#FF2E4C" stroke-width="0.5" opacity="0.3"/>
+    <!-- Corner accent glows -->
+    <circle cx="700" cy="158" r="2.5" fill="#FF2E4C" opacity="0.8"/>
+    <circle cx="756" cy="190" r="2" fill="#FF2E4C" opacity="0.6"/>
+    <circle cx="756" cy="254" r="2" fill="#FF2E4C" opacity="0.6"/>
+    <circle cx="700" cy="286" r="2.5" fill="#FF2E4C" opacity="0.8"/>
+    <circle cx="644" cy="254" r="2" fill="#FF2E4C" opacity="0.6"/>
+    <circle cx="644" cy="190" r="2" fill="#FF2E4C" opacity="0.6"/>
+    <polygon points="700,158 756,190 756,254 700,286 644,254 644,190" fill="url(#platGradE)" opacity="0.8"/>
+
+    <!-- === CYBERPUNK RAT WARLORD === -->
+    <!-- BODY armor -->
+    <rect x="682" y="236" width="36" height="28" rx="5" fill="#1a0308" stroke="#FF2E4C" stroke-width="1.2"/>
+    <rect x="684" y="238" width="15" height="12" rx="2" fill="#2d0810" stroke="#FF2E4C" stroke-width="0.6"/>
+    <rect x="701" y="238" width="15" height="12" rx="2" fill="#2d0810" stroke="#FF2E4C" stroke-width="0.6"/>
+    <rect x="686" y="240" width="11" height="2" rx="1" fill="#FF2E4C" opacity="0.5">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="703" y="240" width="11" height="2" rx="1" fill="#FF2E4C" opacity="0.5">
+      <animate attributeName="opacity" values="1;0.5;1" dur="1.3s" repeatCount="indefinite"/>
+    </rect>
+    <rect x="684" y="251" width="32" height="10" rx="2" fill="#2d0810" stroke="#FF2E4C" stroke-width="0.5"/>
+    <circle cx="700" cy="256" r="5" fill="#3a0a14" stroke="#FF2E4C" stroke-width="0.6"/>
+    <text x="700" y="259" text-anchor="middle" fill="#FF2E4C" font-size="8" opacity="0.9">☠</text>
+
+    <!-- ARMS -->
+    <rect x="668" y="238" width="14" height="20" rx="5" fill="#180608" stroke="#FF2E4C" stroke-width="0.9"/>
+    <rect x="718" y="238" width="14" height="20" rx="5" fill="#180608" stroke="#FF2E4C" stroke-width="0.9"/>
+    <ellipse cx="675" cy="238" rx="9" ry="5.5" fill="#2d0810" stroke="#FF2E4C" stroke-width="1"/>
+    <ellipse cx="725" cy="238" rx="9" ry="5.5" fill="#2d0810" stroke="#FF2E4C" stroke-width="1"/>
+    <rect x="668" y="255" width="14" height="7" rx="2.5" fill="#3a0a14" stroke="#FF2E4C" stroke-width="0.8"/>
+    <rect x="718" y="255" width="14" height="7" rx="2.5" fill="#3a0a14" stroke="#FF2E4C" stroke-width="0.8"/>
+    <rect x="670" y="257" width="10" height="3" rx="1" fill="#FF2E4C" opacity="0.35"/>
+    <rect x="720" y="257" width="10" height="3" rx="1" fill="#FF2E4C" opacity="0.35"/>
+
+    <!-- NECK -->
+    <rect x="695" y="229" width="10" height="7" rx="2" fill="#2d0810" stroke="#FF2E4C" stroke-width="0.5"/>
+
+    <!-- HEAD — Rat skull, wider + rounder -->
+    <ellipse cx="700" cy="216" rx="23" ry="18" fill="url(#ratHead)" stroke="#FF2E4C" stroke-width="1.5" filter="url(#glR)"/>
+    <ellipse cx="700" cy="214" rx="18" ry="14" fill="#2a0810"/>
+    <ellipse cx="698" cy="213" rx="9" ry="7" fill="#380e18" opacity="0.6"/>
+
+    <!-- RAT EARS — big round cybernetic -->
+    <!-- Left big ear -->
+    <circle cx="681" cy="203" r="13" fill="#150408" stroke="#FF2E4C" stroke-width="1.2"/>
+    <circle cx="681" cy="203" r="9" fill="#240810"/>
+    <circle cx="681" cy="203" r="6" fill="#350a12"/>
+    <circle cx="681" cy="203" r="3.5" fill="#FF2E4C" opacity="0.15"/>
+    <!-- Ear inner glow ring -->
+    <circle cx="681" cy="203" r="8" fill="none" stroke="#FF2E4C" stroke-width="0.5" opacity="0.4"/>
+    <!-- Ear implant LED -->
+    <circle cx="681" cy="203" r="2.5" fill="#FF2E4C">
+      <animate attributeName="opacity" values="1;0.15;1" dur="1.1s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="2.5;3.5;2.5" dur="1.1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="681" cy="203" r="1" fill="white" opacity="0.7"/>
+
+    <!-- Right big ear -->
+    <circle cx="719" cy="203" r="13" fill="#150408" stroke="#FF2E4C" stroke-width="1.2"/>
+    <circle cx="719" cy="203" r="9" fill="#240810"/>
+    <circle cx="719" cy="203" r="6" fill="#350a12"/>
+    <circle cx="719" cy="203" r="3.5" fill="#FF2E4C" opacity="0.15"/>
+    <circle cx="719" cy="203" r="8" fill="none" stroke="#FF2E4C" stroke-width="0.5" opacity="0.4"/>
+    <circle cx="719" cy="203" r="2.5" fill="#FF2E4C">
+      <animate attributeName="opacity" values="0.15;1;0.15" dur="1.1s" repeatCount="indefinite"/>
+      <animate attributeName="r" values="3.5;2.5;3.5" dur="1.1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="719" cy="203" r="1" fill="white" opacity="0.7"/>
+
+    <!-- WAR HELMET crest -->
+    <path d="M685,208 Q700,196 715,208" fill="none" stroke="#FF2E4C" stroke-width="1.5" opacity="0.7"/>
+    <rect x="696" y="196" width="8" height="4" rx="1.5" fill="#FF2E4C" opacity="0.6"/>
+    <!-- Helmet visor strip -->
+    <rect x="678" y="207" width="44" height="5" rx="2" fill="#0d0308" stroke="#FF2E4C" stroke-width="0.6" opacity="0.9"/>
+    <line x1="680" y1="209.5" x2="720" y2="209.5" stroke="#FF2E4C" stroke-width="0.4" opacity="0.2"/>
+
+    <!-- EYES — red menacing with cyber monocle -->
+    <!-- Left eye -->
+    <ellipse cx="691" cy="216" rx="5.5" ry="5.5" fill="#0d0003"/>
+    <ellipse cx="691" cy="216" rx="4" ry="4" fill="#3a0010"/>
+    <circle cx="691" cy="216" r="2.5" fill="#FF0022" opacity="0.95">
+      <animate attributeName="opacity" values="0.95;0.5;0.95" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="691" cy="216" r="1" fill="#FF6080"/>
+    <circle cx="692.5" cy="213.5" r="1" fill="white" opacity="0.4"/>
+
+    <!-- Right eye with cyber monocle ring -->
+    <ellipse cx="709" cy="216" rx="5.5" ry="5.5" fill="#0d0003"/>
+    <ellipse cx="709" cy="216" rx="4" ry="4" fill="#3a0010"/>
+    <circle cx="709" cy="216" r="2.5" fill="#FF0022" opacity="0.95">
+      <animate attributeName="opacity" values="0.5;0.95;0.5" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="709" cy="216" r="1" fill="#FF6080"/>
+    <circle cx="710.5" cy="213.5" r="1" fill="white" opacity="0.4"/>
+    <!-- Monocle ring around right eye -->
+    <circle cx="709" cy="216" r="7.5" fill="none" stroke="#FF2E4C" stroke-width="0.8" opacity="0.6"/>
+    <line x1="716.5" y1="212" x2="721" y2="209" stroke="#FF2E4C" stroke-width="0.7" opacity="0.5"/>
+
+    <!-- SNOUT — protruding -->
+    <ellipse cx="700" cy="224" rx="7" ry="5" fill="#1a0408" stroke="#FF2E4C" stroke-width="0.5" opacity="0.8"/>
+    <ellipse cx="700" cy="224" rx="3" ry="2.2" fill="#0d0003"/>
+    <circle cx="698.5" cy="223" r="0.8" fill="rgba(255,120,120,0.3)"/>
+    <circle cx="701.5" cy="223" r="0.8" fill="rgba(255,120,120,0.3)"/>
+
+    <!-- WHISKERS -->
+    <line x1="676" y1="222" x2="693" y2="225" stroke="#FF2E4C" stroke-width="0.7" opacity="0.5" stroke-dasharray="2,1.5"/>
+    <line x1="676" y1="225.5" x2="693" y2="226.5" stroke="#FF2E4C" stroke-width="0.5" opacity="0.35" stroke-dasharray="1.5,2"/>
+    <line x1="676" y1="229" x2="693" y2="228" stroke="#FF2E4C" stroke-width="0.4" opacity="0.25" stroke-dasharray="1,2"/>
+    <line x1="724" y1="222" x2="707" y2="225" stroke="#FF2E4C" stroke-width="0.7" opacity="0.5" stroke-dasharray="2,1.5"/>
+    <line x1="724" y1="225.5" x2="707" y2="226.5" stroke="#FF2E4C" stroke-width="0.5" opacity="0.35" stroke-dasharray="1.5,2"/>
+    <line x1="724" y1="229" x2="707" y2="228" stroke="#FF2E4C" stroke-width="0.4" opacity="0.25" stroke-dasharray="1,2"/>
+
+    <!-- HP BAR -->
+    <rect x="657" y="294" width="86" height="7" rx="3.5" fill="rgba(0,0,0,0.75)" stroke="rgba(255,46,76,0.3)" stroke-width="0.5"/>
+    <rect id="enemy-hp-bar" x="657" y="294" width="86" height="7" rx="3.5" fill="#FF2E4C"/>
+    <rect id="enemy-hp-glow" x="657" y="294" width="86" height="7" rx="3.5" fill="#FF2E4C" opacity="0.3" filter="url(#glR)"/>
+    <text id="enemy-health" x="700" y="310" text-anchor="middle" fill="rgba(255,46,76,0.6)" font-size="9" font-family="'Share Tech Mono',monospace">HP 100/100</text>
+  </g>
+
+  <!-- ===== BTC MINE NODE ===== -->
+  <g class="mng" onclick="collectResources()" id="mine-node">
+    <!-- Outer animated rings -->
+    <circle cx="400" cy="220" r="52" fill="none" stroke="#FFD700" stroke-width="1" stroke-dasharray="14 6" opacity="0.3">
+      <animateTransform attributeName="transform" type="rotate" from="0 400 220" to="360 400 220" dur="9s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="400" cy="220" r="44" fill="none" stroke="#FFD700" stroke-width="0.6" stroke-dasharray="8 12" opacity="0.2">
+      <animateTransform attributeName="transform" type="rotate" from="360 400 220" to="0 400 220" dur="14s" repeatCount="indefinite"/>
+    </circle>
+    <!-- Glow aura -->
+    <circle cx="400" cy="220" r="36" fill="rgba(255,215,0,0.06)"/>
+    <!-- Main coin -->
+    <circle cx="400" cy="220" r="30" fill="url(#nodeG)" stroke="#FFD700" stroke-width="2.5" filter="url(#glY)"/>
+    <circle cx="400" cy="220" r="25" fill="none" stroke="#FFF9C4" stroke-width="0.7" opacity="0.4"/>
+    <circle cx="400" cy="220" r="19" fill="none" stroke="#B8860B" stroke-width="0.5" opacity="0.35"/>
+    <!-- ₿ symbol -->
+    <text x="400" y="215" text-anchor="middle" fill="#3d2200" font-size="20" font-weight="900" font-family="'Orbitron',monospace">₿</text>
+    <text x="400" y="233" text-anchor="middle" fill="#5a3800" font-size="7" font-weight="700" font-family="'Share Tech Mono',monospace" letter-spacing="3">MINE</text>
+    <!-- Orbiting sparkles -->
+    <circle cx="400" cy="183" r="3" fill="#FFF9C4"><animate attributeName="opacity" values="1;0;1" dur="1.7s" repeatCount="indefinite"/><animate attributeName="r" values="3;4.5;3" dur="1.7s" repeatCount="indefinite"/></circle>
+    <circle cx="430" cy="200" r="2.2" fill="#FFD700"><animate attributeName="opacity" values="0;1;0" dur="1.3s" begin="0.4s" repeatCount="indefinite"/></circle>
+    <circle cx="430" cy="240" r="2" fill="#FFD700"><animate attributeName="opacity" values="1;0;1" dur="2s" begin="0.8s" repeatCount="indefinite"/></circle>
+    <circle cx="400" cy="257" r="2.5" fill="#FFF9C4"><animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="1.2s" repeatCount="indefinite"/></circle>
+    <circle cx="370" cy="240" r="2" fill="#FFD700"><animate attributeName="opacity" values="1;0;1" dur="1.9s" begin="0.2s" repeatCount="indefinite"/></circle>
+    <circle cx="370" cy="200" r="2.2" fill="#FFD700"><animate attributeName="opacity" values="0;1;0" dur="1.4s" begin="0.9s" repeatCount="indefinite"/></circle>
+  </g>
+  </svg>
+
+  <div id="units-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  <div id="game-result" class="roverlay" style="display:none;">
+    <div class="rbox">
+      <div id="result-emoji" style="font-size:60px;margin-bottom:14px;"></div>
+      <div id="result-text" style="font-family:'Orbitron',monospace;font-size:28px;font-weight:900;letter-spacing:4px;margin-bottom:6px;"></div>
+      <div id="result-sub" style="color:#3A4A6A;font-size:13px;margin-bottom:24px;font-family:'Share Tech Mono',monospace;"></div>
+      <button class="rbtn" id="restart-btn">↺ RESTART</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div style="display:grid;grid-template-columns:1fr 1fr 1.5fr;gap:12px;">
+
+<!-- DEPLOY -->
+<div class="panel" style="padding:16px;">
+  <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
+  <div class="stitle">Deploy Units</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+
+<!-- MINER -->
+<div class="ubtn mi" onclick="createUnit('miner')">
+  <div class="pring" style="--rc:var(--ny);width:68px;height:68px;">
+    <svg viewBox="0 0 68 68" width="68" height="68">
+      <defs>
+        <radialGradient id="mhg" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#9a6d00"/><stop offset="100%" stop-color="#3a2600"/></radialGradient>
+        <radialGradient id="mg2" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="rgba(255,215,0,0.15)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+        <filter id="mglow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <!-- BG glow -->
+      <circle cx="34" cy="34" r="30" fill="url(#mg2)"/>
+      <!-- Body -->
+      <rect x="23" y="42" width="22" height="16" rx="4" fill="#2d1a00" stroke="#FFD700" stroke-width="0.9"/>
+      <rect x="25" y="44" width="9" height="7" rx="1.5" fill="#1a0d00" stroke="#FFD700" stroke-width="0.4"/>
+      <rect x="34" y="44" width="9" height="7" rx="1.5" fill="#1a0d00" stroke="#FFD700" stroke-width="0.4"/>
+      <rect x="25" y="52" width="18" height="4" rx="1" fill="#1a0d00" stroke="#FFD700" stroke-width="0.3"/>
+      <!-- Arm L -->
+      <rect x="13" y="42" width="10" height="13" rx="4" fill="#2d1a00" stroke="#FFD700" stroke-width="0.7"/>
+      <ellipse cx="18" cy="42" rx="6" ry="4" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+      <!-- Arm R + PICKAXE -->
+      <rect x="45" y="42" width="10" height="13" rx="4" fill="#2d1a00" stroke="#FFD700" stroke-width="0.7"/>
+      <ellipse cx="50" cy="42" rx="6" ry="4" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+      <!-- Pickaxe -->
+      <line x1="49" y1="30" x2="62" y2="16" stroke="#8A9DB0" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M60,14 L65,18 L62,22 L57,18 Z" fill="#6B7E90" stroke="#94A3B8" stroke-width="0.5"/>
+      <line x1="57.5" y1="14.5" x2="63" y2="20" stroke="#94A3B8" stroke-width="1.2" stroke-linecap="round"/>
+      <!-- Glint on pickaxe -->
+      <circle cx="61" cy="15" r="1.5" fill="white" opacity="0.6" filter="url(#mglow)"/>
+      <!-- Head -->
+      <ellipse cx="34" cy="30" rx="15" ry="14" fill="url(#mhg)" stroke="#FFD700" stroke-width="1.2" filter="url(#mglow)"/>
+      <ellipse cx="34" cy="29" rx="11" ry="10" fill="#6b4400"/>
+      <!-- HARD HAT -->
+      <path d="M20,26 Q34,14 48,26" fill="#FFD700"/>
+      <rect x="19" y="24.5" width="30" height="4.5" rx="2" fill="#FFD700" stroke="#B8860B" stroke-width="0.7"/>
+      <!-- Hat highlight -->
+      <path d="M21,25.5 Q34,16 47,25.5" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="0.7"/>
+      <text x="34" y="28" text-anchor="middle" fill="#3D2A00" font-size="6.5" font-weight="900" font-family="monospace">₿</text>
+      <!-- Brim light strip -->
+      <rect x="19" y="28.5" width="30" height="1.5" rx="0.5" fill="#FFD700" opacity="0.6"/>
+      <!-- Cat ears under hat -->
+      <polygon points="22,24 26,29 18,29" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+      <polygon points="46,24 42,29 50,29" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+      <!-- Ear LEDs -->
+      <circle cx="22.5" cy="25.5" r="1.5" fill="#FFD700" opacity="0.9"><animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.4s" repeatCount="indefinite"/></circle>
+      <circle cx="45.5" cy="25.5" r="1.5" fill="#FFD700" opacity="0.9"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="1.4s" repeatCount="indefinite"/></circle>
+      <!-- GOGGLES — industrial style -->
+      <rect x="22" y="28" width="11" height="7.5" rx="3" fill="#080500" stroke="#FFD700" stroke-width="0.9"/>
+      <rect x="35" y="28" width="11" height="7.5" rx="3" fill="#080500" stroke="#FFD700" stroke-width="0.9"/>
+      <line x1="33" y1="31.5" x2="35" y2="31.5" stroke="#FFD700" stroke-width="0.9"/>
+      <!-- Goggle lens glow -->
+      <rect x="23" y="29" width="8" height="5" rx="2" fill="#4a3200" opacity="0.8"/>
+      <rect x="36" y="29" width="8" height="5" rx="2" fill="#4a3200" opacity="0.8"/>
+      <rect x="24" y="29.5" width="5" height="3.5" rx="1.5" fill="#6b4800" opacity="0.7"/>
+      <rect x="37" y="29.5" width="5" height="3.5" rx="1.5" fill="#6b4800" opacity="0.7"/>
+      <!-- Nose, mouth -->
+      <polygon points="34,37 32,39.5 36,39.5" fill="#F9A8D4" opacity="0.9"/>
+      <path d="M31,41 Q34,43 37,41" fill="none" stroke="#B8860B" stroke-width="0.7"/>
+      <!-- Whiskers -->
+      <line x1="16" y1="37.5" x2="24" y2="38.5" stroke="#FFD700" stroke-width="0.6" stroke-dasharray="2,1.5" opacity="0.6"/>
+      <line x1="16" y1="40" x2="24" y2="40" stroke="#FFD700" stroke-width="0.5" stroke-dasharray="1.5,2" opacity="0.45"/>
+      <line x1="52" y1="37.5" x2="44" y2="38.5" stroke="#FFD700" stroke-width="0.6" stroke-dasharray="2,1.5" opacity="0.6"/>
+      <line x1="52" y1="40" x2="44" y2="40" stroke="#FFD700" stroke-width="0.5" stroke-dasharray="1.5,2" opacity="0.45"/>
+    </svg>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--ny);font-family:'Orbitron',monospace;letter-spacing:1px;">BTC MINER</div>
+  <div style="font-size:10px;color:rgba(255,215,0,0.4);margin:2px 0 7px;font-family:'Share Tech Mono',monospace;">Harvests credits</div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'Share Tech Mono',monospace;">
+    <span style="color:var(--ny);">₿ <span id="miner-cost">10</span></span>
+    <span style="color:var(--nc);opacity:0.5;">2s</span>
+  </div>
+</div>
+
+<!-- FIGHTER -->
+<div class="ubtn fi" onclick="createUnit('fighter')">
+  <div class="pring" style="--rc:var(--nr);width:68px;height:68px;">
+    <svg viewBox="0 0 68 68" width="68" height="68">
+      <defs>
+        <radialGradient id="fhg" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#7f1d1d"/><stop offset="100%" stop-color="#250505"/></radialGradient>
+        <radialGradient id="fg2" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="rgba(255,46,76,0.12)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+        <filter id="fglow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <circle cx="34" cy="34" r="30" fill="url(#fg2)"/>
+      <!-- Body armor (battle-worn) -->
+      <rect x="23" y="42" width="22" height="16" rx="4" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.9"/>
+      <rect x="25" y="44" width="9" height="7" rx="1.5" fill="#0d0101" stroke="#FF2E4C" stroke-width="0.4"/>
+      <rect x="34" y="44" width="9" height="7" rx="1.5" fill="#0d0101" stroke="#FF2E4C" stroke-width="0.4"/>
+      <rect x="25" y="52" width="18" height="4" rx="1" fill="#0d0101" stroke="#FF2E4C" stroke-width="0.3"/>
+      <!-- Chest glow strip -->
+      <rect x="27" y="53" width="14" height="1.5" rx="0.5" fill="#FF2E4C" opacity="0.4"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="1.6s" repeatCount="indefinite"/></rect>
+      <!-- ARMS -->
+      <rect x="13" y="42" width="10" height="14" rx="4" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.7"/>
+      <ellipse cx="18" cy="42" rx="6" ry="4" fill="#280808" stroke="#FF2E4C" stroke-width="0.8"/>
+      <rect x="45" y="42" width="10" height="14" rx="4" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.7"/>
+      <ellipse cx="50" cy="42" rx="6" ry="4" fill="#280808" stroke="#FF2E4C" stroke-width="0.8"/>
+      <!-- SWORD -->
+      <rect x="47" y="10" width="3.5" height="26" rx="1.5" fill="#9DB0C0" stroke="#BDD0E0" stroke-width="0.5" transform="rotate(18,48.5,23)"/>
+      <rect x="44" y="21" width="14" height="3" rx="1.5" fill="#6B7E90" transform="rotate(18,51,22.5)"/>
+      <circle cx="46.5" cy="11.5" r="3" fill="#FFD700" stroke="#B8860B" stroke-width="0.6"/>
+      <!-- Sword gleam -->
+      <line x1="47" y1="12" x2="50" y2="32" stroke="rgba(255,255,255,0.3)" stroke-width="0.6" stroke-linecap="round"/>
+      <circle cx="50" cy="15" r="2" fill="white" opacity="0.5" filter="url(#fglow)"/>
+      <!-- HEAD -->
+      <ellipse cx="34" cy="30" rx="15" ry="13.5" fill="url(#fhg)" stroke="#FF2E4C" stroke-width="1.2" filter="url(#fglow)"/>
+      <ellipse cx="34" cy="29" rx="11" ry="10" fill="#4a0d0d"/>
+      <!-- BATTLE VISOR lower face -->
+      <rect x="25" y="33" width="18" height="10" rx="3" fill="#0d0003" stroke="#FF2E4C" stroke-width="0.8"/>
+      <!-- Visor grille lines -->
+      <line x1="27" y1="36" x2="41" y2="36" stroke="#FF2E4C" stroke-width="0.4" opacity="0.5"/>
+      <line x1="27" y1="39" x2="41" y2="39" stroke="#FF2E4C" stroke-width="0.4" opacity="0.4"/>
+      <line x1="30" y1="34" x2="30" y2="42" stroke="#FF2E4C" stroke-width="0.3" opacity="0.3"/>
+      <line x1="34" y1="33.5" x2="34" y2="43" stroke="#FF2E4C" stroke-width="0.3" opacity="0.3"/>
+      <line x1="38" y1="34" x2="38" y2="42" stroke="#FF2E4C" stroke-width="0.3" opacity="0.3"/>
+      <!-- Cat EARS with armor plates -->
+      <polygon points="21,22 26,30 16,30" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.9"/>
+      <polygon points="23,23 26,29 18,29" fill="#280808" opacity="0.8"/>
+      <polygon points="47,22 42,30 52,30" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.9"/>
+      <polygon points="45,23 42,29 50,29" fill="#280808" opacity="0.8"/>
+      <!-- Ear LEDs -->
+      <circle cx="21.5" cy="24" r="2" fill="#FF2E4C"><animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.5s" repeatCount="indefinite"/></circle>
+      <circle cx="46.5" cy="24" r="2" fill="#FF2E4C"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="1.5s" repeatCount="indefinite"/></circle>
+      <!-- BROWS (angry) -->
+      <line x1="20" y1="22" x2="28" y2="25.5" stroke="#FF2E4C" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="48" y1="22" x2="40" y2="25.5" stroke="#FF2E4C" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- EYES (angry cat slits) -->
+      <ellipse cx="26.5" cy="28" rx="5" ry="5.5" fill="#0d0003"/>
+      <ellipse cx="26.5" cy="28" rx="3.5" ry="5" fill="#3a0010"/>
+      <ellipse cx="26.5" cy="28" rx="1.2" ry="4.5" fill="#FF2E4C" opacity="0.95"/>
+      <ellipse cx="26.5" cy="28" rx="0.5" ry="4" fill="#000"/>
+      <circle cx="28" cy="25" r="1" fill="white" opacity="0.4"/>
+      <ellipse cx="41.5" cy="28" rx="5" ry="5.5" fill="#0d0003"/>
+      <ellipse cx="41.5" cy="28" rx="3.5" ry="5" fill="#3a0010"/>
+      <ellipse cx="41.5" cy="28" rx="1.2" ry="4.5" fill="#FF2E4C" opacity="0.95"/>
+      <ellipse cx="41.5" cy="28" rx="0.5" ry="4" fill="#000"/>
+      <circle cx="43" cy="25" r="1" fill="white" opacity="0.4"/>
+      <!-- Battle scar -->
+      <line x1="22" y1="26" x2="25.5" y2="31" stroke="#FCA5A5" stroke-width="0.8" opacity="0.7"/>
+      <!-- Tactical headband -->
+      <rect x="20" y="21" width="28" height="4" rx="2" fill="#0d0003" stroke="#FF2E4C" stroke-width="0.6" opacity="0.9"/>
+      <rect x="22" y="22" width="24" height="1.5" rx="0.5" fill="#FF2E4C" opacity="0.2"/>
+    </svg>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--nr);font-family:'Orbitron',monospace;letter-spacing:1px;">FIGHTER</div>
+  <div style="font-size:10px;color:rgba(255,46,76,0.4);margin:2px 0 7px;font-family:'Share Tech Mono',monospace;">Melee combat</div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'Share Tech Mono',monospace;">
+    <span style="color:var(--ny);">₿ <span id="fighter-cost">15</span></span>
+    <span style="color:var(--nc);opacity:0.5;">3s</span>
+  </div>
+</div>
+
+<!-- HACKER -->
+<div class="ubtn ha" onclick="createUnit('hacker')">
+  <div class="pring" style="--rc:var(--np);width:68px;height:68px;">
+    <svg viewBox="0 0 68 68" width="68" height="68">
+      <defs>
+        <radialGradient id="hhg" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#12063a"/></radialGradient>
+        <radialGradient id="hg2" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="rgba(191,95,255,0.12)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+        <filter id="hglow"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <circle cx="34" cy="34" r="30" fill="url(#hg2)"/>
+      <!-- Sleek coat body -->
+      <rect x="22" y="42" width="24" height="16" rx="4" fill="#120930" stroke="#BF5FFF" stroke-width="0.9"/>
+      <line x1="34" y1="42" x2="34" y2="58" stroke="#BF5FFF" stroke-width="0.4" opacity="0.5"/>
+      <!-- Lapels -->
+      <path d="M34,42 L28,50 L34,52" fill="#0a0520" stroke="#BF5FFF" stroke-width="0.5" opacity="0.7"/>
+      <path d="M34,42 L40,50 L34,52" fill="#0a0520" stroke="#BF5FFF" stroke-width="0.5" opacity="0.7"/>
+      <!-- LAPTOP/datapad held in arms -->
+      <rect x="10" y="44" width="48" height="12" rx="2.5" fill="#080420" stroke="#BF5FFF" stroke-width="0.8"/>
+      <rect x="11" y="45" width="46" height="10" rx="2" fill="#120840" opacity="0.9"/>
+      <!-- Screen glow -->
+      <rect x="12" y="46" width="44" height="8" rx="1.5" fill="#1a0860" opacity="0.5"/>
+      <!-- Matrix rain text -->
+      <text x="14" y="52.5" fill="#BF5FFF" font-size="4.5" font-family="monospace" opacity="0.8">010 110 1 0101</text>
+      <text x="14" y="48.5" fill="#7C3AED" font-size="4" font-family="monospace" opacity="0.5">1010 01 101 1 0</text>
+      <!-- Arms -->
+      <rect x="10" y="44" width="10" height="11" rx="3.5" fill="#120930" stroke="#BF5FFF" stroke-width="0.7"/>
+      <rect x="48" y="44" width="10" height="11" rx="3.5" fill="#120930" stroke="#BF5FFF" stroke-width="0.7"/>
+      <!-- HEAD -->
+      <ellipse cx="34" cy="29" rx="15.5" ry="13.5" fill="url(#hhg)" stroke="#BF5FFF" stroke-width="1.2" filter="url(#hglow)"/>
+      <ellipse cx="34" cy="28" rx="12" ry="10" fill="#2a0e60"/>
+      <!-- Cat EARS — pointed, elven -->
+      <polygon points="21,20 26,29 16,29" fill="#1e0840" stroke="#BF5FFF" stroke-width="0.9"/>
+      <polygon points="47,20 42,29 52,29" fill="#1e0840" stroke="#BF5FFF" stroke-width="0.9"/>
+      <!-- Ear data ports -->
+      <circle cx="21.5" cy="22" r="2" fill="#BF5FFF"><animate attributeName="opacity" values="0.8;0.1;0.8" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="46.5" cy="22" r="2" fill="#BF5FFF"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite"/></circle>
+      <!-- CYBER VR GOGGLES -->
+      <rect x="18" y="24.5" width="32" height="12" rx="5" fill="#080420" stroke="#7C3AED" stroke-width="1.1"/>
+      <!-- Left lens -->
+      <rect x="19.5" y="25.5" width="12.5" height="10" rx="4" fill="#2a0d80" opacity="0.9"/>
+      <rect x="20.5" y="26.5" width="10.5" height="8" rx="3" fill="#3B0FB0" opacity="0.85"/>
+      <rect x="21.5" y="27.5" width="7" height="5.5" rx="2" fill="#BF5FFF" opacity="0.3"/>
+      <!-- Left lens scan line -->
+      <line x1="20" y1="30" x2="32" y2="30" stroke="#BF5FFF" stroke-width="0.4" opacity="0.5"><animate attributeName="y1" values="27;35;27" dur="1.8s" repeatCount="indefinite"/><animate attributeName="y2" values="27;35;27" dur="1.8s" repeatCount="indefinite"/></line>
+      <!-- Right lens -->
+      <rect x="36" y="25.5" width="12.5" height="10" rx="4" fill="#2a0d80" opacity="0.9"/>
+      <rect x="37" y="26.5" width="10.5" height="8" rx="3" fill="#3B0FB0" opacity="0.85"/>
+      <rect x="38" y="27.5" width="7" height="5.5" rx="2" fill="#BF5FFF" opacity="0.3"/>
+      <!-- Right lens scan line -->
+      <line x1="36" y1="30" x2="48" y2="30" stroke="#BF5FFF" stroke-width="0.4" opacity="0.5"><animate attributeName="y1" values="35;27;35" dur="1.8s" repeatCount="indefinite"/><animate attributeName="y2" values="35;27;35" dur="1.8s" repeatCount="indefinite"/></line>
+      <!-- Bridge + side connectors -->
+      <line x1="32" y1="30" x2="36" y2="30" stroke="#7C3AED" stroke-width="1.4"/>
+      <line x1="18" y1="30" x2="16" y2="30" stroke="#BF5FFF" stroke-width="0.9" opacity="0.7"/>
+      <line x1="50" y1="30" x2="52" y2="30" stroke="#BF5FFF" stroke-width="0.9" opacity="0.7"/>
+      <!-- Floating glyph decorations -->
+      <text x="4" y="17" fill="#BF5FFF" font-size="6" font-family="monospace" opacity="0.7">&lt;/&gt;</text>
+      <text x="56" y="19" fill="#7C3AED" font-size="5.5" font-family="monospace" opacity="0.5">01</text>
+      <!-- Nose, expression -->
+      <polygon points="34,38.5 32,40.5 36,40.5" fill="#F9A8D4" opacity="0.7"/>
+      <line x1="29" y1="42" x2="39" y2="42" stroke="#6D28D9" stroke-width="0.6" opacity="0.4"/>
+    </svg>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--np);font-family:'Orbitron',monospace;letter-spacing:1px;">HACKER</div>
+  <div style="font-size:10px;color:rgba(191,95,255,0.4);margin:2px 0 7px;font-family:'Share Tech Mono',monospace;">Boosts network</div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'Share Tech Mono',monospace;">
+    <span style="color:var(--ny);">₿ <span id="hacker-cost">20</span></span>
+    <span style="color:var(--nc);opacity:0.5;">5s</span>
+  </div>
+</div>
+
+<!-- TANK -->
+<div class="ubtn ta" onclick="createUnit('tank')">
+  <div class="pring" style="--rc:var(--ng);width:68px;height:68px;">
+    <svg viewBox="0 0 68 68" width="68" height="68">
+      <defs>
+        <radialGradient id="thg" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#166534"/><stop offset="100%" stop-color="#042e14"/></radialGradient>
+        <radialGradient id="tg2" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="rgba(57,255,20,0.1)"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+        <filter id="tglow"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
+      <circle cx="34" cy="34" r="30" fill="url(#tg2)"/>
+      <!-- HEAVY BODY ARMOR -->
+      <rect x="20" y="43" width="28" height="18" rx="4" fill="#042e14" stroke="#39FF14" stroke-width="1"/>
+      <!-- Chest segments with detail -->
+      <rect x="22" y="45" width="11" height="7" rx="2" fill="#0a1a09" stroke="#39FF14" stroke-width="0.5"/>
+      <rect x="35" y="45" width="11" height="7" rx="2" fill="#0a1a09" stroke="#39FF14" stroke-width="0.5"/>
+      <rect x="22" y="53" width="24" height="6" rx="2" fill="#0a1a09" stroke="#39FF14" stroke-width="0.5"/>
+      <!-- Chest shield emblem -->
+      <polygon points="34,45 30,48 30,52 34,55 38,52 38,48" fill="#0d3318" stroke="#39FF14" stroke-width="0.6"/>
+      <circle cx="34" cy="50" r="2" fill="#39FF14" opacity="0.4"/>
+      <!-- Chest glow strip -->
+      <rect x="24" y="54" width="20" height="1.5" rx="0.5" fill="#39FF14" opacity="0.4"><animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/></rect>
+      <!-- MASSIVE PAULDRONS -->
+      <ellipse cx="14" cy="44" rx="11" ry="7" fill="#042e14" stroke="#39FF14" stroke-width="0.9"/>
+      <ellipse cx="14" cy="43" rx="8.5" ry="5.5" fill="#0a3a1a"/>
+      <ellipse cx="14" cy="42.5" rx="5" ry="3.5" fill="#0d4a22" opacity="0.7"/>
+      <ellipse cx="54" cy="44" rx="11" ry="7" fill="#042e14" stroke="#39FF14" stroke-width="0.9"/>
+      <ellipse cx="54" cy="43" rx="8.5" ry="5.5" fill="#0a3a1a"/>
+      <ellipse cx="54" cy="42.5" rx="5" ry="3.5" fill="#0d4a22" opacity="0.7"/>
+      <!-- ARMS (thick) -->
+      <rect x="9" y="44" width="11" height="16" rx="4" fill="#042e14" stroke="#39FF14" stroke-width="0.8"/>
+      <rect x="48" y="44" width="11" height="16" rx="4" fill="#042e14" stroke="#39FF14" stroke-width="0.8"/>
+      <!-- Arm power lines -->
+      <line x1="11" y1="47" x2="11" y2="57" stroke="#39FF14" stroke-width="0.4" opacity="0.4"/>
+      <line x1="57" y1="47" x2="57" y2="57" stroke="#39FF14" stroke-width="0.4" opacity="0.4"/>
+      <!-- HEAD (big, armored) -->
+      <ellipse cx="34" cy="30" rx="17" ry="15" fill="url(#thg)" stroke="#39FF14" stroke-width="1.4" filter="url(#tglow)"/>
+      <ellipse cx="34" cy="29" rx="13" ry="11" fill="#0d3a1a"/>
+      <!-- TACTICAL HELMET — full head coverage -->
+      <path d="M18,26 Q34,11 50,26" fill="#0d3318" stroke="#39FF14" stroke-width="1.3"/>
+      <rect x="17" y="24.5" width="34" height="5.5" rx="2.5" fill="#0a2a12" stroke="#39FF14" stroke-width="1"/>
+      <!-- Helmet visor slit -->
+      <rect x="20" y="26" width="28" height="3" rx="1.2" fill="#000"/>
+      <rect x="21" y="26.5" width="26" height="2" rx="0.8" fill="#39FF14" opacity="0.18"/>
+      <!-- Helmet segment lines -->
+      <line x1="34" y1="11" x2="34" y2="24" stroke="#39FF14" stroke-width="0.5" opacity="0.4"/>
+      <!-- Helmet bolts -->
+      <circle cx="20" cy="25" r="1.2" fill="#39FF14" opacity="0.8"/>
+      <circle cx="48" cy="25" r="1.2" fill="#39FF14" opacity="0.8"/>
+      <circle cx="34" cy="22" r="1.5" fill="#39FF14" opacity="0.9"><animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.8s" repeatCount="indefinite"/></circle>
+      <!-- Cat ears under helmet (barely visible) -->
+      <polygon points="21,24 25,29 17,29" fill="#042e14" stroke="#39FF14" stroke-width="0.5" opacity="0.6"/>
+      <polygon points="47,24 43,29 51,29" fill="#042e14" stroke="#39FF14" stroke-width="0.5" opacity="0.6"/>
+      <!-- Ear LEDs -->
+      <circle cx="21" cy="25.5" r="1.5" fill="#39FF14" opacity="0.7"><animate attributeName="opacity" values="0.7;0.2;0.7" dur="2s" repeatCount="indefinite"/></circle>
+      <circle cx="47" cy="25.5" r="1.5" fill="#39FF14" opacity="0.7"><animate attributeName="opacity" values="0.2;0.7;0.2" dur="2s" repeatCount="indefinite"/></circle>
+      <!-- EYES — glowing under visor -->
+      <ellipse cx="27" cy="31" rx="4" ry="5" fill="#021a09"/>
+      <ellipse cx="27" cy="31" rx="2.5" ry="4.5" fill="#0d3a1a"/>
+      <ellipse cx="27" cy="31" rx="1" ry="4" fill="#39FF14" opacity="0.9"><animate attributeName="opacity" values="0.9;0.4;0.9" dur="2.5s" repeatCount="indefinite"/></ellipse>
+      <circle cx="28.2" cy="28" r="1" fill="white" opacity="0.4"/>
+      <ellipse cx="41" cy="31" rx="4" ry="5" fill="#021a09"/>
+      <ellipse cx="41" cy="31" rx="2.5" ry="4.5" fill="#0d3a1a"/>
+      <ellipse cx="41" cy="31" rx="1" ry="4" fill="#39FF14" opacity="0.9"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="2.5s" repeatCount="indefinite"/></ellipse>
+      <circle cx="42.2" cy="28" r="1" fill="white" opacity="0.4"/>
+      <!-- Nose -->
+      <polygon points="34,37 32,39.5 36,39.5" fill="#8BE098" opacity="0.8"/>
+      <!-- Comms unit on cheek -->
+      <rect x="44" y="32" width="7" height="3.5" rx="1" fill="#042e14" stroke="#39FF14" stroke-width="0.5"/>
+      <line x1="51" y1="33.5" x2="54" y2="31" stroke="#39FF14" stroke-width="0.6" opacity="0.7"/>
+      <circle cx="54" cy="30.5" r="1" fill="#39FF14" opacity="0.8"><animate attributeName="opacity" values="0.8;0.2;0.8" dur="1.2s" repeatCount="indefinite"/></circle>
+    </svg>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--ng);font-family:'Orbitron',monospace;letter-spacing:1px;">HASH TANK</div>
+  <div style="font-size:10px;color:rgba(57,255,20,0.4);margin:2px 0 7px;font-family:'Share Tech Mono',monospace;">Siege class</div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'Share Tech Mono',monospace;">
+    <span style="color:var(--ny);">₿ <span id="tank-cost">30</span></span>
+    <span style="color:var(--nc);opacity:0.5;">8s</span>
+  </div>
+</div>
+
+  </div>
+  <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--db);">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.3);margin-bottom:5px;font-family:'Share Tech Mono',monospace;"><span>UNIT CAPACITY</span><span id="unit-capacity">0/10</span></div>
+    <div class="pt"><div id="unit-capacity-bar" class="pf" style="background:linear-gradient(90deg,var(--nc),var(--np));width:0%;"></div></div>
+  </div>
+</div>
+
+<!-- ABILITIES -->
+<div class="panel" style="padding:16px;">
+  <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
+  <div class="stitle">Special Ops</div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="abtn" onclick="useAbility('nuke')">
+      <div style="width:44px;height:44px;background:rgba(255,46,76,0.08);border:1px solid rgba(255,46,76,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">💣</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#FCA5A5;font-family:'Orbitron',monospace;letter-spacing:1px;">SATOSHI BOMB</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;font-family:'Share Tech Mono',monospace;">Annihilate all enemies</div>
+        <div class="cdstrip"><div id="nuke-cooldown-bar" class="cdfill" style="background:linear-gradient(90deg,var(--nr),#FF8C00);"></div></div>
+      </div>
+    </div>
+    <div class="abtn" onclick="useAbility('heal')">
+      <div style="width:44px;height:44px;background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">💚</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#86EFAC;font-family:'Orbitron',monospace;letter-spacing:1px;">HALVING HEAL</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-top:2px;font-family:'Share Tech Mono',monospace;">Restore base integrity</div>
+        <div class="cdstrip"><div id="heal-cooldown-bar" class="cdfill" style="background:linear-gradient(90deg,var(--ng),var(--nc));"></div></div>
+      </div>
+    </div>
+    <div style="background:rgba(0,0,0,0.3);border:1px solid var(--db);border-radius:8px;padding:12px;margin-top:2px;">
+      <div style="font-size:8px;font-family:'Orbitron',monospace;letter-spacing:2px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:9px;">Unit Guide</div>
+      <div style="display:flex;flex-direction:column;gap:5px;">
+        <div class="gpill"><div class="gdot" style="background:var(--ny);box-shadow:0 0 5px var(--ny);"></div><span style="color:rgba(255,215,0,0.8);font-size:11px;">Miner</span><span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;font-family:'Share Tech Mono',monospace;">farms BTC</span></div>
+        <div class="gpill"><div class="gdot" style="background:var(--nr);box-shadow:0 0 5px var(--nr);"></div><span style="color:rgba(255,46,76,0.9);font-size:11px;">Fighter</span><span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;font-family:'Share Tech Mono',monospace;">kills units</span></div>
+        <div class="gpill"><div class="gdot" style="background:var(--np);box-shadow:0 0 5px var(--np);"></div><span style="color:rgba(191,95,255,0.9);font-size:11px;">Hacker</span><span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;font-family:'Share Tech Mono',monospace;">boosts net</span></div>
+        <div class="gpill"><div class="gdot" style="background:var(--ng);box-shadow:0 0 5px var(--ng);"></div><span style="color:rgba(57,255,20,0.9);font-size:11px;">Tank</span><span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;font-family:'Share Tech Mono',monospace;">siege base</span></div>
+      </div>
+      <div style="margin-top:9px;font-size:9px;color:rgba(0,245,255,0.35);font-family:'Share Tech Mono',monospace;border-top:1px solid var(--db);padding-top:7px;">» Destroy enemy base to win</div>
+    </div>
+  </div>
+</div>
+
+<!-- UPGRADES -->
+<div class="panel" style="padding:16px;">
+  <div class="pc tl"></div><div class="pc tr"></div><div class="pc bl"></div><div class="pc br"></div>
+  <div class="stitle">Tech Tree</div>
+  <div style="background:rgba(0,0,0,0.3);border:1px solid var(--db);border-radius:8px;padding:12px;margin-bottom:12px;">
+    <div style="font-size:8px;font-family:'Orbitron',monospace;letter-spacing:2px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:10px;">Threat Level</div>
+    <div style="display:flex;flex-direction:column;gap:9px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:4px;font-family:'Share Tech Mono',monospace;"><span>Enemy Spawn Rate</span><span id="spawn-val" style="color:var(--nc);">5</span></div>
+        <input type="range" min="1" max="10" value="5" id="spawn-rate-slider" oninput="document.getElementById('spawn-val').textContent=this.value" onchange="updateDifficulty('spawnRate',this.value)">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:4px;font-family:'Share Tech Mono',monospace;"><span>Enemy Health</span><span id="ehp-val" style="color:var(--nr);">5</span></div>
+        <input type="range" min="1" max="10" value="5" id="enemy-health-slider" style="accent-color:var(--nr);" oninput="document.getElementById('ehp-val').textContent=this.value" onchange="updateDifficulty('enemyHealth',this.value)">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,0.35);margin-bottom:4px;font-family:'Share Tech Mono',monospace;"><span>Enemy Damage</span><span id="edmg-val" style="color:var(--no);">5</span></div>
+        <input type="range" min="1" max="10" value="5" id="enemy-damage-slider" style="accent-color:var(--no);" oninput="document.getElementById('edmg-val').textContent=this.value" onchange="updateDifficulty('enemyDamage',this.value)">
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:7px;">
+    <div class="upbtn" onclick="buyUpgrade('mining')">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;background:rgba(255,215,0,0.07);border:1px solid rgba(255,215,0,0.18);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;">⛏</div>
+        <div><div style="font-size:11px;font-weight:600;color:#E2E8F0;">Neural Mining</div><div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;">+50% BTC yield</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:10px;color:var(--ny);font-family:'Share Tech Mono',monospace;">₿<span id="mining-upgrade-cost">50</span></span><div class="lvlb" id="mining-upgrade-level">0</div></div>
+    </div>
+    <div class="upbtn" onclick="buyUpgrade('attack')">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;background:rgba(255,46,76,0.07);border:1px solid rgba(255,46,76,0.18);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;">⚔</div>
+        <div><div style="font-size:11px;font-weight:600;color:#E2E8F0;">Combat Protocol</div><div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;">+25% dmg output</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:10px;color:var(--ny);font-family:'Share Tech Mono',monospace;">₿<span id="attack-upgrade-cost">75</span></span><div class="lvlb" id="attack-upgrade-level">0</div></div>
+    </div>
+    <div class="upbtn" onclick="buyUpgrade('capacity')">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.18);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;">👥</div>
+        <div><div style="font-size:11px;font-weight:600;color:#E2E8F0;">Squad Expansion</div><div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;">+5 unit slots</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:10px;color:var(--ny);font-family:'Share Tech Mono',monospace;">₿<span id="capacity-upgrade-cost">100</span></span><div class="lvlb" id="capacity-upgrade-level">0</div></div>
+    </div>
+    <div class="upbtn" onclick="buyUpgrade('base')">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;background:rgba(57,255,20,0.07);border:1px solid rgba(57,255,20,0.18);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;">🏰</div>
+        <div><div style="font-size:11px;font-weight:600;color:#E2E8F0;">Fortress Protocol</div><div style="font-size:9px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;">+50 base HP</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:10px;color:var(--ny);font-family:'Share Tech Mono',monospace;">₿<span id="base-upgrade-cost">120</span></span><div class="lvlb" id="base-upgrade-level">0</div></div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div id="notifications" style="position:fixed;bottom:18px;right:18px;width:280px;display:flex;flex-direction:column;gap:7px;z-index:1000;"></div>
 
 <script>
-// ==================== SVG UNIT TEMPLATES ====================
-function getMinerSVG() {
-    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
-        <defs>
-            <radialGradient id="mg" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stop-color="#b45309"/>
-                <stop offset="100%" stop-color="#78350f"/>
-            </radialGradient>
-        </defs>
-        <!-- Body glow -->
-        <circle cx="22" cy="24" r="14" fill="#f59e0b" opacity="0.12"/>
-        <!-- Body -->
-        <circle cx="22" cy="24" r="12" fill="url(#mg)" stroke="#fbbf24" stroke-width="1.5"/>
-        <!-- Ears -->
-        <polygon points="15,14 19,22 11,22" fill="#92400e" stroke="#fbbf24" stroke-width="1"/>
-        <polygon points="29,14 25,22 33,22" fill="#92400e" stroke="#fbbf24" stroke-width="1"/>
-        <polygon points="16,16 18,21 13,21" fill="#fbbf24" opacity="0.4"/>
-        <polygon points="28,16 26,21 31,21" fill="#fbbf24" opacity="0.4"/>
-        <!-- Eyes - slit pupils -->
-        <ellipse cx="18" cy="23" rx="2.5" ry="3" fill="#1c0a00"/>
-        <ellipse cx="18" cy="23" rx="0.9" ry="2.6" fill="#fde68a"/>
-        <ellipse cx="26" cy="23" rx="2.5" ry="3" fill="#1c0a00"/>
-        <ellipse cx="26" cy="23" rx="0.9" ry="2.6" fill="#fde68a"/>
-        <circle cx="18.8" cy="21.5" r="0.8" fill="white" opacity="0.7"/>
-        <circle cx="26.8" cy="21.5" r="0.8" fill="white" opacity="0.7"/>
-        <!-- Nose -->
-        <polygon points="22,28 20,30 24,30" fill="#f9a8d4"/>
-        <!-- Whiskers -->
-        <line x1="9" y1="27" x2="19" y2="28.5" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-        <line x1="9" y1="30" x2="19" y2="30" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-        <line x1="35" y1="27" x2="25" y2="28.5" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-        <line x1="35" y1="30" x2="25" y2="30" stroke="#fbbf24" stroke-width="0.6" opacity="0.6"/>
-        <!-- Pickaxe tool -->
-        <line x1="30" y1="32" x2="40" y2="14" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
-        <ellipse cx="40" cy="14" rx="4" ry="2" fill="#64748b" transform="rotate(-45,40,14)" stroke="#94a3b8" stroke-width="0.5"/>
-        <!-- Hard hat -->
-        <path d="M11,18 Q22,8 33,18" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
-        <rect x="10" y="17" width="24" height="4" rx="1" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.8"/>
-        <!-- BTC badge on hat -->
-        <text x="22" y="20" text-anchor="middle" fill="#92400e" font-size="7" font-weight="900">₿</text>
-    </svg>`;
+// ===== ENEMY SVG TEMPLATES =====
+function getEnemySVGUnit(type){
+  const c={
+    fighter:{bc:'#1a0308',sc:'#FF2E4C',gT:'#3a0810',gB:'#0d0204',ec:'#FF0022',bg:'rgba(255,46,76,0.07)'},
+    tank:   {bc:'#0a0520',sc:'#BF5FFF',gT:'#2a0a60',gB:'#0a041a',ec:'#8800FF',bg:'rgba(191,95,255,0.07)'},
+    hacker: {bc:'#001818',sc:'#00F5FF',gT:'#003030',gB:'#000d0d',ec:'#00CCDD',bg:'rgba(0,245,255,0.07)'},
+    sniper: {bc:'#001430',sc:'#7DD3FC',gT:'#002050',gB:'#000a1a',ec:'#38BDF8',bg:'rgba(125,211,252,0.07)'},
+    medic:  {bc:'#180024',sc:'#F472B6',gT:'#360048',gB:'#0e000e',ec:'#EC4899',bg:'rgba(244,114,182,0.07)'},
+  };
+  const C=c[type]||c.fighter;
+  const uid='e'+Math.random().toString(36).substr(2,6);
+  return `<svg viewBox="0 0 56 56" width="56" height="56" style="overflow:visible">
+  <defs>
+    <radialGradient id="${uid}a" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="${C.gT}"/><stop offset="100%" stop-color="${C.gB}"/></radialGradient>
+    <radialGradient id="${uid}b" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="${C.bg}"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+    <filter id="${uid}f"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <circle cx="28" cy="28" r="24" fill="url(#${uid}b)"/>
+  <!-- Body armor -->
+  <rect x="19" y="36" width="18" height="14" rx="3.5" fill="${C.bc}" stroke="${C.sc}" stroke-width="0.8"/>
+  <rect x="21" y="38" width="6" height="5" rx="1" fill="${C.gB}" stroke="${C.sc}" stroke-width="0.3"/>
+  <rect x="29" y="38" width="6" height="5" rx="1" fill="${C.gB}" stroke="${C.sc}" stroke-width="0.3"/>
+  <rect x="21" y="44" width="14" height="4" rx="1" fill="${C.gB}" stroke="${C.sc}" stroke-width="0.3"/>
+  <text x="28" y="47.5" text-anchor="middle" fill="${C.sc}" font-size="6.5" opacity="0.8">☠</text>
+  <!-- ARMS -->
+  <rect x="10" y="37" width="9" height="11" rx="3.5" fill="${C.bc}" stroke="${C.sc}" stroke-width="0.6"/>
+  <rect x="37" y="37" width="9" height="11" rx="3.5" fill="${C.bc}" stroke="${C.sc}" stroke-width="0.6"/>
+  <!-- HEAD -->
+  <ellipse cx="28" cy="25" rx="14" ry="13" fill="url(#${uid}a)" stroke="${C.sc}" stroke-width="1.1" filter="url(#${uid}f)"/>
+  <ellipse cx="28" cy="24" rx="10.5" ry="10" fill="${C.gT}" opacity="0.8"/>
+  <!-- BIG RAT EARS -->
+  <circle cx="16" cy="14" r="10" fill="${C.bc}" stroke="${C.sc}" stroke-width="1"/>
+  <circle cx="16" cy="14" r="7" fill="${C.gT}"/>
+  <circle cx="16" cy="14" r="4.5" fill="${C.bc}" opacity="0.5"/>
+  <circle cx="16" cy="14" r="2.5" fill="${C.ec}" opacity="0.2"/>
+  <circle cx="16" cy="14" r="1.5" fill="${C.sc}"><animate attributeName="opacity" values="0.9;0.1;0.9" dur="1.2s" repeatCount="indefinite"/><animate attributeName="r" values="1.5;2.5;1.5" dur="1.2s" repeatCount="indefinite"/></circle>
+  <circle cx="40" cy="14" r="10" fill="${C.bc}" stroke="${C.sc}" stroke-width="1"/>
+  <circle cx="40" cy="14" r="7" fill="${C.gT}"/>
+  <circle cx="40" cy="14" r="4.5" fill="${C.bc}" opacity="0.5"/>
+  <circle cx="40" cy="14" r="2.5" fill="${C.ec}" opacity="0.2"/>
+  <circle cx="40" cy="14" r="1.5" fill="${C.sc}"><animate attributeName="opacity" values="0.1;0.9;0.1" dur="1.2s" repeatCount="indefinite"/><animate attributeName="r" values="2.5;1.5;2.5" dur="1.2s" repeatCount="indefinite"/></circle>
+  <!-- Visor/helmet strip -->
+  <rect x="15" y="18" width="26" height="4" rx="1.8" fill="${C.gB}" stroke="${C.sc}" stroke-width="0.6" opacity="0.9"/>
+  <!-- EYES (menacing red) -->
+  <ellipse cx="22" cy="24" rx="4.5" ry="4.5" fill="#080002"/>
+  <ellipse cx="22" cy="24" rx="3" ry="3" fill="#3a0010"/>
+  <circle cx="22" cy="24" r="2" fill="#FF0022" opacity="0.95"><animate attributeName="opacity" values="0.95;0.4;0.95" dur="2.5s" repeatCount="indefinite"/></circle>
+  <circle cx="23" cy="22.5" r="0.8" fill="white" opacity="0.4"/>
+  <ellipse cx="34" cy="24" rx="4.5" ry="4.5" fill="#080002"/>
+  <ellipse cx="34" cy="24" rx="3" ry="3" fill="#3a0010"/>
+  <circle cx="34" cy="24" r="2" fill="#FF0022" opacity="0.95"><animate attributeName="opacity" values="0.4;0.95;0.4" dur="2.5s" repeatCount="indefinite"/></circle>
+  <circle cx="35" cy="22.5" r="0.8" fill="white" opacity="0.4"/>
+  <!-- SNOUT -->
+  <ellipse cx="28" cy="30" rx="5.5" ry="4" fill="${C.bc}" stroke="${C.sc}" stroke-width="0.5" opacity="0.8"/>
+  <ellipse cx="28" cy="30" rx="2.2" ry="1.6" fill="#050001"/>
+  <circle cx="26.8" cy="29.2" r="0.7" fill="rgba(255,100,100,0.4)"/>
+  <circle cx="29.2" cy="29.2" r="0.7" fill="rgba(255,100,100,0.4)"/>
+  <!-- WHISKERS -->
+  <line x1="10" y1="29" x2="22" y2="30.5" stroke="${C.sc}" stroke-width="0.55" opacity="0.5" stroke-dasharray="2,1.5"/>
+  <line x1="10" y1="32" x2="22" y2="32.5" stroke="${C.sc}" stroke-width="0.45" opacity="0.35" stroke-dasharray="1.5,2"/>
+  <line x1="46" y1="29" x2="34" y2="30.5" stroke="${C.sc}" stroke-width="0.55" opacity="0.5" stroke-dasharray="2,1.5"/>
+  <line x1="46" y1="32" x2="34" y2="32.5" stroke="${C.sc}" stroke-width="0.45" opacity="0.35" stroke-dasharray="1.5,2"/>
+  </svg>`;
 }
 
-function getFighterSVG() {
-    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
-        <defs>
-            <radialGradient id="fg" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stop-color="#991b1b"/>
-                <stop offset="100%" stop-color="#7f1d1d"/>
-            </radialGradient>
-        </defs>
-        <!-- Body glow -->
-        <circle cx="22" cy="24" r="14" fill="#ef4444" opacity="0.12"/>
-        <!-- Body -->
-        <circle cx="22" cy="24" r="12" fill="url(#fg)" stroke="#f87171" stroke-width="1.5"/>
-        <!-- Ears -->
-        <polygon points="15,13 19,22 11,22" fill="#7f1d1d" stroke="#f87171" stroke-width="1"/>
-        <polygon points="29,13 25,22 33,22" fill="#7f1d1d" stroke="#f87171" stroke-width="1"/>
-        <polygon points="16,15 18,21 13,21" fill="#f87171" opacity="0.4"/>
-        <polygon points="28,15 26,21 31,21" fill="#f87171" opacity="0.4"/>
-        <!-- Eyes - angry slit -->
-        <ellipse cx="18" cy="23" rx="2.5" ry="3" fill="#1c0000"/>
-        <ellipse cx="18" cy="23" rx="0.9" ry="2.6" fill="#f87171"/>
-        <ellipse cx="26" cy="23" rx="2.5" ry="3" fill="#1c0000"/>
-        <ellipse cx="26" cy="23" rx="0.9" ry="2.6" fill="#f87171"/>
-        <circle cx="18.8" cy="21.5" r="0.8" fill="white" opacity="0.6"/>
-        <circle cx="26.8" cy="21.5" r="0.8" fill="white" opacity="0.6"/>
-        <!-- Angry brows -->
-        <line x1="14" y1="19" x2="20" y2="21" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="30" y1="19" x2="24" y2="21" stroke="#f87171" stroke-width="1.5" stroke-linecap="round"/>
-        <!-- Nose -->
-        <polygon points="22,28 20,30 24,30" fill="#f9a8d4"/>
-        <!-- Scar -->
-        <line x1="15" y1="23" x2="17" y2="27" stroke="#fca5a5" stroke-width="0.8" opacity="0.8"/>
-        <!-- Whiskers -->
-        <line x1="9" y1="27" x2="19" y2="28.5" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
-        <line x1="9" y1="30" x2="19" y2="30" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
-        <line x1="35" y1="27" x2="25" y2="28.5" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
-        <line x1="35" y1="30" x2="25" y2="30" stroke="#f87171" stroke-width="0.6" opacity="0.5"/>
-        <!-- Sword -->
-        <rect x="34" y="6" width="3" height="26" rx="1" fill="#94a3b8" stroke="#cbd5e1" stroke-width="0.5" transform="rotate(-15,35,20)"/>
-        <rect x="30" y="19" width="14" height="3" rx="1" fill="#64748b" transform="rotate(-15,37,20)"/>
-        <circle cx="37" cy="7" r="2.5" fill="#fbbf24" stroke="#f59e0b" stroke-width="0.5"/>
-        <!-- Chest armor -->
-        <rect x="16" y="32" width="12" height="6" rx="2" fill="#7f1d1d" stroke="#f87171" stroke-width="0.8"/>
-        <line x1="22" y1="32" x2="22" y2="38" stroke="#f87171" stroke-width="0.6" opacity="0.4"/>
-    </svg>`;
+// Cat unit SVGs (compact, 56px)
+function getCatUnitSVG(type){
+  if(type==='miner') return `<svg viewBox="0 0 56 56" width="56" height="56" style="overflow:visible">
+  <defs><radialGradient id="cmu" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#8B6200"/><stop offset="100%" stop-color="#3D2A00"/></radialGradient><filter id="cmf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <circle cx="28" cy="28" r="24" fill="rgba(255,215,0,0.06)"/>
+  <rect x="19" y="36" width="18" height="13" rx="3.5" fill="#2d1a00" stroke="#FFD700" stroke-width="0.8"/>
+  <rect x="21" y="38" width="6.5" height="5" rx="1.5" fill="#1a0d00" stroke="#FFD700" stroke-width="0.4"/>
+  <rect x="29" y="38" width="6.5" height="5" rx="1.5" fill="#1a0d00" stroke="#FFD700" stroke-width="0.4"/>
+  <rect x="11" y="37" width="8" height="11" rx="3.5" fill="#2d1a00" stroke="#FFD700" stroke-width="0.6"/>
+  <ellipse cx="15" cy="37" rx="5.5" ry="3.5" fill="#3d2800" stroke="#FFD700" stroke-width="0.6"/>
+  <rect x="37" y="37" width="8" height="11" rx="3.5" fill="#2d1a00" stroke="#FFD700" stroke-width="0.6"/>
+  <ellipse cx="41" cy="37" rx="5.5" ry="3.5" fill="#3d2800" stroke="#FFD700" stroke-width="0.6"/>
+  <!-- Pickaxe -->
+  <line x1="40" y1="26" x2="52" y2="13" stroke="#8A9DB0" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M50,11 L55,16 L52,20 L47,15 Z" fill="#6B7E90" stroke="#94A3B8" stroke-width="0.5"/>
+  <circle cx="51" cy="12" r="1.5" fill="white" opacity="0.55"/>
+  <!-- Head -->
+  <ellipse cx="28" cy="27" rx="14" ry="13" fill="url(#cmu)" stroke="#FFD700" stroke-width="1.1" filter="url(#cmf)"/>
+  <ellipse cx="28" cy="26" rx="10.5" ry="10" fill="#6b4400"/>
+  <!-- Hard hat -->
+  <path d="M15,23 Q28,12 41,23" fill="#FFD700"/>
+  <rect x="14" y="21.5" width="28" height="4" rx="2" fill="#FFD700" stroke="#B8860B" stroke-width="0.7"/>
+  <text x="28" y="25" text-anchor="middle" fill="#3D2A00" font-size="5.5" font-weight="900" font-family="monospace">₿</text>
+  <!-- Cat ears under hat -->
+  <polygon points="17,21 22,27 13,27" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+  <polygon points="39,21 34,27 43,27" fill="#3d2800" stroke="#FFD700" stroke-width="0.7"/>
+  <circle cx="17.5" cy="22.5" r="1.5" fill="#FFD700"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>
+  <circle cx="38.5" cy="22.5" r="1.5" fill="#FFD700"><animate attributeName="opacity" values="0.2;1;0.2" dur="1.4s" repeatCount="indefinite"/></circle>
+  <!-- Goggles -->
+  <rect x="18" y="25" width="10" height="7" rx="3" fill="#080500" stroke="#FFD700" stroke-width="0.8"/>
+  <rect x="29" y="25" width="10" height="7" rx="3" fill="#080500" stroke="#FFD700" stroke-width="0.8"/>
+  <line x1="28" y1="28.5" x2="29" y2="28.5" stroke="#FFD700" stroke-width="0.8"/>
+  <rect x="19" y="26" width="7" height="5" rx="2" fill="#5a3a00" opacity="0.8"/>
+  <rect x="30" y="26" width="7" height="5" rx="2" fill="#5a3a00" opacity="0.8"/>
+  <!-- Nose -->
+  <polygon points="28,34 26,36 30,36" fill="#F9A8D4" opacity="0.9"/>
+  <!-- Whiskers -->
+  <line x1="11" y1="33" x2="20" y2="34" stroke="#FFD700" stroke-width="0.55" stroke-dasharray="2,1.5" opacity="0.6"/>
+  <line x1="11" y1="35.5" x2="20" y2="35.5" stroke="#FFD700" stroke-width="0.45" stroke-dasharray="1.5,2" opacity="0.45"/>
+  <line x1="45" y1="33" x2="36" y2="34" stroke="#FFD700" stroke-width="0.55" stroke-dasharray="2,1.5" opacity="0.6"/>
+  <line x1="45" y1="35.5" x2="36" y2="35.5" stroke="#FFD700" stroke-width="0.45" stroke-dasharray="1.5,2" opacity="0.45"/>
+  </svg>`;
+
+  if(type==='fighter') return `<svg viewBox="0 0 56 56" width="56" height="56" style="overflow:visible">
+  <defs><radialGradient id="cfu" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#7f1d1d"/><stop offset="100%" stop-color="#250505"/></radialGradient><filter id="cff"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <circle cx="28" cy="28" r="24" fill="rgba(255,46,76,0.06)"/>
+  <rect x="19" y="36" width="18" height="13" rx="3.5" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.8"/>
+  <rect x="21" y="38" width="6.5" height="5" rx="1.5" fill="#0d0101" stroke="#FF2E4C" stroke-width="0.3"/>
+  <rect x="29" y="38" width="6.5" height="5" rx="1.5" fill="#0d0101" stroke="#FF2E4C" stroke-width="0.3"/>
+  <rect x="23" y="45" width="10" height="2" rx="0.5" fill="#FF2E4C" opacity="0.35"><animate attributeName="opacity" values="0.35;0.8;0.35" dur="1.5s" repeatCount="indefinite"/></rect>
+  <rect x="11" y="37" width="8" height="12" rx="3.5" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.6"/>
+  <ellipse cx="15" cy="37" rx="5.5" ry="3.5" fill="#280808" stroke="#FF2E4C" stroke-width="0.7"/>
+  <rect x="37" y="37" width="8" height="12" rx="3.5" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.6"/>
+  <ellipse cx="41" cy="37" rx="5.5" ry="3.5" fill="#280808" stroke="#FF2E4C" stroke-width="0.7"/>
+  <!-- Sword -->
+  <rect x="39" y="8" width="3" height="22" rx="1.2" fill="#9DB0C0" stroke="#BDD0E0" stroke-width="0.5" transform="rotate(16,40.5,19)"/>
+  <rect x="36" y="18" width="12" height="2.5" rx="1.2" fill="#6B7E90" transform="rotate(16,42,19)"/>
+  <circle cx="38" cy="9" r="2.5" fill="#FFD700" stroke="#B8860B" stroke-width="0.5"/>
+  <circle cx="41" cy="13" r="1.5" fill="white" opacity="0.5"/>
+  <!-- Head -->
+  <ellipse cx="28" cy="27" rx="14" ry="12.5" fill="url(#cfu)" stroke="#FF2E4C" stroke-width="1.1" filter="url(#cff)"/>
+  <ellipse cx="28" cy="26" rx="10.5" ry="9.5" fill="#4a0d0d"/>
+  <!-- Battle visor lower -->
+  <rect x="20" y="30" width="16" height="9" rx="2.5" fill="#0d0003" stroke="#FF2E4C" stroke-width="0.7"/>
+  <line x1="22" y1="33.5" x2="34" y2="33.5" stroke="#FF2E4C" stroke-width="0.35" opacity="0.5"/>
+  <line x1="22" y1="36.5" x2="34" y2="36.5" stroke="#FF2E4C" stroke-width="0.35" opacity="0.4"/>
+  <!-- Cat ears with armor -->
+  <polygon points="16,20 22,27 12,27" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.9"/>
+  <polygon points="40,20 34,27 44,27" fill="#1a0303" stroke="#FF2E4C" stroke-width="0.9"/>
+  <circle cx="16.5" cy="22" r="1.8" fill="#FF2E4C"><animate attributeName="opacity" values="0.9;0.2;0.9" dur="1.5s" repeatCount="indefinite"/></circle>
+  <circle cx="39.5" cy="22" r="1.8" fill="#FF2E4C"><animate attributeName="opacity" values="0.2;0.9;0.2" dur="1.5s" repeatCount="indefinite"/></circle>
+  <!-- Brows -->
+  <line x1="15" y1="20" x2="24" y2="23.5" stroke="#FF2E4C" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="41" y1="20" x2="32" y2="23.5" stroke="#FF2E4C" stroke-width="1.4" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <ellipse cx="22.5" cy="26" rx="4.5" ry="5" fill="#0d0003"/>
+  <ellipse cx="22.5" cy="26" rx="3" ry="4.5" fill="#3a0010"/>
+  <ellipse cx="22.5" cy="26" rx="1.1" ry="4" fill="#FF2E4C" opacity="0.95"/>
+  <circle cx="24" cy="23" r="0.9" fill="white" opacity="0.4"/>
+  <ellipse cx="33.5" cy="26" rx="4.5" ry="5" fill="#0d0003"/>
+  <ellipse cx="33.5" cy="26" rx="3" ry="4.5" fill="#3a0010"/>
+  <ellipse cx="33.5" cy="26" rx="1.1" ry="4" fill="#FF2E4C" opacity="0.95"/>
+  <circle cx="35" cy="23" r="0.9" fill="white" opacity="0.4"/>
+  <!-- Scar, headband -->
+  <line x1="17" y1="23.5" x2="21" y2="28" stroke="#FCA5A5" stroke-width="0.7" opacity="0.7"/>
+  <rect x="15" y="19" width="26" height="3.5" rx="1.5" fill="#0d0003" stroke="#FF2E4C" stroke-width="0.5" opacity="0.9"/>
+  </svg>`;
+
+  if(type==='hacker') return `<svg viewBox="0 0 56 56" width="56" height="56" style="overflow:visible">
+  <defs><radialGradient id="chu" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#4c1d95"/><stop offset="100%" stop-color="#12063a"/></radialGradient><filter id="chf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <circle cx="28" cy="28" r="24" fill="rgba(191,95,255,0.06)"/>
+  <rect x="19" y="37" width="18" height="13" rx="3.5" fill="#120930" stroke="#BF5FFF" stroke-width="0.8"/>
+  <rect x="8" y="41" width="40" height="9" rx="2" fill="#080420" stroke="#BF5FFF" stroke-width="0.7"/>
+  <rect x="9" y="42" width="38" height="7" rx="1.5" fill="#120840" opacity="0.8"/>
+  <text x="14" y="47.5" fill="#BF5FFF" font-size="4.5" font-family="monospace" opacity="0.7">010110 1010</text>
+  <rect x="10" y="41" width="8" height="9" rx="3.5" fill="#12093a" stroke="#BF5FFF" stroke-width="0.6"/>
+  <rect x="38" y="41" width="8" height="9" rx="3.5" fill="#12093a" stroke="#BF5FFF" stroke-width="0.6"/>
+  <!-- Head -->
+  <ellipse cx="28" cy="27" rx="14.5" ry="12.5" fill="url(#chu)" stroke="#BF5FFF" stroke-width="1.1" filter="url(#chf)"/>
+  <ellipse cx="28" cy="26" rx="11" ry="9.5" fill="#2a0e60"/>
+  <!-- Cat ears (pointed) -->
+  <polygon points="16,19 22,27 12,27" fill="#1e0840" stroke="#BF5FFF" stroke-width="0.9"/>
+  <polygon points="40,19 34,27 44,27" fill="#1e0840" stroke="#BF5FFF" stroke-width="0.9"/>
+  <circle cx="16.5" cy="21" r="1.8" fill="#BF5FFF"><animate attributeName="opacity" values="0.8;0.1;0.8" dur="2s" repeatCount="indefinite"/></circle>
+  <circle cx="39.5" cy="21" r="1.8" fill="#BF5FFF"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="2s" repeatCount="indefinite"/></circle>
+  <!-- VR Goggles -->
+  <rect x="15" y="22.5" width="26" height="10.5" rx="4.5" fill="#080420" stroke="#7C3AED" stroke-width="1"/>
+  <rect x="16.5" y="23.5" width="11" height="8.5" rx="3.5" fill="#2a0d80" opacity="0.9"/>
+  <rect x="17.5" y="24.5" width="9" height="6.5" rx="2.5" fill="#3B0FB0" opacity="0.85"/>
+  <rect x="18.5" y="25.5" width="6" height="4.5" rx="2" fill="#BF5FFF" opacity="0.3"/>
+  <rect x="28.5" y="23.5" width="11" height="8.5" rx="3.5" fill="#2a0d80" opacity="0.9"/>
+  <rect x="29.5" y="24.5" width="9" height="6.5" rx="2.5" fill="#3B0FB0" opacity="0.85"/>
+  <rect x="30.5" y="25.5" width="6" height="4.5" rx="2" fill="#BF5FFF" opacity="0.3"/>
+  <line x1="27.5" y1="27.5" x2="28.5" y2="27.5" stroke="#7C3AED" stroke-width="1.2"/>
+  <line x1="15" y1="27.5" x2="13" y2="27.5" stroke="#BF5FFF" stroke-width="0.8"/>
+  <line x1="41" y1="27.5" x2="43" y2="27.5" stroke="#BF5FFF" stroke-width="0.8"/>
+  <polygon points="28,36 26,38 30,38" fill="#F9A8D4" opacity="0.7"/>
+  <text x="4" y="14" fill="#BF5FFF" font-size="5.5" font-family="monospace" opacity="0.6">&lt;/&gt;</text>
+  </svg>`;
+
+  // tank
+  return `<svg viewBox="0 0 56 56" width="56" height="56" style="overflow:visible">
+  <defs><radialGradient id="ctu" cx="45%" cy="35%" r="70%"><stop offset="0%" stop-color="#166534"/><stop offset="100%" stop-color="#042e14"/></radialGradient><filter id="ctf"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <circle cx="28" cy="30" r="24" fill="rgba(57,255,20,0.05)"/>
+  <rect x="17" y="38" width="22" height="16" rx="3.5" fill="#042e14" stroke="#39FF14" stroke-width="0.9"/>
+  <rect x="19" y="40" width="9" height="6" rx="1.5" fill="#0a1a09" stroke="#39FF14" stroke-width="0.4"/>
+  <rect x="30" y="40" width="9" height="6" rx="1.5" fill="#0a1a09" stroke="#39FF14" stroke-width="0.4"/>
+  <rect x="19" y="47" width="20" height="5" rx="1.5" fill="#0a1a09" stroke="#39FF14" stroke-width="0.4"/>
+  <polygon points="28,40 24.5,43 24.5,47.5 28,50.5 31.5,47.5 31.5,43" fill="#0d3318" stroke="#39FF14" stroke-width="0.5"/>
+  <!-- Pauldrons -->
+  <ellipse cx="11" cy="40" rx="9" ry="6" fill="#042e14" stroke="#39FF14" stroke-width="0.8"/>
+  <ellipse cx="11" cy="39" rx="7" ry="4.5" fill="#0a3a1a"/>
+  <ellipse cx="45" cy="40" rx="9" ry="6" fill="#042e14" stroke="#39FF14" stroke-width="0.8"/>
+  <ellipse cx="45" cy="39" rx="7" ry="4.5" fill="#0a3a1a"/>
+  <rect x="8" y="40" width="8" height="13" rx="3.5" fill="#042e14" stroke="#39FF14" stroke-width="0.7"/>
+  <rect x="40" y="40" width="8" height="13" rx="3.5" fill="#042e14" stroke="#39FF14" stroke-width="0.7"/>
+  <!-- Head -->
+  <ellipse cx="28" cy="28" rx="15" ry="13.5" fill="url(#ctu)" stroke="#39FF14" stroke-width="1.2" filter="url(#ctf)"/>
+  <ellipse cx="28" cy="27" rx="11.5" ry="10.5" fill="#0d3a1a"/>
+  <!-- Helmet -->
+  <path d="M14,23.5 Q28,11 42,23.5" fill="#0d3318" stroke="#39FF14" stroke-width="1.2"/>
+  <rect x="13" y="22" width="30" height="5" rx="2.5" fill="#0a2a12" stroke="#39FF14" stroke-width="0.9"/>
+  <rect x="16" y="23.5" width="24" height="2.5" rx="1" fill="#000"/>
+  <rect x="17" y="24" width="22" height="1.5" rx="0.5" fill="#39FF14" opacity="0.2"/>
+  <circle cx="15.5" cy="23" r="1" fill="#39FF14" opacity="0.8"/>
+  <circle cx="40.5" cy="23" r="1" fill="#39FF14" opacity="0.8"/>
+  <circle cx="28" cy="21" r="1.3" fill="#39FF14"><animate attributeName="opacity" values="0.9;0.3;0.9" dur="1.8s" repeatCount="indefinite"/></circle>
+  <!-- Cat ears under helmet -->
+  <polygon points="17,22 21,27 14,26" fill="#042e14" stroke="#39FF14" stroke-width="0.5" opacity="0.6"/>
+  <polygon points="39,22 35,27 42,26" fill="#042e14" stroke="#39FF14" stroke-width="0.5" opacity="0.6"/>
+  <!-- Eyes -->
+  <ellipse cx="22" cy="29" rx="3.5" ry="4.5" fill="#021a09"/>
+  <ellipse cx="22" cy="29" rx="2" ry="4" fill="#0d3a1a"/>
+  <ellipse cx="22" cy="29" rx="0.9" ry="3.5" fill="#39FF14" opacity="0.9"><animate attributeName="opacity" values="0.9;0.4;0.9" dur="2.5s" repeatCount="indefinite"/></ellipse>
+  <circle cx="23.2" cy="26" r="0.9" fill="white" opacity="0.4"/>
+  <ellipse cx="34" cy="29" rx="3.5" ry="4.5" fill="#021a09"/>
+  <ellipse cx="34" cy="29" rx="2" ry="4" fill="#0d3a1a"/>
+  <ellipse cx="34" cy="29" rx="0.9" ry="3.5" fill="#39FF14" opacity="0.9"><animate attributeName="opacity" values="0.4;0.9;0.4" dur="2.5s" repeatCount="indefinite"/></ellipse>
+  <circle cx="35.2" cy="26" r="0.9" fill="white" opacity="0.4"/>
+  <polygon points="28,34.5 26,37 30,37" fill="#8BE098" opacity="0.8"/>
+  </svg>`;
 }
 
-function getHackerSVG() {
-    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
-        <defs>
-            <radialGradient id="hg" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stop-color="#5b21b6"/>
-                <stop offset="100%" stop-color="#4c1d95"/>
-            </radialGradient>
-        </defs>
-        <!-- Body glow -->
-        <circle cx="22" cy="24" r="14" fill="#a855f7" opacity="0.12"/>
-        <!-- Body -->
-        <circle cx="22" cy="24" r="12" fill="url(#hg)" stroke="#a855f7" stroke-width="1.5"/>
-        <!-- Ears -->
-        <polygon points="15,13 19,22 11,22" fill="#4c1d95" stroke="#a855f7" stroke-width="1"/>
-        <polygon points="29,13 25,22 33,22" fill="#4c1d95" stroke="#a855f7" stroke-width="1"/>
-        <polygon points="16,15 18,21 13,21" fill="#c084fc" opacity="0.4"/>
-        <polygon points="28,15 26,21 31,21" fill="#c084fc" opacity="0.4"/>
-        <!-- VR Goggles frame -->
-        <rect x="11" y="21" width="22" height="9" rx="3.5" fill="#1e1035" stroke="#7c3aed" stroke-width="1.2"/>
-        <!-- Left lens -->
-        <rect x="12" y="22" width="9" height="7" rx="2.5" fill="#5b21b6"/>
-        <rect x="12.5" y="22.5" width="8" height="6" rx="2" fill="#7c3aed" opacity="0.8"/>
-        <!-- Lens glow -->
-        <rect x="13" y="23" width="6" height="4" rx="1.5" fill="#c084fc" opacity="0.5"/>
-        <rect x="14" y="23.5" width="3" height="2.5" rx="1" fill="white" opacity="0.25"/>
-        <!-- Right lens -->
-        <rect x="23" y="22" width="9" height="7" rx="2.5" fill="#5b21b6"/>
-        <rect x="23.5" y="22.5" width="8" height="6" rx="2" fill="#7c3aed" opacity="0.8"/>
-        <rect x="24" y="23" width="6" height="4" rx="1.5" fill="#c084fc" opacity="0.5"/>
-        <rect x="25" y="23.5" width="3" height="2.5" rx="1" fill="white" opacity="0.25"/>
-        <!-- Bridge -->
-        <line x1="21" y1="25" x2="23" y2="25" stroke="#7c3aed" stroke-width="1.5"/>
-        <!-- Nose -->
-        <polygon points="22,31 20,33 24,33" fill="#f9a8d4"/>
-        <!-- Floating code -->
-        <text x="3" y="14" fill="#a855f7" font-size="7" font-weight="700" opacity="0.7">&lt;/&gt;</text>
-        <text x="35" y="16" fill="#7c3aed" font-size="6" opacity="0.6">01</text>
-        <text x="2" y="30" fill="#6d28d9" font-size="6" opacity="0.5">10</text>
-        <!-- Laptop badge -->
-        <rect x="10" y="34" width="24" height="7" rx="2" fill="#1e1035" stroke="#7c3aed" stroke-width="0.8"/>
-        <rect x="11" y="35" width="22" height="5" rx="1" fill="#2d1a5e" opacity="0.8"/>
-        <text x="22" y="39" text-anchor="middle" fill="#a855f7" font-size="5.5" font-weight="700">&#9608;&#9608; HACK &#9608;&#9608;</text>
-    </svg>`;
-}
-
-function getTankSVG() {
-    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
-        <defs>
-            <radialGradient id="tg" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stop-color="#15803d"/>
-                <stop offset="100%" stop-color="#14532d"/>
-            </radialGradient>
-        </defs>
-        <!-- Body glow -->
-        <circle cx="22" cy="26" r="14" fill="#22c55e" opacity="0.12"/>
-        <!-- Body -->
-        <circle cx="22" cy="26" r="12" fill="url(#tg)" stroke="#4ade80" stroke-width="1.5"/>
-        <!-- Armor helmet -->
-        <path d="M10,21 Q22,8 34,21" fill="#15803d" stroke="#4ade80" stroke-width="1.5"/>
-        <rect x="9" y="19" width="26" height="5" rx="2" fill="#166534" stroke="#4ade80" stroke-width="1"/>
-        <!-- Visor slit -->
-        <rect x="12" y="21" width="20" height="2.5" rx="1" fill="#052e16" stroke="#4ade80" stroke-width="0.5"/>
-        <!-- Visor glow -->
-        <rect x="13" y="21.5" width="18" height="1.5" rx="0.5" fill="#4ade80" opacity="0.3"/>
-        <!-- Eyes under visor -->
-        <ellipse cx="18" cy="27" rx="2.5" ry="3" fill="#052e16"/>
-        <ellipse cx="18" cy="27" rx="1" ry="2.6" fill="#4ade80"/>
-        <ellipse cx="26" cy="27" rx="2.5" ry="3" fill="#052e16"/>
-        <ellipse cx="26" cy="27" rx="1" ry="2.6" fill="#4ade80"/>
-        <circle cx="18.8" cy="25.5" r="0.8" fill="white" opacity="0.7"/>
-        <circle cx="26.8" cy="25.5" r="0.8" fill="white" opacity="0.7"/>
-        <!-- Nose -->
-        <polygon points="22,31 20,33 24,33" fill="#f9a8d4"/>
-        <!-- Shoulder armor -->
-        <rect x="7" y="30" width="10" height="8" rx="3" fill="#166534" stroke="#4ade80" stroke-width="1"/>
-        <rect x="27" y="30" width="10" height="8" rx="3" fill="#166534" stroke="#4ade80" stroke-width="1"/>
-        <!-- Body armor plate -->
-        <rect x="14" y="35" width="16" height="7" rx="2" fill="#15803d" stroke="#4ade80" stroke-width="1"/>
-        <!-- Armor hexagon detail -->
-        <line x1="14" y1="38" x2="30" y2="38" stroke="#4ade80" stroke-width="0.6" opacity="0.4"/>
-        <line x1="22" y1="35" x2="22" y2="42" stroke="#4ade80" stroke-width="0.6" opacity="0.4"/>
-        <!-- Shield emblem -->
-        <polygon points="22,36 20,38 20,40 22,41 24,40 24,38" fill="#22c55e" opacity="0.7"/>
-    </svg>`;
-}
-
-function getEnemySVG(type) {
-    const configs = {
-        fighter: { bodyColor: '#7f1d1d', strokeColor: '#f87171', grad1: '#991b1b', grad2: '#7f1d1d', eyeColor: '#fca5a5', earColor: '#7f1d1d', earStroke: '#f87171' },
-        tank: { bodyColor: '#14532d', strokeColor: '#86efac', grad1: '#15803d', grad2: '#14532d', eyeColor: '#86efac', earColor: '#14532d', earStroke: '#86efac' },
-        hacker: { bodyColor: '#4c1d95', strokeColor: '#c084fc', grad1: '#5b21b6', grad2: '#4c1d95', eyeColor: '#c084fc', earColor: '#4c1d95', earStroke: '#c084fc' },
-        sniper: { bodyColor: '#1e3a5f', strokeColor: '#7dd3fc', grad1: '#1d4ed8', grad2: '#1e3a5f', eyeColor: '#7dd3fc', earColor: '#1e3a5f', earStroke: '#7dd3fc' },
-        medic: { bodyColor: '#4a1d2e', strokeColor: '#f9a8d4', grad1: '#9d174d', grad2: '#4a1d2e', eyeColor: '#f9a8d4', earColor: '#4a1d2e', earStroke: '#f9a8d4' },
-    };
-    const c = configs[type] || configs.fighter;
-    const uid = 'eg' + Math.random().toString(36).substr(2,6);
-    return `<svg viewBox="0 0 44 44" width="44" height="44" style="overflow:visible;">
-        <defs>
-            <radialGradient id="${uid}" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stop-color="${c.grad1}"/>
-                <stop offset="100%" stop-color="${c.grad2}"/>
-            </radialGradient>
-        </defs>
-        <circle cx="22" cy="24" r="14" fill="${c.strokeColor}" opacity="0.1"/>
-        <circle cx="22" cy="24" r="12" fill="url(#${uid})" stroke="${c.strokeColor}" stroke-width="1.5"/>
-        <!-- Rat round ears -->
-        <circle cx="15" cy="14" r="7" fill="${c.earColor}" stroke="${c.earStroke}" stroke-width="1"/>
-        <circle cx="29" cy="14" r="7" fill="${c.earColor}" stroke="${c.earStroke}" stroke-width="1"/>
-        <circle cx="15" cy="14" r="4" fill="${c.strokeColor}" opacity="0.2"/>
-        <circle cx="29" cy="14" r="4" fill="${c.strokeColor}" opacity="0.2"/>
-        <!-- Angry/menacing eyes -->
-        <circle cx="18" cy="23" r="3" fill="#0f0000"/>
-        <circle cx="18" cy="23" r="2" fill="#dc2626"/>
-        <circle cx="26" cy="23" r="3" fill="#0f0000"/>
-        <circle cx="26" cy="23" r="2" fill="#dc2626"/>
-        <circle cx="18.8" cy="22" r="0.8" fill="white" opacity="0.6"/>
-        <circle cx="26.8" cy="22" r="0.8" fill="white" opacity="0.6"/>
-        <!-- Snout -->
-        <ellipse cx="22" cy="29" rx="5" ry="4" fill="${c.earColor}"/>
-        <circle cx="22" cy="29" r="2" fill="#0f0000"/>
-        <!-- Whiskers -->
-        <line x1="8" y1="28" x2="17" y2="29" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
-        <line x1="8" y1="30.5" x2="17" y2="30" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
-        <line x1="36" y1="28" x2="27" y2="29" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
-        <line x1="36" y1="30.5" x2="27" y2="30" stroke="${c.strokeColor}" stroke-width="0.6" opacity="0.5"/>
-        <!-- Enemy X marking -->
-        <text x="22" y="43" text-anchor="middle" fill="${c.strokeColor}" font-size="8" font-weight="900" opacity="0.8">☠</text>
-    </svg>`;
-}
-
-// ==================== GAME STATE ====================
-const gameState = {
-    btc: 100, networkPower: 10, time: 0,
-    baseHealth: 100, baseMaxHealth: 100,
-    enemyHealth: 100, maxEnemyHealth: 100,
-    unitCount: 0, maxUnits: 10,
-    gameActive: true,
-    units: [], enemyUnits: [],
-    difficulty: { spawnRate: 5, enemyHealth: 5, enemyDamage: 5 },
-    bossSystem: { lastBossSpawn: 0, bossSpawnInterval: 300, bossLevel: 1, activeBoss: null },
-    upgrades: {
-        mining: { level: 0, cost: 50 },
-        attack: { level: 0, cost: 75 },
-        capacity: { level: 0, cost: 100 },
-        base: { level: 0, cost: 120 }
-    },
-    abilities: {
-        nuke: { cooldown: 0, maxCooldown: 300 },
-        heal: { cooldown: 0, maxCooldown: 180 }
-    },
-    unitCosts: { miner: 10, fighter: 15, hacker: 20, tank: 30 },
-    enemySpawnInterval: 8000,
-    spawnTimer: null
+// ===== GAME STATE =====
+const GS={
+  btc:100,networkPower:10,time:0,
+  baseHealth:100,baseMaxHealth:100,
+  enemyHealth:100,maxEnemyHealth:100,
+  unitCount:0,maxUnits:10,
+  gameActive:true,
+  units:[],enemyUnits:[],
+  difficulty:{spawnRate:5,enemyHealth:5,enemyDamage:5},
+  upgrades:{
+    mining:{level:0,cost:50},attack:{level:0,cost:75},
+    capacity:{level:0,cost:100},base:{level:0,cost:120}
+  },
+  abilities:{nuke:{cooldown:0,maxCooldown:300},heal:{cooldown:0,maxCooldown:180}},
+  unitCosts:{miner:10,fighter:15,hacker:20,tank:30},
+  spawnTimer:null,enemySpawnInterval:8000
 };
 
-// Arena pixel dimensions (internal coordinate system)
-const ARENA_W = 800;
-const ARENA_H = 420;
-const PLAYER_BASE_X = 100;
-const PLAYER_BASE_Y = 210;
-const ENEMY_BASE_X = 700;
-const ENEMY_BASE_Y = 210;
-const NODE_X = 400;
-const NODE_Y = 210;
+const AW=800,AH=440,PBX=100,PBY=220,EBX=700,EBY=220,NX=400,NY=220;
 
-function getArenaScale() {
-    const arena = document.getElementById('arena');
-    return { sx: arena.clientWidth / ARENA_W, sy: arena.clientHeight / ARENA_H };
+function getScale(){const a=document.getElementById('arena');return{sx:a.clientWidth/AW,sy:a.clientHeight/AH};}
+function getAtk(t){const b={miner:0,fighter:15,hacker:0,tank:22};return Math.floor((b[t]||0)*(1+GS.upgrades.attack.level*0.25));}
+function getSpd(t){return{miner:0.9,fighter:1.35,hacker:0.65,tank:0.7}[t]||1;}
+function getCD(t){return{miner:80,fighter:25,hacker:160,tank:70}[t]||30;}
+function getHPC(t,e){if(e)return'#FF2E4C';return{miner:'#FFD700',fighter:'#FF2E4C',hacker:'#BF5FFF',tank:'#39FF14'}[t]||'#00F5FF';}
+
+function notify(txt,type='info'){
+  const cols={info:'rgba(0,245,255,0.15)',success:'rgba(57,255,20,0.15)',warning:'rgba(255,107,0,0.15)',error:'rgba(255,46,76,0.15)'};
+  const brd={info:'rgba(0,245,255,0.35)',success:'rgba(57,255,20,0.35)',warning:'rgba(255,107,0,0.35)',error:'rgba(255,46,76,0.35)'};
+  const ico={info:'⬡',success:'✓',warning:'⚠',error:'✗'};
+  const icC={info:'#00F5FF',success:'#39FF14',warning:'#FF6B00',error:'#FF2E4C'};
+  const n=document.createElement('div');n.className='notif';
+  n.style.cssText=`background:${cols[type]};border-color:${brd[type]};`;
+  n.innerHTML=`<span style="color:${icC[type]};font-family:'Orbitron',monospace;font-size:12px;">${ico[type]}</span><span style="font-family:'Rajdhani',sans-serif;font-weight:600;">${txt}</span>`;
+  document.getElementById('notifications').appendChild(n);
+  setTimeout(()=>{n.classList.add('dy');setTimeout(()=>n.remove(),360);},2600);
 }
 
-// ==================== UNIT DATA ====================
-function getUnitAttack(type) {
-    const base = { miner: 0, fighter: 15, hacker: 0, tank: 20 };
-    return Math.floor((base[type] || 0) * (1 + gameState.upgrades.attack.level * 0.25));
-}
-function getUnitSpeed(type) { return { miner: 0.8, fighter: 1.2, hacker: 0.5, tank: 0.6 }[type] || 1; }
-function getUnitCooldown(type) { return { miner: 80, fighter: 25, hacker: 160, tank: 70 }[type] || 30; }
-
-function getUnitSVG(type) {
-    return { miner: getMinerSVG, fighter: getFighterSVG, hacker: getHackerSVG, tank: getTankSVG }[type]?.() || getMinerSVG();
-}
-function getUnitHPColor(type) {
-    return { miner: '#fbbf24', fighter: '#ef4444', hacker: '#a855f7', tank: '#22c55e' }[type] || '#60a5fa';
+function floatText(txt,x,y,color){
+  const a=document.getElementById('arena');const{sx,sy}=getScale();
+  const el=document.createElement('div');el.className='dpop';
+  el.style.cssText=`left:${x*sx-16}px;top:${y*sy-10}px;color:${color};`;
+  el.textContent=txt;a.appendChild(el);setTimeout(()=>el.remove(),950);
 }
 
-// ==================== NOTIFICATIONS ====================
-function showNotification(text, type = 'info') {
-    const colors = { info: '#1e40af,#3b82f6', success: '#14532d,#22c55e', warning: '#78350f,#f59e0b', error: '#7f1d1d,#ef4444' };
-    const [bg, border] = colors[type].split(',');
-    const notif = document.createElement('div');
-    notif.className = 'notification';
-    notif.style.cssText = `background:${bg}22; border:1px solid ${border}44; border-radius:8px; padding:10px 14px; font-size:12px; color:#e2e8f0; display:flex; align-items:center; gap:8px;`;
-    const icons = { info: '💬', success: '✅', warning: '⚠️', error: '❌' };
-    notif.innerHTML = `<span style="font-size:14px;">${icons[type]}</span><span>${text}</span>`;
-    document.getElementById('notifications').appendChild(notif);
-    setTimeout(() => { notif.classList.add('dying'); setTimeout(() => notif.remove(), 400); }, 2600);
+function spawnPtcl(x,y,color,n=6){
+  const a=document.getElementById('arena');const{sx,sy}=getScale();
+  for(let i=0;i<n;i++){
+    const ang=(i/n)*Math.PI*2;const d=14+Math.random()*28;
+    const p=document.createElement('div');p.className='ptcl';
+    p.style.cssText=`width:${3+Math.random()*4}px;height:${3+Math.random()*4}px;background:${color};left:${x*sx}px;top:${y*sy}px;--dx:${Math.cos(ang)*d}px;--dy:${Math.sin(ang)*d}px;box-shadow:0 0 5px ${color};`;
+    a.appendChild(p);setTimeout(()=>p.remove(),700);
+  }
 }
 
-// ==================== FLOATING TEXT ====================
-function showFloatingText(text, x, y, color = 'white') {
-    const arena = document.getElementById('arena');
-    const { sx, sy } = getArenaScale();
-    const el = document.createElement('div');
-    el.className = 'damage-popup';
-    el.style.left = (x * sx - 20) + 'px';
-    el.style.top = (y * sy - 10) + 'px';
-    el.style.color = color;
-    el.textContent = text;
-    arena.appendChild(el);
-    setTimeout(() => el.remove(), 1200);
+function updateUI(){
+  document.getElementById('btc').textContent=Math.floor(GS.btc);
+  document.getElementById('net').textContent=Math.floor(GS.networkPower);
+  document.getElementById('unit-capacity').textContent=`${GS.unitCount}/${GS.maxUnits}`;
+  document.getElementById('unit-capacity-bar').style.width=`${(GS.unitCount/GS.maxUnits)*100}%`;
+  const pH=Math.max(0,(GS.baseHealth/GS.baseMaxHealth)*86);
+  document.getElementById('player-hp-bar').setAttribute('width',pH);
+  document.getElementById('player-hp-glow').setAttribute('width',pH);
+  document.getElementById('base-health').textContent=`HP ${Math.max(0,Math.floor(GS.baseHealth))}/${GS.baseMaxHealth}`;
+  const eH=Math.max(0,(GS.enemyHealth/GS.maxEnemyHealth)*86);
+  document.getElementById('enemy-hp-bar').setAttribute('width',eH);
+  document.getElementById('enemy-hp-glow').setAttribute('width',eH);
+  document.getElementById('enemy-health').textContent=`HP ${Math.max(0,Math.floor(GS.enemyHealth))}/${GS.maxEnemyHealth}`;
 }
 
-// ==================== PARTICLES ====================
-function spawnParticles(x, y, color, count = 6) {
-    const arena = document.getElementById('arena');
-    const { sx, sy } = getArenaScale();
-    for (let i = 0; i < count; i++) {
-        const p = document.createElement('div');
-        const angle = (i / count) * Math.PI * 2;
-        const dist = 20 + Math.random() * 30;
-        p.className = 'particle';
-        p.style.cssText = `width:${3+Math.random()*4}px; height:${3+Math.random()*4}px; background:${color}; left:${x*sx}px; top:${y*sy}px; --px:${Math.cos(angle)*dist}px; --py:${Math.sin(angle)*dist}px;`;
-        arena.appendChild(p);
-        setTimeout(() => p.remove(), 600);
+function shake(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.remove('shk');void el.offsetWidth;el.classList.add('shk');
+  setTimeout(()=>el.classList.remove('shk'),420);
+}
+
+function createUnit(type){
+  if(!GS.gameActive)return;
+  if(GS.btc<GS.unitCosts[type]){notify('Not enough BTC!','error');return;}
+  if(GS.unitCount>=GS.maxUnits){notify('Unit capacity full!','warning');return;}
+  GS.btc-=GS.unitCosts[type];GS.unitCount++;
+  const u={id:Date.now()+Math.random(),type,isEnemy:false,
+    x:PBX+38+Math.random()*18,y:PBY+(Math.random()-0.5)*55,
+    targetX:null,targetY:null,target:null,
+    health:100,maxHealth:100,attack:getAtk(type),speed:getSpd(type),
+    cooldown:0,cooldownMax:getCD(type)};
+  if(type==='miner'){u.targetX=NX;u.targetY=NY;}
+  else if(type==='hacker'){u.targetX=PBX+55+Math.random()*90;u.targetY=PBY+(Math.random()-0.5)*110;}
+  else{u.targetX=EBX;u.targetY=EBY;}
+  GS.units.push(u);spawnUnitEl(u);updateUI();
+  const N={miner:'Miner',fighter:'Fighter',hacker:'Hacker',tank:'Hash Tank'};
+  notify(`${N[type]} deployed!`,'success');
+}
+
+function spawnUnitEl(unit){
+  const{sx,sy}=getScale();
+  const w=document.createElement('div');w.id=`unit-${unit.id}`;w.className='uf af';
+  w.style.cssText=`left:${unit.x*sx-28}px;top:${unit.y*sy-28}px;animation-delay:${Math.random()*3}s;`;
+  w.innerHTML=unit.isEnemy?getEnemySVGUnit(unit.type):getCatUnitSVG(unit.type);
+  const hb=document.createElement('div');hb.className='uhp';
+  const hf=document.createElement('div');hf.className='uhpf';
+  hf.style.cssText=`width:100%;background:${getHPC(unit.type,unit.isEnemy)};box-shadow:0 0 4px ${getHPC(unit.type,unit.isEnemy)};`;
+  hb.appendChild(hf);w.appendChild(hb);
+  if(!unit.isEnemy)w.addEventListener('click',()=>unitClick(unit.id));
+  document.getElementById('units-layer').appendChild(w);
+}
+
+function updateUnitEl(unit){
+  const{sx,sy}=getScale();
+  const el=document.getElementById(`unit-${unit.id}`);if(!el)return;
+  el.style.left=(unit.x*sx-28)+'px';el.style.top=(unit.y*sy-28)+'px';
+  const bar=el.querySelector('.uhpf');
+  if(bar)bar.style.width=`${Math.max(0,(unit.health/unit.maxHealth)*100)}%`;
+}
+
+function removeUnitEl(unit){
+  const el=document.getElementById(`unit-${unit.id}`);if(!el)return;
+  spawnPtcl(unit.x,unit.y,unit.isEnemy?'#FF2E4C':'#FFD700',9);
+  el.style.transition='all 0.22s';el.style.transform='scale(0) rotate(45deg)';el.style.opacity='0';
+  setTimeout(()=>el.remove(),240);
+}
+
+function unitClick(id){
+  const u=GS.units.find(u=>u.id===id);if(!u)return;
+  u.target=null;
+  if(u.type==='miner'){u.targetX=NX;u.targetY=NY;notify('Miner heading to mine!','info');}
+  else if(u.type==='fighter'){if(GS.enemyUnits.length){u.target=GS.enemyUnits[0];notify('Fighter attacking!','info');}else{u.targetX=EBX;u.targetY=EBY;}}
+  else if(u.type==='tank'){u.targetX=EBX;u.targetY=EBY;}
+  else notify('Hacker boosting network!','info');
+}
+
+function destroyUnit(id){
+  const i=GS.units.findIndex(u=>u.id===id);if(i<0)return;
+  const u=GS.units.splice(i,1)[0];GS.unitCount=Math.max(0,GS.unitCount-1);
+  removeUnitEl(u);updateUI();
+}
+
+function destroyEnemy(id){
+  const i=GS.enemyUnits.findIndex(e=>e.id===id);if(i<0)return;
+  const e=GS.enemyUnits.splice(i,1)[0];
+  const d=e.type==='tank'?16:9;GS.btc+=d;
+  floatText(`+${d}₿`,e.x,e.y-10,'#FFD700');removeUnitEl(e);updateUI();
+}
+
+function spawnEnemy(){
+  if(!GS.gameActive)return;
+  const types=['fighter','tank','hacker','sniper','medic'];
+  const type=types[Math.floor(Math.random()*types.length)];
+  const hm=0.5+((GS.difficulty.enemyHealth-1)*1.5/9);
+  const dm=0.5+((GS.difficulty.enemyDamage-1)*1.5/9);
+  const e={id:Date.now()+Math.random(),type,isEnemy:true,
+    x:EBX-38-Math.random()*18,y:EBY+(Math.random()-0.5)*55,
+    targetX:PBX,targetY:PBY,target:null,
+    health:Math.floor(80*hm),maxHealth:Math.floor(80*hm),
+    attack:Math.floor(10*dm),speed:0.95+Math.random()*0.4,
+    cooldown:0,cooldownMax:30};
+  GS.enemyUnits.push(e);spawnUnitEl(e);
+  if(Math.random()<0.3)notify('Enemy unit detected!','warning');
+}
+
+function gameLoop(){
+  if(!GS.gameActive)return;
+  GS.time++;
+  const m=String(Math.floor(GS.time/60)).padStart(2,'0');
+  const s=String(GS.time%60).padStart(2,'0');
+  document.getElementById('gtime').textContent=`${m}:${s}`;
+  GS.btc+=Math.min(1+Math.floor(GS.time/60),10);
+  if(GS.baseHealth<=0){endGame(false);return;}
+  if(GS.enemyHealth<=0){endGame(true);return;}
+  updateUI();
+}
+
+function moveLoop(){
+  if(!GS.gameActive)return;
+  for(const unit of [...GS.units]){
+    if(!document.getElementById(`unit-${unit.id}`))continue;
+    if(unit.cooldown>0)unit.cooldown--;
+    if(unit.type==='fighter'&&!unit.target){
+      let cl=null,cd=115;
+      for(const e of GS.enemyUnits){const d=Math.hypot(e.x-unit.x,e.y-unit.y);if(d<cd){cd=d;cl=e;}}
+      if(cl)unit.target=cl;
     }
-}
-
-// ==================== UI UPDATE ====================
-function updateUI() {
-    document.getElementById('btc-resources').textContent = Math.floor(gameState.btc);
-    document.getElementById('network-power').textContent = Math.floor(gameState.networkPower);
-    document.getElementById('unit-capacity').textContent = `${gameState.unitCount}/${gameState.maxUnits}`;
-    document.getElementById('unit-capacity-bar').style.width = `${(gameState.unitCount / gameState.maxUnits) * 100}%`;
-
-    // Player HP bar
-    const pHPW = Math.max(0, (gameState.baseHealth / gameState.baseMaxHealth) * 84);
-    document.getElementById('player-hp-bar').setAttribute('width', pHPW);
-    document.getElementById('base-health').textContent = `HP: ${Math.max(0, Math.floor(gameState.baseHealth))}/${gameState.baseMaxHealth}`;
-
-    // Enemy HP bar
-    const eHPW = Math.max(0, (gameState.enemyHealth / gameState.maxEnemyHealth) * 84);
-    document.getElementById('enemy-hp-bar').setAttribute('width', eHPW);
-    document.getElementById('enemy-health').textContent = `HP: ${Math.max(0, Math.floor(gameState.enemyHealth))}/${gameState.maxEnemyHealth}`;
-}
-
-function shakeBase(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('shake');
-    setTimeout(() => el.classList.remove('shake'), 450);
-}
-
-// ==================== CREATE UNIT ====================
-function createUnit(type) {
-    if (!gameState.gameActive) return;
-    if (gameState.btc < gameState.unitCosts[type]) { showNotification('Not enough BTC!', 'error'); return; }
-    if (gameState.unitCount >= gameState.maxUnits) { showNotification('Unit capacity reached!', 'warning'); return; }
-
-    gameState.btc -= gameState.unitCosts[type];
-    gameState.unitCount++;
-
-    const unit = {
-        id: Date.now() + Math.random(),
-        type, isEnemy: false,
-        x: PLAYER_BASE_X + 30 + Math.random() * 20,
-        y: PLAYER_BASE_Y + (Math.random() - 0.5) * 60,
-        targetX: null, targetY: null, target: null,
-        health: 100, maxHealth: 100,
-        attack: getUnitAttack(type),
-        speed: getUnitSpeed(type),
-        cooldown: 0,
-        cooldownMax: getUnitCooldown(type)
-    };
-
-    if (type === 'miner') { unit.targetX = NODE_X; unit.targetY = NODE_Y; }
-    else if (type === 'hacker') { unit.targetX = PLAYER_BASE_X + 50 + Math.random()*80; unit.targetY = PLAYER_BASE_Y + (Math.random()-0.5)*100; }
-    else { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
-
-    gameState.units.push(unit);
-    spawnUnitElement(unit);
-    updateUI();
-    showNotification(`${type.charAt(0).toUpperCase()+type.slice(1)} deployed!`, 'success');
-}
-
-function spawnUnitElement(unit) {
-    const layer = document.getElementById('units-layer');
-    const { sx, sy } = getArenaScale();
-
-    const wrapper = document.createElement('div');
-    wrapper.id = `unit-${unit.id}`;
-    wrapper.className = 'unit-svg';
-    wrapper.style.cssText = `position:absolute; left:${unit.x*sx-22}px; top:${unit.y*sy-22}px; width:44px; height:44px; pointer-events:all; animation-delay:${Math.random()*2}s;`;
-    wrapper.innerHTML = unit.isEnemy ? getEnemySVG(unit.type) : getUnitSVG(unit.type);
-
-    // HP bar
-    const hpWrap = document.createElement('div');
-    hpWrap.className = 'health-bar-outer';
-    const hpFill = document.createElement('div');
-    hpFill.className = 'health-bar-inner';
-    hpFill.style.cssText = `width:100%; background:${unit.isEnemy ? '#ef4444' : getUnitHPColor(unit.type)};`;
-    hpWrap.appendChild(hpFill);
-    wrapper.appendChild(hpWrap);
-
-    if (!unit.isEnemy) wrapper.addEventListener('click', () => unitClicked(unit.id));
-    layer.appendChild(wrapper);
-}
-
-function updateUnitElement(unit) {
-    const { sx, sy } = getArenaScale();
-    const el = document.getElementById(`unit-${unit.id}`);
-    if (!el) return;
-    el.style.left = (unit.x * sx - 22) + 'px';
-    el.style.top = (unit.y * sy - 22) + 'px';
-    const hpBar = el.querySelector('.health-bar-inner');
-    if (hpBar) hpBar.style.width = `${Math.max(0, (unit.health / unit.maxHealth) * 100)}%`;
-}
-
-function removeUnitElement(unit) {
-    const el = document.getElementById(`unit-${unit.id}`);
-    if (!el) return;
-    spawnParticles(unit.x, unit.y, unit.isEnemy ? '#ef4444' : '#fbbf24', 8);
-    el.style.transition = 'all 0.25s ease';
-    el.style.transform = 'scale(0) rotate(90deg)';
-    el.style.opacity = '0';
-    setTimeout(() => el.remove(), 260);
-}
-
-// ==================== UNIT CLICKED ====================
-function unitClicked(unitId) {
-    const unit = gameState.units.find(u => u.id === unitId);
-    if (!unit) return;
-    unit.target = null;
-    if (unit.type === 'miner') { unit.targetX = NODE_X; unit.targetY = NODE_Y; showNotification('Miner sent to mine!', 'info'); }
-    else if (unit.type === 'fighter') {
-        if (gameState.enemyUnits.length > 0) { unit.target = gameState.enemyUnits[0]; showNotification('Fighter attacking!', 'info'); }
-        else { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
-    } else if (unit.type === 'tank') { unit.targetX = ENEMY_BASE_X; unit.targetY = ENEMY_BASE_Y; }
-    else if (unit.type === 'hacker') showNotification('Hacker boosting network!', 'info');
-}
-
-// ==================== DESTROY UNITS ====================
-function destroyUnit(unitId) {
-    const idx = gameState.units.findIndex(u => u.id === unitId);
-    if (idx === -1) return;
-    const unit = gameState.units[idx];
-    gameState.units.splice(idx, 1);
-    gameState.unitCount = Math.max(0, gameState.unitCount - 1);
-    removeUnitElement(unit);
-    updateUI();
-}
-
-function destroyEnemyUnit(unitId) {
-    const idx = gameState.enemyUnits.findIndex(e => e.id === unitId);
-    if (idx === -1) return;
-    const enemy = gameState.enemyUnits[idx];
-    gameState.enemyUnits.splice(idx, 1);
-    const btcDrop = enemy.type === 'tank' ? 15 : 8;
-    gameState.btc += btcDrop;
-    showFloatingText(`+${btcDrop}₿`, enemy.x, enemy.y, '#fbbf24');
-    removeUnitElement(enemy);
-    updateUI();
-}
-
-// ==================== ENEMY SPAWN ====================
-function spawnEnemyUnit() {
-    if (!gameState.gameActive) return;
-    const types = ['fighter', 'tank', 'hacker', 'sniper', 'medic'];
-    const type = types[Math.floor(Math.random() * types.length)];
-    const hm = 0.5 + ((gameState.difficulty.enemyHealth - 1) * 1.5 / 9);
-    const dm = 0.5 + ((gameState.difficulty.enemyDamage - 1) * 1.5 / 9);
-    const enemy = {
-        id: Date.now() + Math.random(),
-        type, isEnemy: true,
-        x: ENEMY_BASE_X - 30 - Math.random() * 20,
-        y: ENEMY_BASE_Y + (Math.random() - 0.5) * 60,
-        targetX: PLAYER_BASE_X, targetY: PLAYER_BASE_Y,
-        target: null,
-        health: Math.floor(80 * hm), maxHealth: Math.floor(80 * hm),
-        attack: Math.floor(10 * dm),
-        speed: 0.9 + Math.random() * 0.4,
-        cooldown: 0, cooldownMax: 30,
-        abilities: {}
-    };
-    gameState.enemyUnits.push(enemy);
-    spawnUnitElement(enemy);
-    if (Math.random() < 0.3) showNotification('Enemy unit approaching!', 'warning');
-}
-
-// ==================== GAME LOOP ====================
-function gameLoop() {
-    if (!gameState.gameActive) return;
-    gameState.time++;
-
-    const m = String(Math.floor(gameState.time / 60)).padStart(2, '0');
-    const s = String(gameState.time % 60).padStart(2, '0');
-    document.getElementById('game-time').textContent = `${m}:${s}`;
-
-    // Passive income
-    const passive = Math.min(1 + Math.floor(gameState.time / 60), 10);
-    gameState.btc += passive;
-
-    if (gameState.baseHealth <= 0) { endGame(false); return; }
-    if (gameState.enemyHealth <= 0) { endGame(true); return; }
-    updateUI();
-}
-
-function moveLoop() {
-    if (!gameState.gameActive) return;
-
-    // Player units
-    for (const unit of [...gameState.units]) {
-        const el = document.getElementById(`unit-${unit.id}`);
-        if (!el) continue;
-
-        if (unit.cooldown > 0) unit.cooldown--;
-
-        // Auto-detect enemies for fighters
-        if (unit.type === 'fighter' && !unit.target) {
-            let closest = null, closestDist = 120;
-            for (const e of gameState.enemyUnits) {
-                const d = Math.hypot(e.x - unit.x, e.y - unit.y);
-                if (d < closestDist) { closestDist = d; closest = e; }
-            }
-            if (closest) unit.target = closest;
+    if(unit.target&&!GS.enemyUnits.find(e=>e.id===unit.target.id))unit.target=null;
+    if(unit.target){
+      const e=unit.target,dx=e.x-unit.x,dy=e.y-unit.y,d=Math.hypot(dx,dy);
+      if(d<36){
+        if(unit.cooldown<=0){
+          e.health-=unit.attack;floatText('-'+unit.attack,e.x,e.y-10,'#FF2E4C');
+          updateUnitEl(e);if(e.health<=0)destroyEnemy(e.id);unit.cooldown=unit.cooldownMax;
         }
-
-        // If target died, clear it
-        if (unit.target && !gameState.enemyUnits.find(e => e.id === unit.target.id)) {
-            unit.target = null;
-        }
-
-        if (unit.target) {
-            const enemy = unit.target;
-            const dx = enemy.x - unit.x;
-            const dy = enemy.y - unit.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist < 35) {
-                // Attack!
-                if (unit.cooldown <= 0) {
-                    enemy.health -= unit.attack;
-                    showFloatingText('-' + unit.attack, enemy.x, enemy.y - 10, '#f87171');
-                    updateUnitElement(enemy);
-                    if (enemy.health <= 0) destroyEnemyUnit(enemy.id);
-                    unit.cooldown = unit.cooldownMax;
-                }
-            } else {
-                unit.x += (dx / dist) * unit.speed;
-                unit.y += (dy / dist) * unit.speed;
-            }
-            updateUnitElement(unit);
-            continue;
-        }
-
-        const tx = unit.targetX, ty = unit.targetY;
-        if (tx === null) { updateUnitElement(unit); continue; }
-
-        const dx = tx - unit.x, dy = ty - unit.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (unit.type === 'miner') {
-            if (dist < 20) {
-                if (unit.cooldown <= 0) {
-                    const yieldMult = 1 + gameState.upgrades.mining.level * 0.5;
-                    const btcYield = Math.floor(5 * yieldMult);
-                    gameState.btc += btcYield;
-                    showFloatingText('+' + btcYield + '₿', unit.x, unit.y - 10, '#fbbf24');
-                    unit.cooldown = unit.cooldownMax;
-                    unit.targetX = PLAYER_BASE_X + 40;
-                    unit.targetY = PLAYER_BASE_Y;
-                }
-            } else {
-                unit.x += (dx / dist) * unit.speed;
-                unit.y += (dy / dist) * unit.speed;
-            }
-            // Loop back
-            if (tx === PLAYER_BASE_X + 40 && dist < 20) { unit.targetX = NODE_X; unit.targetY = NODE_Y; }
-            updateUnitElement(unit);
-            continue;
-        }
-
-        if (unit.type === 'hacker') {
-            if (dist < 15) {
-                if (unit.cooldown <= 0) {
-                    gameState.networkPower += 2;
-                    showFloatingText('+2 NET', unit.x, unit.y - 10, '#c084fc');
-                    unit.cooldown = unit.cooldownMax;
-                    unit.targetX = PLAYER_BASE_X + 40 + Math.random() * 120;
-                    unit.targetY = PLAYER_BASE_Y + (Math.random() - 0.5) * 140;
-                }
-            } else {
-                unit.x += (dx / dist) * unit.speed;
-                unit.y += (dy / dist) * unit.speed;
-            }
-            updateUnitElement(unit);
-            continue;
-        }
-
-        // Fighter or tank heading to enemy base
-        if (dist < 55) {
-            if (unit.cooldown <= 0) {
-                gameState.enemyHealth -= unit.attack;
-                showFloatingText('-' + unit.attack, ENEMY_BASE_X, ENEMY_BASE_Y - 30, '#f87171');
-                shakeBase('enemy-base-g');
-                unit.cooldown = unit.cooldownMax;
-            }
-        } else {
-            // Slight Y drift to avoid stacking
-            unit.x += (dx / dist) * unit.speed;
-            unit.y += (dy / dist) * unit.speed * 0.95;
-        }
-        updateUnitElement(unit);
+      }else{unit.x+=dx/d*unit.speed;unit.y+=dy/d*unit.speed;}
+      updateUnitEl(unit);continue;
     }
-
-    // Enemy units
-    for (const enemy of [...gameState.enemyUnits]) {
-        if (enemy.cooldown > 0) enemy.cooldown--;
-
-        // Find player units to attack
-        let playerTarget = null, ptDist = 80;
-        for (const u of gameState.units) {
-            const d = Math.hypot(u.x - enemy.x, u.y - enemy.y);
-            if (d < ptDist) { ptDist = d; playerTarget = u; }
+    const tx=unit.targetX,ty=unit.targetY;
+    if(tx===null){updateUnitEl(unit);continue;}
+    const dx=tx-unit.x,dy=ty-unit.y,d=Math.hypot(dx,dy);
+    if(unit.type==='miner'){
+      if(d<22){
+        if(unit.cooldown<=0){
+          const yd=Math.floor(5*(1+GS.upgrades.mining.level*0.5));
+          GS.btc+=yd;floatText('+'+yd+'₿',unit.x,unit.y-10,'#FFD700');
+          spawnPtcl(unit.x,unit.y,'#FFD700',5);unit.cooldown=unit.cooldownMax;
+          unit.targetX=PBX+48;unit.targetY=PBY;
         }
-
-        if (playerTarget) {
-            const dx = playerTarget.x - enemy.x;
-            const dy = playerTarget.y - enemy.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist < 35) {
-                if (enemy.cooldown <= 0) {
-                    playerTarget.health -= enemy.attack;
-                    showFloatingText('-' + enemy.attack, playerTarget.x, playerTarget.y - 10, '#f87171');
-                    updateUnitElement(playerTarget);
-                    if (playerTarget.health <= 0) destroyUnit(playerTarget.id);
-                    enemy.cooldown = enemy.cooldownMax;
-                }
-            } else {
-                enemy.x += (dx / dist) * enemy.speed;
-                enemy.y += (dy / dist) * enemy.speed;
-            }
-            updateUnitElement(enemy);
-            continue;
+      }else{unit.x+=dx/d*unit.speed;unit.y+=dy/d*unit.speed;}
+      if(tx===PBX+48&&d<22){unit.targetX=NX;unit.targetY=NY;}
+      updateUnitEl(unit);continue;
+    }
+    if(unit.type==='hacker'){
+      if(d<16){
+        if(unit.cooldown<=0){
+          GS.networkPower+=2;floatText('+2 NET',unit.x,unit.y-10,'#BF5FFF');
+          unit.cooldown=unit.cooldownMax;
+          unit.targetX=PBX+55+Math.random()*120;unit.targetY=PBY+(Math.random()-0.5)*140;
         }
-
-        // Move toward player base
-        const dx = PLAYER_BASE_X - enemy.x;
-        const dy = PLAYER_BASE_Y - enemy.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < 65) {
-            if (enemy.cooldown <= 0) {
-                gameState.baseHealth -= enemy.attack;
-                showFloatingText('-' + enemy.attack, PLAYER_BASE_X, PLAYER_BASE_Y - 30, '#f87171');
-                shakeBase('player-base-g');
-                enemy.cooldown = enemy.cooldownMax;
-            }
-        } else {
-            enemy.x += (dx / dist) * enemy.speed;
-            enemy.y += (dy / dist) * enemy.speed * 0.95;
+      }else{unit.x+=dx/d*unit.speed;unit.y+=dy/d*unit.speed;}
+      updateUnitEl(unit);continue;
+    }
+    if(d<60){
+      if(unit.cooldown<=0){
+        GS.enemyHealth-=unit.attack;floatText('-'+unit.attack,EBX,EBY-30,'#FF2E4C');
+        shake('enemy-base-g');unit.cooldown=unit.cooldownMax;
+      }
+    }else{unit.x+=dx/d*unit.speed;unit.y+=dy/d*unit.speed*0.93;}
+    updateUnitEl(unit);
+  }
+  for(const enemy of [...GS.enemyUnits]){
+    if(enemy.cooldown>0)enemy.cooldown--;
+    let pt=null,pd=82;
+    for(const u of GS.units){const d=Math.hypot(u.x-enemy.x,u.y-enemy.y);if(d<pd){pd=d;pt=u;}}
+    if(pt){
+      const dx=pt.x-enemy.x,dy=pt.y-enemy.y,d=Math.hypot(dx,dy);
+      if(d<36){
+        if(enemy.cooldown<=0){
+          pt.health-=enemy.attack;floatText('-'+enemy.attack,pt.x,pt.y-10,'#FF2E4C');
+          updateUnitEl(pt);if(pt.health<=0)destroyUnit(pt.id);enemy.cooldown=enemy.cooldownMax;
         }
-        updateUnitElement(enemy);
+      }else{enemy.x+=dx/d*enemy.speed;enemy.y+=dy/d*enemy.speed;}
+      updateUnitEl(enemy);continue;
     }
+    const dx=PBX-enemy.x,dy=PBY-enemy.y,d=Math.hypot(dx,dy);
+    if(d<68){
+      if(enemy.cooldown<=0){
+        GS.baseHealth-=enemy.attack;floatText('-'+enemy.attack,PBX,PBY-30,'#FF2E4C');
+        shake('player-base-g');enemy.cooldown=enemy.cooldownMax;
+      }
+    }else{enemy.x+=dx/d*enemy.speed;enemy.y+=dy/d*enemy.speed*0.93;}
+    updateUnitEl(enemy);
+  }
 }
 
-// ==================== ABILITIES ====================
-function useAbility(type) {
-    if (!gameState.gameActive) return;
-    const ability = gameState.abilities[type];
-    if (ability.cooldown > 0) { showNotification('Ability on cooldown!', 'error'); return; }
-
-    if (type === 'nuke') {
-        for (const e of [...gameState.enemyUnits]) destroyEnemyUnit(e.id);
-        showNotification('Satoshi Bomb launched! All enemies destroyed!', 'success');
-        spawnParticles(NODE_X, NODE_Y, '#ef4444', 20);
-    } else if (type === 'heal') {
-        const healAmt = 50;
-        gameState.baseHealth = Math.min(gameState.baseHealth + healAmt, gameState.baseMaxHealth);
-        showFloatingText('+' + healAmt + ' HP', PLAYER_BASE_X, PLAYER_BASE_Y - 40, '#4ade80');
-        showNotification('Base healed for ' + healAmt + ' HP!', 'success');
-        spawnParticles(PLAYER_BASE_X, PLAYER_BASE_Y, '#4ade80', 12);
-    }
-
-    ability.cooldown = ability.maxCooldown;
-    const bar = document.getElementById(`${type}-cooldown-bar`);
-    if (bar) {
-        const start = Date.now();
-        const tick = () => {
-            const elapsed = (Date.now() - start) / 1000;
-            const rem = Math.max(0, ability.maxCooldown - elapsed);
-            bar.style.width = `${(rem / ability.maxCooldown) * 100}%`;
-            ability.cooldown = rem;
-            if (rem > 0) requestAnimationFrame(tick);
-            else bar.style.width = '0%';
-        };
-        requestAnimationFrame(tick);
-    }
-    updateUI();
+function useAbility(type){
+  if(!GS.gameActive)return;
+  const ab=GS.abilities[type];
+  if(ab.cooldown>0){notify('Ability recharging!','error');return;}
+  if(type==='nuke'){
+    for(const e of [...GS.enemyUnits])destroyEnemy(e.id);
+    spawnPtcl(NX,NY,'#FF2E4C',28);spawnPtcl(EBX,EBY,'#FF6B00',18);
+    notify('Satoshi Bomb detonated!','success');
+  }else{
+    const h=50;GS.baseHealth=Math.min(GS.baseHealth+h,GS.baseMaxHealth);
+    floatText('+'+h+' HP',PBX,PBY-40,'#39FF14');spawnPtcl(PBX,PBY,'#39FF14',16);
+    notify(`Base healed +${h} HP`,'success');
+  }
+  ab.cooldown=ab.maxCooldown;
+  const bar=document.getElementById(`${type}-cooldown-bar`);
+  if(bar){const start=Date.now();const tick=()=>{
+    const el=(Date.now()-start)/1000;const r=Math.max(0,ab.maxCooldown-el);
+    bar.style.width=`${(r/ab.maxCooldown)*100}%`;ab.cooldown=r;
+    if(r>0)requestAnimationFrame(tick);else bar.style.width='0%';
+  };requestAnimationFrame(tick);}
+  updateUI();
 }
 
-// ==================== UPGRADES ====================
-function buyUpgrade(type) {
-    if (!gameState.gameActive) return;
-    const up = gameState.upgrades[type];
-    if (gameState.btc < up.cost) { showNotification('Not enough BTC!', 'error'); return; }
-    gameState.btc -= up.cost;
-    up.level++;
-    up.cost = Math.floor(up.cost * 1.75);
-
-    document.getElementById(`${type}-upgrade-cost`).textContent = up.cost;
-    document.getElementById(`${type}-upgrade-level`).textContent = up.level;
-
-    if (type === 'capacity') { gameState.maxUnits += 5; showNotification('+5 unit slots unlocked!', 'success'); }
-    else if (type === 'base') { gameState.baseMaxHealth += 50; gameState.baseHealth += 50; showNotification('+50 base HP!', 'success'); }
-    else if (type === 'mining') { showNotification('Mining efficiency +50%!', 'success'); }
-    else if (type === 'attack') {
-        for (const u of gameState.units) u.attack = getUnitAttack(u.type);
-        showNotification('Unit damage +25%!', 'success');
-    }
-    updateUI();
+function buyUpgrade(type){
+  if(!GS.gameActive)return;
+  const up=GS.upgrades[type];
+  if(GS.btc<up.cost){notify('Insufficient BTC!','error');return;}
+  GS.btc-=up.cost;up.level++;up.cost=Math.floor(up.cost*1.75);
+  document.getElementById(`${type}-upgrade-cost`).textContent=up.cost;
+  document.getElementById(`${type}-upgrade-level`).textContent=up.level;
+  const msgs={mining:'Neural Mining upgraded!',attack:'Combat Protocol upgraded!',capacity:'Squad expanded +5 slots!',base:'Fortress reinforced +50 HP!'};
+  if(type==='capacity')GS.maxUnits+=5;
+  else if(type==='base'){GS.baseMaxHealth+=50;GS.baseHealth+=50;}
+  else if(type==='attack')for(const u of GS.units)u.attack=getAtk(u.type);
+  notify(msgs[type],'success');updateUI();
 }
 
-// ==================== COLLECT RESOURCES ====================
-function collectResources() {
-    if (!gameState.gameActive) return;
-    const miners = gameState.units.filter(u => u.type === 'miner');
-    if (miners.length === 0) { showNotification('You need Miners to collect BTC!', 'error'); return; }
-    const bonus = 1 + Math.floor(miners.length / 2);
-    gameState.btc += bonus;
-    showFloatingText('+' + bonus + '₿', NODE_X, NODE_Y - 30, '#fbbf24');
-    spawnParticles(NODE_X, NODE_Y, '#fbbf24', 10);
-    updateUI();
+function collectResources(){
+  if(!GS.gameActive)return;
+  const mn=GS.units.filter(u=>u.type==='miner');
+  if(!mn.length){notify('Deploy Miners to harvest BTC!','error');return;}
+  const b=1+Math.floor(mn.length/2);GS.btc+=b;
+  floatText('+'+b+'₿',NX,NY-30,'#FFD700');spawnPtcl(NX,NY,'#FFD700',12);updateUI();
 }
 
-// ==================== DIFFICULTY ====================
-function updateDifficulty(type, value) {
-    value = parseInt(value);
-    gameState.difficulty[type] = value;
-    if (type === 'spawnRate') {
-        gameState.enemySpawnInterval = 8000 - ((value - 1) * 6000 / 9);
-        restartSpawnTimer();
-    }
-    showNotification('Difficulty updated!', 'info');
+function updateDifficulty(type,val){
+  val=parseInt(val);GS.difficulty[type]=val;
+  if(type==='spawnRate'){GS.enemySpawnInterval=8000-((val-1)*6000/9);restartSpawn();}
+  notify('Threat level updated!','info');
 }
 
-function restartSpawnTimer() {
-    if (gameState.spawnTimer) clearInterval(gameState.spawnTimer);
-    gameState.spawnTimer = setInterval(spawnEnemyUnit, gameState.enemySpawnInterval);
+function restartSpawn(){
+  if(GS.spawnTimer)clearInterval(GS.spawnTimer);
+  GS.spawnTimer=setInterval(spawnEnemy,GS.enemySpawnInterval);
 }
 
-// ==================== END GAME ====================
-function endGame(win) {
-    gameState.gameActive = false;
-    if (gameState.spawnTimer) clearInterval(gameState.spawnTimer);
-
-    document.getElementById('result-emoji').textContent = win ? '🏆' : '💀';
-    document.getElementById('result-text').textContent = win ? 'VICTORY!' : 'DEFEATED';
-    document.getElementById('result-text').style.color = win ? '#4ade80' : '#f87171';
-    document.getElementById('result-sub').textContent = win
-        ? `You destroyed the Rat Mob in ${Math.floor(gameState.time/60)}m ${gameState.time%60}s!`
-        : 'The Rat Mob has overrun your base!';
-    document.getElementById('game-result').style.display = 'flex';
-
-    // Clear units
-    document.getElementById('units-layer').innerHTML = '';
-    gameState.units = [];
-    gameState.enemyUnits = [];
-    gameState.unitCount = 0;
+function endGame(win){
+  GS.gameActive=false;if(GS.spawnTimer)clearInterval(GS.spawnTimer);
+  document.getElementById('result-emoji').textContent=win?'🏆':'💀';
+  document.getElementById('result-text').textContent=win?'VICTORY':'DEFEATED';
+  document.getElementById('result-text').style.color=win?'#39FF14':'#FF2E4C';
+  document.getElementById('result-text').style.textShadow=win?'0 0 20px #39FF14':'0 0 20px #FF2E4C';
+  document.getElementById('result-sub').textContent=win
+    ?`Rat Mob annihilated in ${Math.floor(GS.time/60)}m ${GS.time%60}s!`
+    :'The Rat Mob has breached your base!';
+  document.getElementById('game-result').style.display='flex';
+  document.getElementById('units-layer').innerHTML='';
+  GS.units=[];GS.enemyUnits=[];GS.unitCount=0;
 }
 
-function restartGame() {
-    gameState.btc = 100;
-    gameState.networkPower = 10;
-    gameState.time = 0;
-    gameState.baseHealth = gameState.baseMaxHealth = 100 + gameState.upgrades.base.level * 50;
-    gameState.enemyHealth = gameState.maxEnemyHealth = 100;
-    gameState.unitCount = 0;
-    gameState.maxUnits = 10 + gameState.upgrades.capacity.level * 5;
-    gameState.units = [];
-    gameState.enemyUnits = [];
-    gameState.gameActive = true;
-    document.getElementById('units-layer').innerHTML = '';
-    document.getElementById('notifications').innerHTML = '';
-    document.getElementById('game-result').style.display = 'none';
-    restartSpawnTimer();
-    updateUI();
+function restartGame(){
+  GS.btc=100;GS.networkPower=10;GS.time=0;
+  GS.baseHealth=GS.baseMaxHealth=100+GS.upgrades.base.level*50;
+  GS.enemyHealth=GS.maxEnemyHealth=100;
+  GS.unitCount=0;GS.maxUnits=10+GS.upgrades.capacity.level*5;
+  GS.units=[];GS.enemyUnits=[];GS.gameActive=true;
+  document.getElementById('units-layer').innerHTML='';
+  document.getElementById('notifications').innerHTML='';
+  document.getElementById('game-result').style.display='none';
+  restartSpawn();updateUI();
 }
 
-// ==================== INIT ====================
-function init() {
-    updateUI();
-    setInterval(gameLoop, 1000);
-    setInterval(moveLoop, 50);
-    document.getElementById('restart-btn').addEventListener('click', restartGame);
-    restartSpawnTimer();
-}
-
-window.addEventListener('load', init);
+window.addEventListener('load',()=>{
+  updateUI();setInterval(gameLoop,1000);setInterval(moveLoop,50);
+  document.getElementById('restart-btn').addEventListener('click',restartGame);
+  restartSpawn();
+  notify('MEOW WARS — Neon Protocol v3.0 online!','success');
+});
 </script>
 </body>
 </html>
